@@ -1,0 +1,6 @@
+{
+  "name": "SmashMatch",
+  "description": "Premium court matching app and social directory for finding badminton partners, hosting friendly matches, and managing doubles/singles sessions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
