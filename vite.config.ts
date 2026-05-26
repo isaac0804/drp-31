@@ -3,9 +3,11 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
 
-export default defineConfig(() => {
+export default defineConfig(({command}) => {
+  const base = command === 'build' ? '/drp-31/' : '/';
+
   return {
-    base: '/drp-31/',
+    base,
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
