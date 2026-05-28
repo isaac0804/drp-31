@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MatchSession, UserProfile, Player } from './types';
-import { INITIAL_SESSIONS, DEFAULT_USER } from './data';
+import { INITIAL_SESSIONS } from './data';
+import { getCurrentUser, resetDemoUser, signInDemoUser, updateCurrentUser } from './auth';
 
 // Component imports
 import Header from './components/Header';
@@ -12,10 +13,11 @@ import HostScreen from './components/HostScreen';
 import MySessions from './components/MySessions';
 import SessionDetails from './components/SessionDetails';
 import ProfileScreen from './components/ProfileScreen';
+import AuthScreen from './components/AuthScreen';
 
 export default function App() {
   const [sessions, setSessions] = useState<MatchSession[]>([]);
-  const [user, setUser] = useState<UserProfile>(DEFAULT_USER);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [activeScreen, setActiveScreen] = useState<string>('explore'); // explore, host, sessions, details, profile
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [editingSession, setEditingSession] = useState<MatchSession | null>(null);
@@ -26,7 +28,6 @@ export default function App() {
   // Load state from local storage dynamically
   useEffect(() => {
     const cachedSessions = localStorage.getItem('smash_sessions');
-    const cachedUser = localStorage.getItem('smash_user');
 
     if (cachedSessions) {
       try {
@@ -39,23 +40,22 @@ export default function App() {
       localStorage.setItem('smash_sessions', JSON.stringify(INITIAL_SESSIONS));
     }
 
-    if (cachedUser) {
-      try {
-        setUser(JSON.parse(cachedUser));
-      } catch (e) {
-        setUser(DEFAULT_USER);
-      }
-    } else {
-      setUser(DEFAULT_USER);
-      localStorage.setItem('smash_user', JSON.stringify(DEFAULT_USER));
-    }
+    setUser(getCurrentUser());
   }, []);
+
+  const handleSignIn = () => {
+    setUser(signInDemoUser());
+  };
 
   // Update profile and cascade changes to any matching sessions
   const handleUpdateProfile = (updated: Partial<UserProfile>) => {
+    if (!user) {
+      return;
+    }
+
     const newUser = { ...user, ...updated };
     setUser(newUser);
-    localStorage.setItem('smash_user', JSON.stringify(newUser));
+    updateCurrentUser(newUser);
 
     // Cascade name/avatar updates
     const updatedSessions = sessions.map((s) => {
@@ -79,9 +79,8 @@ export default function App() {
   // Restores base template data
   const handleResetData = () => {
     localStorage.removeItem('smash_sessions');
-    localStorage.removeItem('smash_user');
     setSessions(INITIAL_SESSIONS);
-    setUser(DEFAULT_USER);
+    setUser(resetDemoUser());
     setActiveScreen('explore');
     setSelectedSessionId(null);
     setEditingSession(null);
@@ -89,6 +88,10 @@ export default function App() {
 
   // Post a new court session
   const handlePostSession = (newSessionData: Omit<MatchSession, 'id' | 'host' | 'playersJoined'>) => {
+    if (!user) {
+      return;
+    }
+
     const freshId = `session_${Date.now()}`;
     const hostPlayer: Player = {
       id: user.id,
@@ -111,7 +114,15 @@ export default function App() {
 
   // Modify existing session values
   const handleUpdateSession = (id: string, updatedFields: Partial<MatchSession>) => {
+    if (!user) {
+      return;
+    }
+
     const newSessions = sessions.map((s) => {
+      if (s.host.id !== user.id) {
+        return s;
+      }
+
       if (s.id === id) {
         return {
           ...s,
@@ -131,18 +142,26 @@ export default function App() {
 
   // Remove hosted session permanently
   const handleCancelSession = (id: string) => {
+    if (!user) {
+      return;
+    }
+
     const confirmMessage = "Are you sure you want to cancel and delete this court match session?";
     if (window.confirm && !window.confirm(confirmMessage)) {
       return;
     }
 
-    const filtered = sessions.filter((s) => s.id !== id);
+    const filtered = sessions.filter((s) => s.id !== id || s.host.id !== user.id);
     setSessions(filtered);
     localStorage.setItem('smash_sessions', JSON.stringify(filtered));
   };
 
   // Join slots on court match
   const handleJoinSession = (sessionId: string) => {
+    if (!user) {
+      return;
+    }
+
     const playerToJoin: Player = {
       id: user.id,
       name: user.name,
@@ -167,8 +186,16 @@ export default function App() {
 
   // Retire from court lineup
   const handleLeaveSession = (sessionId: string) => {
+    if (!user) {
+      return;
+    }
+
     const updated = sessions.map((s) => {
       if (s.id === sessionId) {
+        if (s.host.id === user.id) {
+          return s;
+        }
+
         return {
           ...s,
           playersJoined: s.playersJoined.filter((p) => p.id !== user.id)
@@ -183,6 +210,10 @@ export default function App() {
 
   // Edit trigger
   const handleEditTrigger = (session: MatchSession) => {
+    if (!user || session.host.id !== user.id) {
+      return;
+    }
+
     setEditingSession(session);
     setActiveScreen('host');
   };
@@ -193,8 +224,12 @@ export default function App() {
   // Counts for sidebar and profiles
   const matchesCount = sessions.length;
   const myParticipatedMatchesCount = sessions.filter((s) => 
-    s.playersJoined.some((p) => p.id === user.id)
+    user && s.playersJoined.some((p) => p.id === user.id)
   ).length;
+
+  if (!user) {
+    return <AuthScreen onSignIn={handleSignIn} />;
+  }
 
   return (
     <div className="min-h-screen bg-background text-on-background flex flex-col relative antialiased pb-28 md:pb-6">
