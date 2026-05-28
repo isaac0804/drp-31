@@ -45,7 +45,7 @@ export default function SidebarDrawer({
                   <span className="font-sans font-extrabold text-2xl tracking-tighter italic text-primary-fixed uppercase">
                     SMASHMATCH
                   </span>
-                  <span className="text-xs text-on-surface-variant font-mono mt-0.5 tracking-wider">v1.2 // PRO LEAGUE</span>
+                  <span className="text-xs text-on-surface-variant font-mono mt-0.5 tracking-wider">v0.2 // PRO LEAGUE</span>
                 </div>
                 <button
                   onClick={onClose}
