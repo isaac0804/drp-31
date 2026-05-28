@@ -1,35 +1,72 @@
+import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { DEFAULT_USER } from './data';
+import { auth, db } from './firebase';
 import { UserProfile } from './types';
 
-const AUTH_USER_STORAGE_KEY = 'smash_auth_user';
+const usersCollection = 'users';
 
-export function getCurrentUser(): UserProfile | null {
-  const cachedUser = localStorage.getItem(AUTH_USER_STORAGE_KEY);
-
-  if (!cachedUser) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(cachedUser) as UserProfile;
-  } catch (e) {
-    localStorage.removeItem(AUTH_USER_STORAGE_KEY);
-    return null;
-  }
+function getUserRef(uid: string) {
+  return doc(db, usersCollection, uid);
 }
 
-export function signInDemoUser(): UserProfile {
-  const existingUser = getCurrentUser();
-  const user = existingUser ?? DEFAULT_USER;
-  localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(user));
+function createDefaultProfile(uid: string): UserProfile {
+  return {
+    ...DEFAULT_USER,
+    id: uid
+  };
+}
+
+async function getOrCreateUserProfile(uid: string): Promise<UserProfile> {
+  const userRef = getUserRef(uid);
+  const snapshot = await getDoc(userRef);
+
+  if (snapshot.exists()) {
+    return snapshot.data() as UserProfile;
+  }
+
+  const profile = createDefaultProfile(uid);
+  await setDoc(userRef, {
+    ...profile,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+
+  return profile;
+}
+
+export function subscribeToCurrentUser(
+  onChange: (user: UserProfile | null) => void,
+  onError: (error: Error) => void
+): () => void {
+  return onAuthStateChanged(auth, async (firebaseUser) => {
+    try {
+      if (!firebaseUser) {
+        onChange(null);
+        return;
+      }
+
+      onChange(await getOrCreateUserProfile(firebaseUser.uid));
+    } catch (error) {
+      onError(error instanceof Error ? error : new Error('Firebase authentication failed.'));
+    }
+  });
+}
+
+export async function signInDemoUser(): Promise<UserProfile> {
+  const credential = await signInAnonymously(auth);
+  return getOrCreateUserProfile(credential.user.uid);
+}
+
+export async function updateCurrentUser(updatedUser: UserProfile): Promise<void> {
+  await setDoc(getUserRef(updatedUser.id), {
+    ...updatedUser,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+}
+
+export async function resetDemoUser(currentUserId: string): Promise<UserProfile> {
+  const user = createDefaultProfile(currentUserId);
+  await updateCurrentUser(user);
   return user;
-}
-
-export function updateCurrentUser(updatedUser: UserProfile): void {
-  localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(updatedUser));
-}
-
-export function resetDemoUser(): UserProfile {
-  localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(DEFAULT_USER));
-  return DEFAULT_USER;
 }

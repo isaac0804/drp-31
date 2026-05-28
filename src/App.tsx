@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MatchSession, UserProfile, Player } from './types';
 import { INITIAL_SESSIONS } from './data';
-import { getCurrentUser, resetDemoUser, signInDemoUser, updateCurrentUser } from './auth';
+import { resetDemoUser, signInDemoUser, subscribeToCurrentUser, updateCurrentUser } from './auth';
 
 // Component imports
 import Header from './components/Header';
@@ -18,6 +18,8 @@ import AuthScreen from './components/AuthScreen';
 export default function App() {
   const [sessions, setSessions] = useState<MatchSession[]>([]);
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [activeScreen, setActiveScreen] = useState<string>('explore'); // explore, host, sessions, details, profile
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [editingSession, setEditingSession] = useState<MatchSession | null>(null);
@@ -25,7 +27,7 @@ export default function App() {
   // Sidebar state
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Load state from local storage dynamically
+  // Load sessions from local storage dynamically
   useEffect(() => {
     const cachedSessions = localStorage.getItem('smash_sessions');
 
@@ -40,22 +42,41 @@ export default function App() {
       localStorage.setItem('smash_sessions', JSON.stringify(INITIAL_SESSIONS));
     }
 
-    setUser(getCurrentUser());
   }, []);
 
-  const handleSignIn = () => {
-    setUser(signInDemoUser());
+  useEffect(() => {
+    return subscribeToCurrentUser((currentUser) => {
+      setUser(currentUser);
+      setIsAuthLoading(false);
+      setAuthError(null);
+    }, (error) => {
+      setUser(null);
+      setIsAuthLoading(false);
+      setAuthError(error.message);
+    });
+  }, []);
+
+  const handleSignIn = async () => {
+    setIsAuthLoading(true);
+    setAuthError(null);
+    try {
+      setUser(await signInDemoUser());
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Firebase sign-in failed.');
+    } finally {
+      setIsAuthLoading(false);
+    }
   };
 
   // Update profile and cascade changes to any matching sessions
-  const handleUpdateProfile = (updated: Partial<UserProfile>) => {
+  const handleUpdateProfile = async (updated: Partial<UserProfile>) => {
     if (!user) {
       return;
     }
 
     const newUser = { ...user, ...updated };
     setUser(newUser);
-    updateCurrentUser(newUser);
+    await updateCurrentUser(newUser);
 
     // Cascade name/avatar updates
     const updatedSessions = sessions.map((s) => {
@@ -77,10 +98,14 @@ export default function App() {
   };
 
   // Restores base template data
-  const handleResetData = () => {
+  const handleResetData = async () => {
+    if (!user) {
+      return;
+    }
+
     localStorage.removeItem('smash_sessions');
     setSessions(INITIAL_SESSIONS);
-    setUser(resetDemoUser());
+    setUser(await resetDemoUser(user.id));
     setActiveScreen('explore');
     setSelectedSessionId(null);
     setEditingSession(null);
@@ -227,8 +252,21 @@ export default function App() {
     user && s.playersJoined.some((p) => p.id === user.id)
   ).length;
 
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-background text-on-background flex items-center justify-center px-5 antialiased">
+        <div className="text-center space-y-3">
+          <div className="w-12 h-12 rounded-full border-2 border-primary-fixed/30 border-t-primary-fixed animate-spin mx-auto" />
+          <p className="font-mono text-xs uppercase tracking-[0.25em] text-on-surface-variant">
+            Loading SmashMatch
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
-    return <AuthScreen onSignIn={handleSignIn} />;
+    return <AuthScreen onSignIn={handleSignIn} error={authError} />;
   }
 
   return (

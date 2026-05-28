@@ -2,9 +2,10 @@ import { Trophy, UserCheck } from 'lucide-react';
 
 interface AuthScreenProps {
   onSignIn: () => void;
+  error?: string | null;
 }
 
-export default function AuthScreen({ onSignIn }: AuthScreenProps) {
+export default function AuthScreen({ onSignIn, error }: AuthScreenProps) {
   return (
     <main className="min-h-screen bg-background text-on-background flex items-center justify-center px-5 py-10 antialiased">
       <section className="w-full max-w-md bg-surface-container-high border border-outline-variant/20 rounded-3xl p-6 md:p-8 shadow-2xl overflow-hidden relative">
@@ -37,6 +38,12 @@ export default function AuthScreen({ onSignIn }: AuthScreenProps) {
             <UserCheck className="w-5 h-5 stroke-[2.5px]" />
             Continue as Demo User
           </button>
+
+          {error && (
+            <p className="rounded-2xl border border-error/40 bg-error-container/20 px-4 py-3 text-xs font-semibold text-error leading-relaxed">
+              {error}
+            </p>
+          )}
 
           <div className="rounded-2xl bg-surface-container-low border border-outline-variant/10 p-4">
             <p className="text-[11px] text-on-surface-variant/75 font-medium leading-relaxed">
