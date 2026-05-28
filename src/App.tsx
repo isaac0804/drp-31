@@ -75,8 +75,13 @@ export default function App() {
     }
 
     const newUser = { ...user, ...updated };
+    try {
+      await updateCurrentUser(newUser);
+    } catch {
+      return;
+    }
+
     setUser(newUser);
-    await updateCurrentUser(newUser);
 
     // Cascade name/avatar updates
     const updatedSessions = sessions.map((s) => {
