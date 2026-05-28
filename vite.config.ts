@@ -4,7 +4,7 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 export default defineConfig(({command}) => {
-  const base = command === 'build' ? '/drp-31/' : '/';
+  const base = '/';
 
   return {
     base,
