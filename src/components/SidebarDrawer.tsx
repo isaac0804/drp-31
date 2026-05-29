@@ -43,7 +43,7 @@ export default function SidebarDrawer({
               <div className="flex justify-between items-center mb-8">
                 <div className="flex flex-col">
                   <span className="font-sans font-extrabold text-2xl tracking-tighter italic text-primary-fixed uppercase">
-                    SMASHMATCH
+                    PEER PLAY
                   </span>
                   <span className="text-xs text-on-surface-variant font-mono mt-0.5 tracking-wider">v0.2 // PRO LEAGUE</span>
                 </div>
@@ -147,10 +147,10 @@ export default function SidebarDrawer({
                 className="w-full text-xs text-on-surface-variant hover:text-error flex items-center justify-center gap-2 py-2 border border-outline-variant/30 hover:border-error/40 rounded-lg transition-colors bg-black/20"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                Reset SmashMatch State
+                Reset Peer Play State
               </button>
               <div className="text-center text-[10px] text-on-surface-variant/40 mt-3 font-mono">
-                SmashMatch Inc. // All Rights Reserved
+                Peer Play Inc. // All Rights Reserved
               </div>
             </div>
           </motion.div>

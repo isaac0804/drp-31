@@ -19,7 +19,7 @@ export default function AuthScreen({ onSignIn, error }: AuthScreenProps) {
             </div>
             <div>
               <p className="font-mono text-xs text-primary-fixed uppercase tracking-[0.25em] mb-2">
-                SmashMatch Demo
+                Peer Play Demo
               </p>
               <h1 className="font-sans font-black text-3xl md:text-4xl text-white tracking-tight leading-tight">
                 Sign in to manage court sessions.
