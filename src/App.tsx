@@ -263,7 +263,7 @@ export default function App() {
         <div className="text-center space-y-3">
           <div className="w-12 h-12 rounded-full border-2 border-primary-fixed/30 border-t-primary-fixed animate-spin mx-auto" />
           <p className="font-mono text-xs uppercase tracking-[0.25em] text-on-surface-variant">
-            Loading SmashMatch
+            Loading Peer Play
           </p>
         </div>
       </div>
