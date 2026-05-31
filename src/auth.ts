@@ -1,7 +1,7 @@
-import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import { onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut, User } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { DEFAULT_USER } from './data';
-import { auth, db } from './firebase';
+import { auth, db, googleProvider } from './firebase';
 import { UserProfile } from './types';
 
 const usersCollection = 'users';
@@ -10,14 +10,16 @@ function getUserRef(uid: string) {
   return doc(db, usersCollection, uid);
 }
 
-function createDefaultProfile(uid: string): UserProfile {
+function createDefaultProfile(uid: string, googleUser?: User): UserProfile {
   return {
     ...DEFAULT_USER,
-    id: uid
+    id: uid,
+    name: googleUser?.displayName ?? DEFAULT_USER.name,
+    avatar: googleUser?.photoURL ?? DEFAULT_USER.avatar,
   };
 }
 
-async function getOrCreateUserProfile(uid: string): Promise<UserProfile> {
+async function getOrCreateUserProfile(uid: string, googleUser?: User): Promise<UserProfile> {
   const userRef = getUserRef(uid);
   const snapshot = await getDoc(userRef);
 
@@ -25,7 +27,7 @@ async function getOrCreateUserProfile(uid: string): Promise<UserProfile> {
     return snapshot.data() as UserProfile;
   }
 
-  const profile = createDefaultProfile(uid);
+  const profile = createDefaultProfile(uid, googleUser);
   await setDoc(userRef, {
     ...profile,
     createdAt: serverTimestamp(),
@@ -46,16 +48,16 @@ export function subscribeToCurrentUser(
         return;
       }
 
-      onChange(await getOrCreateUserProfile(firebaseUser.uid));
+      onChange(await getOrCreateUserProfile(firebaseUser.uid, firebaseUser));
     } catch (error) {
       onError(error instanceof Error ? error : new Error('Firebase authentication failed.'));
     }
   });
 }
 
-export async function signInDemoUser(): Promise<UserProfile> {
-  const credential = await signInAnonymously(auth);
-  return getOrCreateUserProfile(credential.user.uid);
+export async function signInWithGoogle(): Promise<UserProfile> {
+  const credential = await signInWithPopup(auth, googleProvider);
+  return getOrCreateUserProfile(credential.user.uid, credential.user);
 }
 
 export async function updateCurrentUser(updatedUser: UserProfile): Promise<void> {
@@ -63,6 +65,10 @@ export async function updateCurrentUser(updatedUser: UserProfile): Promise<void>
     ...updatedUser,
     updatedAt: serverTimestamp()
   }, { merge: true });
+}
+
+export async function signOut(): Promise<void> {
+  await firebaseSignOut(auth);
 }
 
 export async function resetDemoUser(currentUserId: string): Promise<UserProfile> {
