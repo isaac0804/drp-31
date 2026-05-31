@@ -240,6 +240,7 @@ export default function App() {
                 currentUserId={user.id}
                 onEditSession={handleEditTrigger}
                 onCancelSession={handleCancelSession}
+                onLeaveSession={handleLeaveSession}
                 onNavigateToHost={() => {
                   setEditingSession(null);
                   setActiveScreen('host');
