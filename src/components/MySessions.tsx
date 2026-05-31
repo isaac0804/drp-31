@@ -1,5 +1,6 @@
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { MatchSession, Player } from '../types';
+import { getReviewedPlayerIds } from '../reviews';
 import { MapPin, Edit3, Trash2, Plus, Trophy, Users, LogOut, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReviewTeamScreen from './ReviewTeamScreen';
@@ -42,6 +43,14 @@ export default function MySessions({
   const [activeTab, setActiveTab] = useState<Tab>('hosting');
   const [reviewingSession, setReviewingSession] = useState<MatchSession | null>(null);
   const [reviewingPlayer, setReviewingPlayer] = useState<Player | null>(null);
+  const [reviewedPlayerIds, setReviewedPlayerIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!reviewingSession) { setReviewedPlayerIds([]); return; }
+    getReviewedPlayerIds(currentUserId, reviewingSession.id)
+      .then(setReviewedPlayerIds)
+      .catch(() => setReviewedPlayerIds([]));
+  }, [reviewingSession, currentUserId]);
 
   const hostingSessions = sessions.filter(
     (s) => s.host.id === currentUserId && isUpcoming(s.date)
@@ -67,10 +76,14 @@ export default function MySessions({
   if (reviewingPlayer && reviewingSession) {
     return (
       <ReviewPlayerScreen
+        reviewerId={currentUserId}
         player={reviewingPlayer}
         session={reviewingSession}
         onBack={() => setReviewingPlayer(null)}
-        onSubmit={() => { setReviewingPlayer(null); setReviewingSession(null); }}
+        onSubmit={() => {
+          setReviewedPlayerIds((prev) => [...prev, reviewingPlayer.id]);
+          setReviewingPlayer(null);
+        }}
       />
     );
   }
@@ -80,8 +93,9 @@ export default function MySessions({
       <ReviewTeamScreen
         session={reviewingSession}
         currentUserId={currentUserId}
+        reviewedPlayerIds={reviewedPlayerIds}
         onSelectPlayer={setReviewingPlayer}
-        onBack={() => setReviewingSession(null)}
+        onBack={() => { setReviewingSession(null); setReviewedPlayerIds([]); }}
       />
     );
   }

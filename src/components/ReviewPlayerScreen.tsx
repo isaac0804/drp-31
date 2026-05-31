@@ -1,41 +1,62 @@
-import { useState } from 'react';
-import { Player, MatchSession } from '../types';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Player, MatchSession, PlayAgain, SkillAccuracy } from '../types';
 import { ArrowLeft, ThumbsUp, ThumbsDown, TrendingDown, CheckCircle, TrendingUp, Send } from 'lucide-react';
 import { motion } from 'motion/react';
+import { submitReview } from '../reviews';
 
 interface ReviewPlayerScreenProps {
+  reviewerId: string;
   player: Player;
   session: MatchSession;
   onBack: () => void;
   onSubmit: () => void;
 }
 
-type PlayAgain = 'yes' | 'no' | null;
-type SkillAccuracy = 'too-high' | 'accurate' | 'too-low' | null;
+type PlayAgainState = PlayAgain | null;
+type SkillAccuracyState = SkillAccuracy | null;
 
-const SKILL_OPTIONS: { value: SkillAccuracy; label: string; icon: React.ReactNode }[] = [
+const SKILL_OPTIONS: { value: SkillAccuracy; label: string; icon: ReactNode }[] = [
   { value: 'too-high', label: 'Rated Too High', icon: <TrendingDown className="w-4 h-4" /> },
   { value: 'accurate', label: 'Accurate',        icon: <CheckCircle  className="w-4 h-4" /> },
   { value: 'too-low',  label: 'Rated Too Low',   icon: <TrendingUp   className="w-4 h-4" /> },
 ];
 
 export default function ReviewPlayerScreen({
+  reviewerId,
   player,
   session,
   onBack,
   onSubmit,
 }: ReviewPlayerScreenProps) {
-  const [playAgain, setPlayAgain] = useState<PlayAgain>(null);
-  const [skillAccuracy, setSkillAccuracy] = useState<SkillAccuracy>(null);
+  const [playAgain, setPlayAgain] = useState<PlayAgainState>(null);
+  const [skillAccuracy, setSkillAccuracy] = useState<SkillAccuracyState>(null);
   const [feedback, setFeedback] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const canSubmit = playAgain !== null && skillAccuracy !== null;
+  // Cancel the success-screen timeout if the user navigates away
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
-  function handleSubmit() {
-    if (!canSubmit) return;
-    setSubmitted(true);
-    setTimeout(onSubmit, 1200);
+  const canSubmit = playAgain !== null && skillAccuracy !== null && !submitting;
+
+  async function handleSubmit() {
+    if (!canSubmit || !playAgain || !skillAccuracy) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await submitReview(reviewerId, player.id, session.id, playAgain, skillAccuracy, feedback);
+      setSubmitted(true);
+      timeoutRef.current = setTimeout(onSubmit, 1200);
+    } catch {
+      setError('Failed to submit. Please try again.');
+      setSubmitting(false);
+    }
   }
 
   if (submitted) {
@@ -128,7 +149,7 @@ export default function ReviewPlayerScreen({
         <div>
           <h3 className="font-bold text-sm text-white">How accurate is their skill level?</h3>
           <p className="text-xs text-on-surface-variant/40 mt-0.5">
-            Listed as <span className="text-primary-fixed capitalize">{session.skillLevel}</span>
+            Session level: <span className="text-primary-fixed capitalize">{session.skillLevel}</span>
           </p>
         </div>
         <div className="flex flex-col gap-2">
@@ -153,7 +174,9 @@ export default function ReviewPlayerScreen({
 
       {/* Q3: Feedback */}
       <section className="space-y-3">
-        <h3 className="font-bold text-sm text-white">Share your feedback <span className="text-on-surface-variant/40 font-normal">(optional)</span></h3>
+        <h3 className="font-bold text-sm text-white">
+          Share your feedback <span className="text-on-surface-variant/40 font-normal">(optional)</span>
+        </h3>
         <textarea
           value={feedback}
           onChange={(e) => setFeedback(e.target.value)}
@@ -162,6 +185,10 @@ export default function ReviewPlayerScreen({
           className="w-full bg-surface-container border border-outline-variant/15 rounded-xl px-4 py-3 text-sm text-on-surface placeholder-on-surface-variant/30 resize-none outline-none focus:border-primary-fixed/40 transition-colors"
         />
       </section>
+
+      {error && (
+        <p className="text-xs text-error text-center">{error}</p>
+      )}
 
       {/* Submit */}
       <button
@@ -174,7 +201,7 @@ export default function ReviewPlayerScreen({
         }`}
       >
         <Send className="w-4 h-4" />
-        Submit Review
+        {submitting ? 'Submitting…' : 'Submit Review'}
       </button>
     </motion.div>
   );

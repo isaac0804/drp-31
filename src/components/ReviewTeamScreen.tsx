@@ -1,10 +1,11 @@
 import { MatchSession, Player } from '../types';
-import { ArrowLeft, MapPin, ChevronRight } from 'lucide-react';
+import { ArrowLeft, MapPin, ChevronRight, CheckCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface ReviewTeamScreenProps {
   session: MatchSession;
   currentUserId: string;
+  reviewedPlayerIds: string[];
   onSelectPlayer: (player: Player) => void;
   onBack: () => void;
 }
@@ -17,6 +18,7 @@ function formatDate(dateStr: string): string {
 export default function ReviewTeamScreen({
   session,
   currentUserId,
+  reviewedPlayerIds,
   onSelectPlayer,
   onBack,
 }: ReviewTeamScreenProps) {
@@ -67,27 +69,41 @@ export default function ReviewTeamScreen({
             No other players in this session.
           </div>
         ) : (
-          teammates.map((player, i) => (
-            <motion.button
-              key={player.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.18, delay: i * 0.05 }}
-              onClick={() => onSelectPlayer(player)}
-              className="w-full flex items-center gap-3.5 bg-surface-container hover:bg-surface-container-high border border-outline-variant/15 rounded-2xl px-4 py-3.5 transition-all cursor-pointer group text-left"
-            >
-              <img
-                src={player.avatar}
-                alt={player.name}
-                className="w-11 h-11 rounded-full object-cover border-2 border-outline-variant/20 shrink-0"
-              />
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm text-white">{player.name}</p>
-                <p className="text-[11px] text-on-surface-variant/50 mt-0.5">Tap to review</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-on-surface-variant/30 group-hover:text-primary-fixed transition-colors shrink-0" />
-            </motion.button>
-          ))
+          teammates.map((player, i) => {
+            const alreadyReviewed = reviewedPlayerIds.includes(player.id);
+            return (
+              <motion.button
+                key={player.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.18, delay: i * 0.05 }}
+                onClick={() => !alreadyReviewed && onSelectPlayer(player)}
+                disabled={alreadyReviewed}
+                className={`w-full flex items-center gap-3.5 border rounded-2xl px-4 py-3.5 transition-all text-left ${
+                  alreadyReviewed
+                    ? 'bg-surface-container/50 border-outline-variant/10 cursor-default opacity-60'
+                    : 'bg-surface-container hover:bg-surface-container-high border-outline-variant/15 cursor-pointer group'
+                }`}
+              >
+                <img
+                  src={player.avatar}
+                  alt={player.name}
+                  className="w-11 h-11 rounded-full object-cover border-2 border-outline-variant/20 shrink-0"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm text-white">{player.name}</p>
+                  <p className="text-[11px] text-on-surface-variant/50 mt-0.5">
+                    {alreadyReviewed ? 'Already reviewed' : 'Tap to review'}
+                  </p>
+                </div>
+                {alreadyReviewed ? (
+                  <CheckCircle className="w-4 h-4 text-primary-fixed shrink-0" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 text-on-surface-variant/30 group-hover:text-primary-fixed transition-colors shrink-0" />
+                )}
+              </motion.button>
+            );
+          })
         )}
       </div>
     </motion.div>
