@@ -1,4 +1,17 @@
 export type SkillLevel = 'beginner' | 'intermediate' | 'advanced' | 'pro';
+export type PlayAgain = 'yes' | 'no';
+export type SkillAccuracy = 'too-high' | 'accurate' | 'too-low';
+
+export interface Review {
+  id: string;
+  reviewerId: string;
+  revieweeId: string;
+  sessionId: string;
+  playAgain: PlayAgain;
+  skillAccuracy: SkillAccuracy;
+  feedback: string;
+  createdAt: number;
+}
 export type MatchType = 'singles' | 'doubles';
 
 export interface UserProfile {
