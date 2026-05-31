@@ -1,4 +1,4 @@
-import { X, Play, Trophy, Users, Award, Zap, RefreshCw } from 'lucide-react';
+import { X, Play, Trophy, Users, Award, Zap, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface SidebarDrawerProps {
@@ -6,7 +6,7 @@ interface SidebarDrawerProps {
   onClose: () => void;
   activeScreen: string;
   onNavigate: (screen: string) => void;
-  onResetData: () => void;
+  onSignOut: () => void;
   matchesCount: number;
 }
 
@@ -15,7 +15,7 @@ export default function SidebarDrawer({
   onClose,
   activeScreen,
   onNavigate,
-  onResetData,
+  onSignOut,
   matchesCount
 }: SidebarDrawerProps) {
   return (
@@ -43,9 +43,9 @@ export default function SidebarDrawer({
               <div className="flex justify-between items-center mb-8">
                 <div className="flex flex-col">
                   <span className="font-sans font-extrabold text-2xl tracking-tighter italic text-primary-fixed uppercase">
-                    SMASHMATCH
+                    PEER PLAY
                   </span>
-                  <span className="text-xs text-on-surface-variant font-mono mt-0.5 tracking-wider">v1.2 // PRO LEAGUE</span>
+                  <span className="text-xs text-on-surface-variant font-mono mt-0.5 tracking-wider">v0.2 // PRO LEAGUE</span>
                 </div>
                 <button
                   onClick={onClose}
@@ -137,20 +137,20 @@ export default function SidebarDrawer({
               </div>
             </div>
 
-            {/* Reset data helper */}
-            <div className="border-t border-outline-variant/20 pt-4">
+            {/* Bottom actions */}
+            <div className="border-t border-outline-variant/20 pt-4 space-y-2">
               <button
                 onClick={() => {
-                  onResetData();
+                  onSignOut();
                   onClose();
                 }}
-                className="w-full text-xs text-on-surface-variant hover:text-error flex items-center justify-center gap-2 py-2 border border-outline-variant/30 hover:border-error/40 rounded-lg transition-colors bg-black/20"
+                className="w-full text-xs text-on-surface-variant hover:text-on-surface flex items-center justify-center gap-2 py-2 border border-outline-variant/30 hover:border-outline-variant/60 rounded-lg transition-colors bg-black/20"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
-                Reset SmashMatch State
+                <LogOut className="w-3.5 h-3.5" />
+                Sign Out
               </button>
-              <div className="text-center text-[10px] text-on-surface-variant/40 mt-3 font-mono">
-                SmashMatch Inc. // All Rights Reserved
+              <div className="text-center text-[10px] text-on-surface-variant/40 mt-1 font-mono">
+                Peer Play Inc. // All Rights Reserved
               </div>
             </div>
           </motion.div>

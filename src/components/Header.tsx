@@ -26,7 +26,7 @@ export default function Header({ user, onMenuClick, onProfileClick, onLogoClick 
           onClick={onLogoClick}
           className="font-sans font-extrabold text-xl md:text-2xl tracking-tighter italic text-primary-fixed uppercase select-none cursor-pointer focus:outline-none flex items-center gap-1 hover:brightness-110 active:scale-98 transition-transform"
         >
-          SMASHMATCH
+          PEER PLAY
         </button>
 
         {/* Profile Avatar Trigger Button */}

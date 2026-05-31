@@ -1,8 +1,16 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MatchSession, UserProfile, Player } from './types';
-import { INITIAL_SESSIONS } from './data';
-import { resetDemoUser, signInDemoUser, subscribeToCurrentUser, updateCurrentUser } from './auth';
+import { signInWithGoogle, signOut, subscribeToCurrentUser, updateCurrentUser } from './auth';
+import {
+  subscribeToSessions,
+  postSession,
+  updateSession,
+  cancelSession,
+  joinSession,
+  leaveSession,
+  updateSessionsForPlayer,
+} from './sessions';
 
 // Component imports
 import Header from './components/Header';
@@ -27,21 +35,8 @@ export default function App() {
   // Sidebar state
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Load sessions from local storage dynamically
   useEffect(() => {
-    const cachedSessions = localStorage.getItem('smash_sessions');
-
-    if (cachedSessions) {
-      try {
-        setSessions(JSON.parse(cachedSessions));
-      } catch (e) {
-        setSessions(INITIAL_SESSIONS);
-      }
-    } else {
-      setSessions(INITIAL_SESSIONS);
-      localStorage.setItem('smash_sessions', JSON.stringify(INITIAL_SESSIONS));
-    }
-
+    return subscribeToSessions(setSessions, (err) => console.error('Sessions error:', err));
   }, []);
 
   useEffect(() => {
@@ -60,7 +55,7 @@ export default function App() {
     setIsAuthLoading(true);
     setAuthError(null);
     try {
-      setUser(await signInDemoUser());
+      setUser(await signInWithGoogle());
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Firebase sign-in failed.');
     } finally {
@@ -68,11 +63,8 @@ export default function App() {
     }
   };
 
-  // Update profile and cascade changes to any matching sessions
   const handleUpdateProfile = async (updated: Partial<UserProfile>) => {
-    if (!user) {
-      return;
-    }
+    if (!user) return;
 
     const newUser = { ...user, ...updated };
     try {
@@ -82,160 +74,61 @@ export default function App() {
     }
 
     setUser(newUser);
-
-    // Cascade name/avatar updates
-    const updatedSessions = sessions.map((s) => {
-      let host = s.host;
-      if (s.host.id === user.id) {
-        host = { ...s.host, name: newUser.name, avatar: newUser.avatar };
-      }
-      const playersJoined = s.playersJoined.map((p) => {
-        if (p.id === user.id) {
-          return { ...p, name: newUser.name, avatar: newUser.avatar };
-        }
-        return p;
-      });
-      return { ...s, host, playersJoined };
-    });
-
-    setSessions(updatedSessions);
-    localStorage.setItem('smash_sessions', JSON.stringify(updatedSessions));
+    updateSessionsForPlayer(sessions, user.id, { name: newUser.name, avatar: newUser.avatar })
+      .catch((err) => console.error('Session cascade error:', err));
   };
 
-  // Restores base template data
-  const handleResetData = async () => {
-    if (!user) {
-      return;
-    }
-
-    localStorage.removeItem('smash_sessions');
-    setSessions(INITIAL_SESSIONS);
-    setUser(await resetDemoUser(user.id));
-    setActiveScreen('explore');
-    setSelectedSessionId(null);
-    setEditingSession(null);
+  const handleSignOut = async () => {
+    await signOut();
+    // onAuthStateChanged will fire with null and set user to null automatically
   };
 
-  // Post a new court session
   const handlePostSession = (newSessionData: Omit<MatchSession, 'id' | 'host' | 'playersJoined'>) => {
-    if (!user) {
-      return;
-    }
+    if (!user) return;
 
-    const freshId = `session_${Date.now()}`;
-    const hostPlayer: Player = {
-      id: user.id,
-      name: user.name,
-      avatar: user.avatar
-    };
-
+    const hostPlayer: Player = { id: user.id, name: user.name, avatar: user.avatar };
     const finishedSession: MatchSession = {
       ...newSessionData,
-      id: freshId,
+      id: `session_${Date.now()}`,
       host: hostPlayer,
-      playersJoined: [hostPlayer] // Host joined by default
+      playersJoined: [hostPlayer],
     };
 
-    const newSessions = [finishedSession, ...sessions];
-    setSessions(newSessions);
-    localStorage.setItem('smash_sessions', JSON.stringify(newSessions));
-    setActiveScreen('sessions'); // Jump to managed screen to see accomplishments
+    postSession(finishedSession).catch((err) => console.error('Post session error:', err));
+    setActiveScreen('sessions');
   };
 
-  // Modify existing session values
   const handleUpdateSession = (id: string, updatedFields: Partial<MatchSession>) => {
-    if (!user) {
-      return;
-    }
+    if (!user) return;
+    const session = sessions.find((s) => s.id === id);
+    if (!session || session.host.id !== user.id) return;
 
-    const newSessions = sessions.map((s) => {
-      if (s.host.id !== user.id) {
-        return s;
-      }
-
-      if (s.id === id) {
-        return {
-          ...s,
-          ...updatedFields,
-          // Recalculate max players safely
-          maxPlayers: updatedFields.maxPlayers ?? s.maxPlayers
-        };
-      }
-      return s;
-    });
-
-    setSessions(newSessions);
-    localStorage.setItem('smash_sessions', JSON.stringify(newSessions));
+    updateSession(id, updatedFields).catch((err) => console.error('Update session error:', err));
     setEditingSession(null);
-    setActiveScreen('sessions'); // Return to list view
+    setActiveScreen('sessions');
   };
 
-  // Remove hosted session permanently
   const handleCancelSession = (id: string) => {
-    if (!user) {
+    if (!user) return;
+    const session = sessions.find((s) => s.id === id);
+    if (!session || session.host.id !== user.id) return;
+
+    if (window.confirm && !window.confirm('Are you sure you want to cancel and delete this court match session?')) {
       return;
     }
 
-    const confirmMessage = "Are you sure you want to cancel and delete this court match session?";
-    if (window.confirm && !window.confirm(confirmMessage)) {
-      return;
-    }
-
-    const filtered = sessions.filter((s) => s.id !== id || s.host.id !== user.id);
-    setSessions(filtered);
-    localStorage.setItem('smash_sessions', JSON.stringify(filtered));
+    cancelSession(id).catch((err) => console.error('Cancel session error:', err));
   };
 
-  // Join slots on court match
   const handleJoinSession = (sessionId: string) => {
-    if (!user) {
-      return;
-    }
-
-    const playerToJoin: Player = {
-      id: user.id,
-      name: user.name,
-      avatar: user.avatar
-    };
-
-    const updated = sessions.map((s) => {
-      if (s.id === sessionId) {
-        if (s.playersJoined.length >= s.maxPlayers) {
-          return s; // Full, bypass
-        }
-        if (!s.playersJoined.some((p) => p.id === user.id)) {
-          return { ...s, playersJoined: [...s.playersJoined, playerToJoin] };
-        }
-      }
-      return s;
-    });
-
-    setSessions(updated);
-    localStorage.setItem('smash_sessions', JSON.stringify(updated));
+    if (!user) return;
+    const player: Player = { id: user.id, name: user.name, avatar: user.avatar };
+    joinSession(sessionId, player).catch((err) => console.error('Join session error:', err));
   };
 
-  // Retire from court lineup
   const handleLeaveSession = (sessionId: string) => {
-    if (!user) {
-      return;
-    }
-
-    const updated = sessions.map((s) => {
-      if (s.id === sessionId) {
-        if (s.host.id === user.id) {
-          return s;
-        }
-
-        return {
-          ...s,
-          playersJoined: s.playersJoined.filter((p) => p.id !== user.id)
-        };
-      }
-      return s;
-    });
-
-    setSessions(updated);
-    localStorage.setItem('smash_sessions', JSON.stringify(updated));
+    if (!user) return;
+    leaveSession(sessionId, user.id).catch((err) => console.error('Leave session error:', err));
   };
 
   // Edit trigger
@@ -263,7 +156,7 @@ export default function App() {
         <div className="text-center space-y-3">
           <div className="w-12 h-12 rounded-full border-2 border-primary-fixed/30 border-t-primary-fixed animate-spin mx-auto" />
           <p className="font-mono text-xs uppercase tracking-[0.25em] text-on-surface-variant">
-            Loading SmashMatch
+            Loading Peer Play
           </p>
         </div>
       </div>
@@ -299,7 +192,7 @@ export default function App() {
           setEditingSession(null);
           setActiveScreen(screen);
         }}
-        onResetData={handleResetData}
+        onSignOut={handleSignOut}
         matchesCount={matchesCount}
       />
 
