@@ -17,6 +17,8 @@ function createDefaultProfile(uid: string, googleUser?: User): UserProfile {
     name: googleUser?.displayName ?? DEFAULT_USER.name,
     avatar: googleUser?.photoURL ?? DEFAULT_USER.avatar,
     about: DEFAULT_USER.about,
+    sportsPlayed: DEFAULT_USER.sportsPlayed,
+    matchPreferences: DEFAULT_USER.matchPreferences,
   };
 }
 

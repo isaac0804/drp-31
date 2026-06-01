@@ -7,6 +7,8 @@ export interface UserProfile {
   avatar: string;
   skillLevel: SkillLevel;
   about: string;
+  sportsPlayed: string[];
+  matchPreferences: string;
 }
 
 export interface Player {

@@ -3,6 +3,8 @@ import { UserProfile, SkillLevel } from '../types';
 import { AVATARS } from '../data';
 import { Trophy, User, Award } from 'lucide-react';
 
+type SportOption = 'Badminton' | 'Table Tennis' | 'Football' | 'Pickleball';
+
 interface ProfileScreenProps {
   user: UserProfile;
   onUpdateProfile: (updated: Partial<UserProfile>) => void;
@@ -18,7 +20,19 @@ export default function ProfileScreen({
   const [selectedAvatar, setSelectedAvatar] = useState(user.avatar);
   const [skill, setSkill] = useState<SkillLevel>(user.skillLevel);
   const [about, setAbout] = useState(user.about ?? '');
+  const [sportsPlayed, setSportsPlayed] = useState<SportOption[]>(user.sportsPlayed as SportOption[] ?? []);
+  const [matchPreferences, setMatchPreferences] = useState(user.matchPreferences ?? '');
   const [isSavedSuccessfully, setIsSavedSuccessfully] = useState(false);
+
+  const availableSports: SportOption[] = ['Badminton', 'Table Tennis', 'Football', 'Pickleball'];
+
+  const toggleSport = (sport: SportOption) => {
+    setSportsPlayed((currentSports: SportOption[]) =>
+      currentSports.includes(sport)
+        ? currentSports.filter((currentSport) => currentSport !== sport)
+        : [...currentSports, sport]
+    );
+  };
 
   const handleSave = (e: FormEvent) => {
     e.preventDefault();
@@ -26,7 +40,9 @@ export default function ProfileScreen({
       name,
       avatar: selectedAvatar,
       skillLevel: skill,
-      about
+      about,
+      sportsPlayed,
+      matchPreferences
     });
     setIsSavedSuccessfully(true);
     setTimeout(() => {
@@ -47,7 +63,7 @@ export default function ProfileScreen({
       </section>
 
       {/* Main Profile Layout form with stats column */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
         {/* Left column: Current card configuration */}
         <section className="md:col-span-1 bg-surface-container-high rounded-xl p-5 border border-outline-variant/15 flex flex-col items-center text-center gap-4 relative">
           <div className="relative">
@@ -118,6 +134,52 @@ export default function ProfileScreen({
                 placeholder="Tell others a little about your play style, goals, or what kind of matches you enjoy..."
                 value={about}
                 onChange={(e) => setAbout(e.target.value)}
+                className="w-full bg-transparent text-on-surface font-sans text-sm p-3 outline-none border-none focus:ring-0 placeholder-on-surface-variant/50 resize-none"
+              />
+            </div>
+          </div>
+
+          {/* Sports I Play */}
+          <div className="space-y-2">
+            <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
+              Sports I Play
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {availableSports.map((sport) => {
+                const isSelected = sportsPlayed.includes(sport);
+
+                return (
+                  <button
+                    key={sport}
+                    type="button"
+                    onClick={() => toggleSport(sport)}
+                    className={`rounded-lg border px-3 py-3 text-left transition-all ${
+                      isSelected
+                        ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+                        : 'border-outline-variant/40 bg-surface-variant/60 text-on-surface-variant hover:bg-surface-bright'
+                    }`}
+                  >
+                    <div className="font-sans text-sm font-bold">{sport}</div>
+                    <div className="mt-1 text-[10px] uppercase tracking-wider">
+                      {isSelected ? 'Selected' : 'Tap to add'}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Match Preferences */}
+          <div className="space-y-1.5">
+            <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
+              Match Preferences
+            </label>
+            <div className="rounded-lg bg-surface-variant/60 border border-outline-variant/40 focus-within:border-primary-fixed focus-within:ring-1 focus-within:ring-primary-fixed transition-all overflow-hidden">
+              <textarea
+                rows={4}
+                placeholder="Describe the kind of matches you prefer, such as doubles or singles, casual or competitive, and other preferences..."
+                value={matchPreferences}
+                onChange={(e) => setMatchPreferences(e.target.value)}
                 className="w-full bg-transparent text-on-surface font-sans text-sm p-3 outline-none border-none focus:ring-0 placeholder-on-surface-variant/50 resize-none"
               />
             </div>
