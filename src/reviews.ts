@@ -40,5 +40,7 @@ export async function getReviewedPlayerIds(
     where('sessionId', '==', sessionId)
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => (d.data() as Pick<Review, 'revieweeId'>).revieweeId);
+  return Array.from(
+    new Set(snap.docs.map((d) => (d.data() as Pick<Review, 'revieweeId'>).revieweeId))
+  );
 }

@@ -3,7 +3,7 @@ export type PlayAgain = 'yes' | 'no';
 export type SkillAccuracy = 'too-high' | 'accurate' | 'too-low';
 
 export interface Review {
-  id: string;
+  id?: string;
   reviewerId: string;
   revieweeId: string;
   sessionId: string;
