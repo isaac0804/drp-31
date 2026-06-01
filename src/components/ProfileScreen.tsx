@@ -65,10 +65,10 @@ export default function ProfileScreen({
         </p>
       </section>
 
-      {/* Main Profile Layout form with stats column */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-        {/* Left column: Current card configuration */}
-        <section className="md:col-span-1 bg-surface-container-high rounded-xl p-5 border border-outline-variant/15 flex flex-col items-center text-center gap-4 relative">
+      {/* Main Profile Layout: left summary stacked above form on all sizes */}
+      <div className="grid grid-cols-1 gap-6 items-start">
+        {/* Profile image, name and skill (no section wrapper) */}
+        <div className="flex flex-col items-center text-center gap-4">
           <div className="relative">
             <div className="w-24 h-24 rounded-full border-4 border-primary-fixed overflow-hidden relative">
               <img
@@ -89,20 +89,20 @@ export default function ProfileScreen({
               {skill}
             </span>
           </div>
+        </div>
 
-          {/* User Quick Statistics */}
-          <div className="w-full pt-4 border-t border-outline-variant/10 space-y-3">
-            <div className="bg-surface-container-low rounded p-3 border border-outline-variant/5 text-center">
-              <div className="text-lg font-bold text-white font-mono">{matchesPlayedCount}</div>
-              <div className="text-[9px] text-on-surface-variant font-medium uppercase tracking-wider">
-                Matches Played
-              </div>
-            </div>
+        {/* Matches Played - show count directly in grey container */}
+        <section className="bg-surface-container-low rounded-xl p-4 border border-outline-variant/15 text-center">
+          <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
+            Matches Played
+          </label>
+          <div className="mt-3">
+            <div className="text-lg font-bold text-on-surface font-mono">{matchesPlayedCount}</div>
           </div>
         </section>
 
-        {/* Right Columns: Personalization parameters - split into sections */}
-        <div className="md:col-span-2 grid grid-cols-1 gap-4">
+        {/* Personalization parameters - form sections */}
+        <div className="grid grid-cols-1 gap-4">
           {/* Athlete Name section */}
           <section className="bg-surface-container-high rounded-xl p-4 border border-outline-variant/15">
             <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
