@@ -6,6 +6,7 @@ export interface UserProfile {
   name: string;
   avatar: string;
   skillLevel: SkillLevel;
+  skillScore?: number; // 1–10 from assessment
 }
 
 export interface Player {
