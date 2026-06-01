@@ -19,6 +19,8 @@ function createDefaultProfile(uid: string, googleUser?: User): UserProfile {
     about: DEFAULT_USER.about,
     sportsPlayed: DEFAULT_USER.sportsPlayed,
     matchPreferences: DEFAULT_USER.matchPreferences,
+    sportingHistory: DEFAULT_USER.sportingHistory,
+    industry: DEFAULT_USER.industry,
   };
 }
 

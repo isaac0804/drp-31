@@ -9,6 +9,8 @@ export interface UserProfile {
   about: string;
   sportsPlayed: string[];
   matchPreferences: string;
+  sportingHistory: string;
+  industry: string;
 }
 
 export interface Player {

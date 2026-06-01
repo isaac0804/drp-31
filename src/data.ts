@@ -46,7 +46,9 @@ export const DEFAULT_USER: UserProfile = {
   skillLevel: 'intermediate',
   about: '',
   sportsPlayed: [],
-  matchPreferences: ''
+  matchPreferences: '',
+  sportingHistory: '',
+  industry: ''
 };
 
 export const INITIAL_SESSIONS: MatchSession[] = [
