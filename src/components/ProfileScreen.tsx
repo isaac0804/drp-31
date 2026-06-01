@@ -1,7 +1,7 @@
 import { useState, FormEvent } from 'react';
-import { UserProfile, SkillLevel } from '../types';
+import { UserProfile } from '../types';
 import { AVATARS } from '../data';
-import { Trophy, User, Flame, Dumbbell, Smile, Award, RotateCcw } from 'lucide-react';
+import { Trophy, User, Award, RotateCcw } from 'lucide-react';
 
 interface ProfileScreenProps {
   user: UserProfile;
@@ -18,7 +18,7 @@ export default function ProfileScreen({
 }: ProfileScreenProps) {
   const [name, setName] = useState(user.name);
   const [selectedAvatar, setSelectedAvatar] = useState(user.avatar);
-  const [skill, setSkill] = useState<SkillLevel>(user.skillLevel);
+  const skill = user.skillLevel;
   const [isSavedSuccessfully, setIsSavedSuccessfully] = useState(false);
 
   const handleSave = (e: FormEvent) => {
@@ -118,38 +118,6 @@ export default function ProfileScreen({
                 onChange={(e) => setName(e.target.value)}
                 className="w-full bg-transparent text-on-surface font-sans text-sm p-3 outline-none border-none focus:ring-0 placeholder-on-surface-variant/50"
               />
-            </div>
-          </div>
-
-          {/* Skill level setting */}
-          <div className="space-y-2">
-            <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
-              Profile Skill Rating
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { val: 'beginner', icon: Smile, lab: 'Beginner' },
-                { val: 'intermediate', icon: Dumbbell, lab: 'Intermed.' },
-                { val: 'pro', icon: Flame, lab: 'Pro Master' }
-              ].map((item) => {
-                const IconComp = item.icon;
-                const isSelected = skill === item.val;
-                return (
-                  <button
-                    key={item.val}
-                    type="button"
-                    onClick={() => setSkill(item.val as SkillLevel)}
-                    className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-primary-fixed/10 border-primary-fixed text-primary-fixed'
-                        : 'border-outline-variant/50 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
-                    }`}
-                  >
-                    <IconComp className="w-4 h-4 mb-1" />
-                    <span className="font-sans font-black text-[9px] uppercase tracking-wider">{item.lab}</span>
-                  </button>
-                );
-              })}
             </div>
           </div>
 
