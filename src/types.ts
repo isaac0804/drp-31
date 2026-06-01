@@ -6,6 +6,7 @@ export interface UserProfile {
   name: string;
   avatar: string;
   skillLevel: SkillLevel;
+  about: string;
 }
 
 export interface Player {

@@ -1,7 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { UserProfile, SkillLevel } from '../types';
 import { AVATARS } from '../data';
-import { Trophy, Shield, User, Star, Flame, Dumbbell, Smile, Landmark, Award } from 'lucide-react';
+import { Trophy, User, Award } from 'lucide-react';
 
 interface ProfileScreenProps {
   user: UserProfile;
@@ -17,6 +17,7 @@ export default function ProfileScreen({
   const [name, setName] = useState(user.name);
   const [selectedAvatar, setSelectedAvatar] = useState(user.avatar);
   const [skill, setSkill] = useState<SkillLevel>(user.skillLevel);
+  const [about, setAbout] = useState(user.about ?? '');
   const [isSavedSuccessfully, setIsSavedSuccessfully] = useState(false);
 
   const handleSave = (e: FormEvent) => {
@@ -24,7 +25,8 @@ export default function ProfileScreen({
     onUpdateProfile({
       name,
       avatar: selectedAvatar,
-      skillLevel: skill
+      skillLevel: skill,
+      about
     });
     setIsSavedSuccessfully(true);
     setTimeout(() => {
@@ -71,17 +73,10 @@ export default function ProfileScreen({
 
           {/* User Quick Statistics */}
           <div className="w-full pt-4 border-t border-outline-variant/10 space-y-3">
-            <h4 className="text-[10px] font-black uppercase text-on-surface-variant tracking-wider text-left">
-              Smash Achievements
-            </h4>
-            <div className="grid grid-cols-2 gap-2 text-center">
-              <div className="bg-surface-container-low rounded p-2 border border-outline-variant/5">
-                <div className="text-base font-bold text-white font-mono">{matchesPlayedCount}</div>
-                <div className="text-[9px] text-on-surface-variant font-medium uppercase">Wins / Matches</div>
-              </div>
-              <div className="bg-surface-container-low rounded p-2 border border-outline-variant/5">
-                <div className="text-base font-bold text-primary-fixed font-mono">100%</div>
-                <div className="text-[9px] text-on-surface-variant font-medium uppercase">Fair Play Rat.</div>
+            <div className="bg-surface-container-low rounded p-3 border border-outline-variant/5 text-center">
+              <div className="text-lg font-bold text-white font-mono">{matchesPlayedCount}</div>
+              <div className="text-[9px] text-on-surface-variant font-medium uppercase tracking-wider">
+                Matches Played
               </div>
             </div>
           </div>
@@ -112,35 +107,19 @@ export default function ProfileScreen({
             </div>
           </div>
 
-          {/* Skill level setting */}
-          <div className="space-y-2">
+          {/* About Me */}
+          <div className="space-y-1.5">
             <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
-              Profile Skill Rating
+              About Me
             </label>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { val: 'beginner', icon: Smile, lab: 'Beginner' },
-                { val: 'intermediate', icon: Dumbbell, lab: 'Intermed.' },
-                { val: 'pro', icon: Flame, lab: 'Pro Master' }
-              ].map((item) => {
-                const IconComp = item.icon;
-                const isSelected = skill === item.val;
-                return (
-                  <button
-                    key={item.val}
-                    type="button"
-                    onClick={() => setSkill(item.val as SkillLevel)}
-                    className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-primary-fixed/10 border-primary-fixed text-primary-fixed'
-                        : 'border-outline-variant/50 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
-                    }`}
-                  >
-                    <IconComp className="w-4 h-4 mb-1" />
-                    <span className="font-sans font-black text-[9px] uppercase tracking-wider">{item.lab}</span>
-                  </button>
-                );
-              })}
+            <div className="rounded-lg bg-surface-variant/60 border border-outline-variant/40 focus-within:border-primary-fixed focus-within:ring-1 focus-within:ring-primary-fixed transition-all overflow-hidden">
+              <textarea
+                rows={5}
+                placeholder="Tell others a little about your play style, goals, or what kind of matches you enjoy..."
+                value={about}
+                onChange={(e) => setAbout(e.target.value)}
+                className="w-full bg-transparent text-on-surface font-sans text-sm p-3 outline-none border-none focus:ring-0 placeholder-on-surface-variant/50 resize-none"
+              />
             </div>
           </div>
 
