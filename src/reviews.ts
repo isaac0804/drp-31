@@ -38,5 +38,7 @@ export async function getReviewedPlayerIds(
     collection(db, REVIEWS_COL),
     where('reviewerId', '==', reviewerId),
     where('sessionId', '==', sessionId)
+  );
   const snap = await getDocs(q);
   return snap.docs.map((d) => (d.data() as Pick<Review, 'revieweeId'>).revieweeId);
+}

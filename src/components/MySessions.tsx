@@ -18,7 +18,9 @@ interface MySessionsProps {
 type Tab = 'hosting' | 'joined' | 'finished';
 
 function isUpcoming(dateStr: string): boolean {
-  return dateStr >= new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  return dateStr >= todayLocal;
 }
 
 function formatDate(dateStr: string): string {
@@ -47,9 +49,11 @@ export default function MySessions({
 
   useEffect(() => {
     if (!reviewingSession) { setReviewedPlayerIds([]); return; }
+    let cancelled = false;
     getReviewedPlayerIds(currentUserId, reviewingSession.id)
-      .then(setReviewedPlayerIds)
-      .catch(() => setReviewedPlayerIds([]));
+      .then((ids) => { if (!cancelled) setReviewedPlayerIds(ids); })
+      .catch(() => { if (!cancelled) setReviewedPlayerIds([]); });
+    return () => { cancelled = true; };
   }, [reviewingSession, currentUserId]);
 
   const hostingSessions = sessions.filter(
