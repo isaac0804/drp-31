@@ -273,6 +273,7 @@ function SessionCard({
   badgeStyle,
   actions,
 }: {
+  key?: string | number;
   session: MatchSession;
   index: number;
   badge: string;
