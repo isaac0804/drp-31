@@ -269,7 +269,6 @@ function SessionCard({
   badgeStyle,
   actions,
 }: {
-  key?: string;
   session: MatchSession;
   index: number;
   badge: string;
