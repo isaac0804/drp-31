@@ -25,6 +25,7 @@ export default function ExploreScreen({
   // Handle filtering
   const filteredSessions = useMemo(() => {
     return sessions.filter((s) => {
+      if (s.isPrivate) return false;
       const matchesSport = selectedSport === 'all' || s.sport === selectedSport;
       const matchesSkill = selectedSkill === 'all' || s.skillLevel === selectedSkill;
       const matchesGender = selectedGender === 'all' || (s.gender ?? 'open') === selectedGender;
