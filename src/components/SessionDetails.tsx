@@ -8,6 +8,7 @@ interface SessionDetailsProps {
   onBack: () => void;
   onJoin: (sessionId: string) => void;
   onLeave: (sessionId: string) => void;
+  onViewPlayerProfile: (player: Player) => void;
 }
 
 export default function SessionDetails({
@@ -15,7 +16,8 @@ export default function SessionDetails({
   currentUser,
   onBack,
   onJoin,
-  onLeave
+  onLeave,
+  onViewPlayerProfile
 }: SessionDetailsProps) {
   const isJoined = session.playersJoined.some((p) => p.id === currentUser.id);
   const isHost = session.host.id === currentUser.id;
@@ -183,9 +185,11 @@ export default function SessionDetails({
             {slots.map((slot, sIdx) => {
               if (slot.type === 'player') {
                 return (
-                  <div
+                  <button
+                    type="button"
+                    onClick={() => onViewPlayerProfile(slot)}
                     key={slot.id || sIdx}
-                    className={`flex flex-col items-center gap-2 p-3 bg-surface-container-low rounded-lg border-2 relative select-none ${
+                    className={`flex flex-col items-center gap-2 p-3 bg-surface-container-low rounded-lg border-2 relative select-none transition-all hover:scale-[1.02] cursor-pointer ${
                       slot.isHost ? 'border-primary-fixed/50' : 'border-outline-variant/20'
                     }`}
                   >
@@ -210,7 +214,7 @@ export default function SessionDetails({
                         {slot.isHost ? 'Level Pro' : 'Athlete'}
                       </div>
                     </div>
-                  </div>
+                  </button>
                 );
               } else {
                 return (
