@@ -47,9 +47,10 @@ interface SessionMapViewProps {
   sessions: MatchSession[];
   onSelectSession: (id: string) => void;
   currentUserId?: string;
+  fullScreen?: boolean;
 }
 
-export default function SessionMapView({ sessions, onSelectSession, currentUserId }: SessionMapViewProps) {
+export default function SessionMapView({ sessions, onSelectSession, currentUserId, fullScreen }: SessionMapViewProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
@@ -73,6 +74,9 @@ export default function SessionMapView({ sessions, onSelectSession, currentUserI
     const layerGroup = L.layerGroup().addTo(map);
     layerGroupRef.current = layerGroup;
     mapRef.current = map;
+
+    // Give the browser one frame to size the container before Leaflet reads it
+    setTimeout(() => map.invalidateSize(), 0);
 
     return () => {
       map.remove();
@@ -124,8 +128,13 @@ export default function SessionMapView({ sessions, onSelectSession, currentUserI
     }
   }, [sessions, currentUserId]);
 
-  const locatedCount = sessions.filter((s) => s.location).length;
-  const unlocatedCount = sessions.length - locatedCount;
+  if (fullScreen) {
+    return (
+      <div ref={mapContainerRef} className="w-full h-full" />
+    );
+  }
+
+  const unlocatedCount = sessions.length - sessions.filter((s) => s.location).length;
 
   return (
     <div className="space-y-2">
