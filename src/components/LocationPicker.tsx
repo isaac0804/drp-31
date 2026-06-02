@@ -118,7 +118,6 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
     const isPreset = SPORT_CENTRES.some((c) => c.lat === value.lat && c.lng === value.lng);
     const marker = L.marker([value.lat, value.lng], { icon: isPreset ? selectedPresetIcon : customIcon }).addTo(map);
     selectedMarkerRef.current = marker;
-    map.setView([value.lat, value.lng], Math.max(map.getZoom(), 15));
   }, [value]);
 
   const handleSearchChange = useCallback((q: string) => {
@@ -140,10 +139,13 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
   }, []);
 
   const selectSearchResult = (result: NominatimResult) => {
+    const lat = parseFloat(result.lat);
+    const lng = parseFloat(result.lon);
     const name = result.display_name.split(',')[0];
-    onChange({ lat: parseFloat(result.lat), lng: parseFloat(result.lon), name, address: result.display_name });
+    onChange({ lat, lng, name, address: result.display_name });
     setSearchQuery(name);
     setSearchResults([]);
+    mapRef.current?.setView([lat, lng], 15, { animate: true });
   };
 
   return (
@@ -211,7 +213,10 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
             <button
               key={centre.name}
               type="button"
-              onClick={() => onChange(centre)}
+              onClick={() => {
+                onChange(centre);
+                mapRef.current?.setView([centre.lat, centre.lng], 15, { animate: true });
+              }}
               className={`text-[11px] font-sans font-bold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
                 value?.name === centre.name
                   ? 'bg-primary-fixed/15 border-primary-fixed text-primary-fixed'
