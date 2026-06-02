@@ -43,7 +43,12 @@ export const DEFAULT_USER: UserProfile = {
   id: 'user_chloe',
   name: 'Chloe J.',
   avatar: AVATARS[0].url,
-  skillLevel: 'intermediate'
+  skillLevel: 'intermediate',
+  about: '',
+  sportsPlayed: [],
+  matchPreferences: '',
+  sportingHistory: '',
+  industry: ''
 };
 
 export const INITIAL_SESSIONS: MatchSession[] = [
@@ -56,6 +61,7 @@ export const INITIAL_SESSIONS: MatchSession[] = [
     address: 'University Campus Dr, Sector 4',
     skillLevel: 'intermediate',
     matchType: 'doubles',
+    gender: 'open',
     maxPlayers: 4,
     host: {
       id: 'marcus',
@@ -77,6 +83,7 @@ export const INITIAL_SESSIONS: MatchSession[] = [
     address: '56 West Boulevard, Metro',
     skillLevel: 'beginner',
     matchType: 'singles',
+    gender: 'open',
     maxPlayers: 2,
     host: {
       id: 'jamie',
@@ -97,6 +104,7 @@ export const INITIAL_SESSIONS: MatchSession[] = [
     address: '44 Enterprise Way, Industrial East',
     skillLevel: 'pro',
     matchType: 'doubles',
+    gender: 'male',
     maxPlayers: 4,
     host: {
       id: 'alex',
@@ -120,6 +128,7 @@ export const INITIAL_SESSIONS: MatchSession[] = [
     address: 'Court 4 • 123 Smash Ave, Metro',
     skillLevel: 'intermediate',
     matchType: 'doubles',
+    gender: 'open',
     maxPlayers: 4,
     host: {
       id: 'alex',
