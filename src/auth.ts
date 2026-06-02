@@ -16,6 +16,7 @@ function createDefaultProfile(uid: string, googleUser?: User): UserProfile {
     id: uid,
     name: googleUser?.displayName ?? DEFAULT_USER.name,
     avatar: googleUser?.photoURL ?? DEFAULT_USER.avatar,
+    sportsPlayed: [...(DEFAULT_USER.sportsPlayed ?? [])],
   };
 }
 

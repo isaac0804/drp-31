@@ -43,7 +43,12 @@ export const DEFAULT_USER: UserProfile = {
   id: 'user_chloe',
   name: 'Chloe J.',
   avatar: AVATARS[0].url,
-  skillLevel: 'intermediate'
+  skillLevel: 'intermediate',
+  about: '',
+  sportsPlayed: [],
+  matchPreferences: '',
+  sportingHistory: '',
+  industry: ''
 };
 
 export const INITIAL_SESSIONS: MatchSession[] = [
