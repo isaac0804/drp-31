@@ -1,6 +1,23 @@
-import { useState, useEffect, FormEvent } from 'react';
+import React, { useState, useEffect, FormEvent } from 'react';
 import { MatchSession, SkillLevel, MatchType, GenderPreference } from '../types';
-import { Calendar, Clock, MapPin, Smile, Dumbbell, Flame, Plus, Minus, Check, ArrowLeft, AlignLeft, User, Users } from 'lucide-react';
+import { Calendar, Clock, MapPin, Smile, Dumbbell, Flame, Zap, Plus, Minus, Check, ArrowLeft, AlignLeft, User, Users } from 'lucide-react';
+
+const getLocalDateString = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+const getDefaultTimes = () => {
+  const now = new Date();
+  const h = now.getHours();
+  const m = now.getMinutes();
+  if (h < 17) return { start: '18:30', end: '20:30' };
+  const startH = m < 30 ? h : h + 1;
+  const startM = m < 30 ? 30 : 0;
+  // Fall back if adding 2h would cross midnight
+  if (startH + 2 >= 24) return { start: '18:30', end: '20:30' };
+  const fmt = (hh: number, mm: number) =>
+    `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+  return { start: fmt(startH, startM), end: fmt(startH + 2, startM) };
+};
 
 interface HostScreenProps {
   onPostSession: (session: Omit<MatchSession, 'id' | 'host' | 'playersJoined'>) => void;
@@ -18,16 +35,35 @@ export default function HostScreen({
   const isEditing = !!editingSession;
 
   // Controlled states loaded from existing session or sensible defaults
-  const [date, setDate] = useState('2024-10-24');
-  const [timeStart, setTimeStart] = useState('18:00');
-  const [timeEnd, setTimeEnd] = useState('20:00');
+  const [date, setDate] = useState(() => getLocalDateString());
+  const [timeStart, setTimeStart] = useState(() => getDefaultTimes().start);
+  const [timeEnd, setTimeEnd] = useState(() => getDefaultTimes().end);
   const [venue, setVenue] = useState('');
   const [address, setAddress] = useState('');
   const [skillLevel, setSkillLevel] = useState<SkillLevel>('intermediate');
   const [matchType, setMatchType] = useState<MatchType>('doubles');
   const [gender, setGender] = useState<GenderPreference>('open');
-  const [playersNeeded, setPlayersNeeded] = useState(3);
+  const [playersNeeded, setPlayersNeeded] = useState(4);
   const [hostNote, setHostNote] = useState('');
+
+  const today = getLocalDateString();
+
+  const snapPlayersToMatchType = (type: MatchType, current: number) => {
+    const min = type === 'singles' ? 2 : 4;
+    return Math.max(min, current);
+  };
+
+  const getDuration = (start: string, end: string): string => {
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = end.split(':').map(Number);
+    const diff = eh * 60 + em - (sh * 60 + sm);
+    if (diff <= 0) return '';
+    const h = Math.floor(diff / 60);
+    const m = diff % 60;
+    if (h === 0) return `${m}m`;
+    if (m === 0) return `${h}h`;
+    return `${h}h ${m}m`;
+  };
 
   // Synchronize state when editing session switches
   useEffect(() => {
@@ -40,32 +76,36 @@ export default function HostScreen({
       setSkillLevel(editingSession.skillLevel);
       setMatchType(editingSession.matchType);
       setGender(editingSession.gender ?? 'open');
-
-      // Calculate players needed based on the maximum slots
-      setPlayersNeeded(editingSession.maxPlayers);
+      setPlayersNeeded(snapPlayersToMatchType(editingSession.matchType, editingSession.maxPlayers));
       setHostNote(editingSession.hostNote);
     } else {
-      // Sensible defaults
-      setDate(new Date().toISOString().split('T')[0]);
-      setTimeStart('18:30');
-      setTimeEnd('20:30');
+      const { start, end } = getDefaultTimes();
+      setDate(getLocalDateString());
+      setTimeStart(start);
+      setTimeEnd(end);
       setVenue('');
       setAddress('');
       setSkillLevel('intermediate');
       setMatchType('doubles');
       setGender('open');
-      setPlayersNeeded(3);
+      setPlayersNeeded(4);
       setHostNote('');
     }
   }, [editingSession]);
 
-  // Adjust max players automatically when match type changes
+  const minPlayers = matchType === 'singles' ? 2 : 4;
+
   const handleMatchTypeChange = (type: MatchType) => {
     setMatchType(type);
-    if (!isEditing) {
-      // Default singles to 2 players maximum, doubles to 4
-      setPlayersNeeded(type === 'singles' ? 2 : 4);
-    }
+    setPlayersNeeded((prev) => snapPlayersToMatchType(type, prev));
+  };
+
+  const handleDecrement = () => {
+    setPlayersNeeded((prev) => Math.max(minPlayers, prev - 1));
+  };
+
+  const handleIncrement = () => {
+    setPlayersNeeded((prev) => Math.min(20, prev + 1));
   };
 
   const handleSubmit = (e: FormEvent) => {
@@ -76,12 +116,31 @@ export default function HostScreen({
       return;
     }
 
+    if (date < today) {
+      alert('Session date cannot be in the past.');
+      return;
+    }
+
+    if (date === today) {
+      const now = new Date();
+      const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      if (timeStart <= currentTime) {
+        alert('Start time must be in the future for today\'s sessions.');
+        return;
+      }
+    }
+
+    if (timeEnd <= timeStart) {
+      alert('End time must be after start time.');
+      return;
+    }
+
     const compiledData = {
       date,
       timeStart,
       timeEnd,
       venue,
-      address: address || 'Main Badminton Arena, Court 1',
+      address,
       skillLevel,
       matchType,
       gender,
@@ -95,6 +154,8 @@ export default function HostScreen({
       onPostSession(compiledData);
     }
   };
+
+  const duration = getDuration(timeStart, timeEnd);
 
   return (
     <article className="space-y-6">
@@ -125,7 +186,7 @@ export default function HostScreen({
         onSubmit={handleSubmit}
         className="space-y-6 bg-surface-container-high p-5 md:p-6 rounded-xl border border-outline-variant/15 shadow-xl"
       >
-        {/* Date & Time Picker Group */}
+        {/* Row 1: Date + Match Type */}
         <div className="grid grid-cols-2 gap-4">
           {/* Date Picker */}
           <div className="space-y-1.5">
@@ -139,6 +200,7 @@ export default function HostScreen({
               <input
                 type="date"
                 required
+                min={today}
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 className="w-full bg-transparent text-on-surface font-sans text-sm p-3 outline-none border-none focus:ring-0 appearance-none [&::-webkit-calendar-picker-indicator]:invert-[0.8] cursor-pointer"
@@ -146,7 +208,42 @@ export default function HostScreen({
             </div>
           </div>
 
-          {/* Time Picker */}
+          {/* Match Type Selector */}
+          <div className="space-y-1.5">
+            <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
+              Match Type
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                aria-pressed={matchType === 'singles'}
+                onClick={() => handleMatchTypeChange('singles')}
+                className={`py-3 rounded-lg text-xs font-bold uppercase border transition-all cursor-pointer ${
+                  matchType === 'singles'
+                    ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+                    : 'bg-surface-variant/30 text-on-surface-variant/80 border-outline-variant/40 hover:bg-surface-bright'
+                }`}
+              >
+                Singles
+              </button>
+              <button
+                type="button"
+                aria-pressed={matchType === 'doubles'}
+                onClick={() => handleMatchTypeChange('doubles')}
+                className={`py-3 rounded-lg text-xs font-bold uppercase border transition-all cursor-pointer ${
+                  matchType === 'doubles'
+                    ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+                    : 'bg-surface-variant/30 text-on-surface-variant/80 border-outline-variant/40 hover:bg-surface-bright'
+                }`}
+              >
+                Doubles
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Row 2: Start Time + End Time (logically paired) */}
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
               Start Time
@@ -164,15 +261,16 @@ export default function HostScreen({
               />
             </div>
           </div>
-        </div>
 
-        {/* Dynamic Duration or Time End Row to match screenshot styling */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Time End */}
           <div className="space-y-1.5">
-            <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
-              End Time
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
+                End Time
+              </label>
+              {duration && (
+                <span className="text-[10px] font-mono text-primary-fixed">{duration}</span>
+              )}
+            </div>
             <div className="relative rounded-lg bg-surface-variant/60 border border-outline-variant/40 flex items-center focus-within:border-primary-fixed focus-within:ring-1 focus-within:ring-primary-fixed transition-all overflow-hidden">
               <span className="pl-3 text-on-surface-variant shrink-0">
                 <Clock className="w-4 h-4" />
@@ -184,37 +282,6 @@ export default function HostScreen({
                 onChange={(e) => setTimeEnd(e.target.value)}
                 className="w-full bg-transparent text-on-surface font-sans text-sm p-3 outline-none border-none focus:ring-0 appearance-none inline-block"
               />
-            </div>
-          </div>
-
-          {/* Gameplay Match Type Selector */}
-          <div className="space-y-1.5">
-            <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
-              Match Type
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleMatchTypeChange('singles')}
-                className={`py-3 rounded-lg text-xs font-bold uppercase border transition-all cursor-pointer ${
-                  matchType === 'singles'
-                    ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
-                    : 'bg-surface-variant/30 text-on-surface-variant/80 border-outline-variant/40 hover:bg-surface-bright'
-                }`}
-              >
-                Singles (1v1)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleMatchTypeChange('doubles')}
-                className={`py-3 rounded-lg text-xs font-bold uppercase border transition-all cursor-pointer ${
-                  matchType === 'doubles'
-                    ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
-                    : 'bg-surface-variant/30 text-on-surface-variant/80 border-outline-variant/40 hover:bg-surface-bright'
-                }`}
-              >
-                Doubles (2v2)
-              </button>
             </div>
           </div>
         </div>
@@ -258,53 +325,33 @@ export default function HostScreen({
           </div>
         </div>
 
-        {/* Skill Level Selection (Glassmorphism Cards matching screenshot exactly) */}
+        {/* Skill Level Selection */}
         <div className="space-y-1.5">
           <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
             Skill Level
           </label>
-          <div className="grid grid-cols-3 gap-2">
-            {/* Beginner Card */}
-            <button
-              type="button"
-              onClick={() => setSkillLevel('beginner')}
-              className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all cursor-pointer ${
-                skillLevel === 'beginner'
-                  ? 'bg-primary-fixed/10 border-primary-fixed text-primary-fixed'
-                  : 'border-outline-variant/50 bg-surface-variant text-on-surface-variant hover:bg-surface-bright text-on-surface'
-              }`}
-            >
-              <Smile className="w-5 h-5 mb-1" />
-              <span className="font-sans font-black text-[10px] uppercase tracking-wider">Beginner</span>
-            </button>
-
-            {/* Intermediate Card */}
-            <button
-              type="button"
-              onClick={() => setSkillLevel('intermediate')}
-              className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all cursor-pointer ${
-                skillLevel === 'intermediate'
-                  ? 'bg-primary-fixed/10 border-primary-fixed text-primary-fixed'
-                  : 'border-outline-variant/50 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
-              }`}
-            >
-              <Dumbbell className="w-5 h-5 mb-1" />
-              <span className="font-sans font-black text-[10px] uppercase tracking-wider">Intermediate</span>
-            </button>
-
-            {/* Advanced / Pro Card */}
-            <button
-              type="button"
-              onClick={() => setSkillLevel('pro')}
-              className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all cursor-pointer ${
-                skillLevel === 'pro'
-                  ? 'bg-primary-fixed/10 border-primary-fixed text-primary-fixed'
-                  : 'border-outline-variant/50 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
-              }`}
-            >
-              <Flame className="w-5 h-5 mb-1" />
-              <span className="font-sans font-black text-[10px] uppercase tracking-wider">Advanced</span>
-            </button>
+          <div className="grid grid-cols-4 gap-2">
+            {([
+              { value: 'beginner', label: 'Beginner', icon: <Smile className="w-5 h-5 mb-1" /> },
+              { value: 'intermediate', label: 'Intermediate', icon: <Dumbbell className="w-5 h-5 mb-1" /> },
+              { value: 'advanced', label: 'Advanced', icon: <Zap className="w-5 h-5 mb-1" /> },
+              { value: 'pro', label: 'Pro', icon: <Flame className="w-5 h-5 mb-1" /> },
+            ] as { value: SkillLevel; label: string; icon: React.ReactNode }[]).map(({ value, label, icon }) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={skillLevel === value}
+                onClick={() => setSkillLevel(value)}
+                className={`flex flex-col items-center justify-center p-2 rounded-lg border transition-all cursor-pointer ${
+                  skillLevel === value
+                    ? 'bg-primary-fixed/10 border-primary-fixed text-primary-fixed'
+                    : 'border-outline-variant/50 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
+                }`}
+              >
+                {icon}
+                <span className="font-sans font-black text-[9px] uppercase tracking-tight leading-tight text-center">{label}</span>
+              </button>
+            ))}
           </div>
         </div>
 
@@ -356,21 +403,22 @@ export default function HostScreen({
           </div>
         </div>
 
-        {/* Number of Pax (Stepper control with styled buttons) */}
+        {/* Number of Players */}
         <div className="space-y-1.5">
           <div className="flex justify-between items-center">
             <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
-              Total Court Slots Available
+              Total Players
             </label>
             <span className="text-xs text-on-surface-variant font-mono">
-              (Capacity caps at 10)
+              Min {minPlayers} · max 20 · includes rotation
             </span>
           </div>
           <div className="flex items-center justify-between bg-surface-variant/50 rounded-lg border border-outline-variant/40 p-2">
             <button
-              onClick={() => setPlayersNeeded((prev) => Math.max(1, prev - 1))}
+              onClick={handleDecrement}
               type="button"
-              className="w-10 h-10 flex items-center justify-center rounded-md bg-surface-bright text-on-surface hover:bg-surface-container transition-colors active:scale-95 cursor-pointer"
+              disabled={playersNeeded <= minPlayers}
+              className="w-10 h-10 flex items-center justify-center rounded-md bg-surface-bright text-on-surface hover:bg-surface-container transition-colors active:scale-95 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <Minus className="w-4 h-4" />
             </button>
@@ -378,9 +426,10 @@ export default function HostScreen({
               {playersNeeded}
             </span>
             <button
-              onClick={() => setPlayersNeeded((prev) => Math.min(10, prev + 1))}
+              onClick={handleIncrement}
               type="button"
-              className="w-10 h-10 flex items-center justify-center rounded-md bg-surface-bright text-on-surface hover:bg-surface-container transition-colors active:scale-95 cursor-pointer"
+              disabled={playersNeeded >= 20}
+              className="w-10 h-10 flex items-center justify-center rounded-md bg-surface-bright text-on-surface hover:bg-surface-container transition-colors active:scale-95 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <Plus className="w-4 h-4" />
             </button>
