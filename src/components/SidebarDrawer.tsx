@@ -86,7 +86,7 @@ export default function SidebarDrawer({
                   }`}
                 >
                   <Play className="w-4 h-4" />
-                  Host Badminton Match
+                  Host a Game
                 </button>
 
                 <button

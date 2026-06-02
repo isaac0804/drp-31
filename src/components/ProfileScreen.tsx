@@ -1,8 +1,6 @@
 import { useState, FormEvent } from 'react';
-import { UserProfile, SkillLevel } from '../types';
+import { UserProfile, SkillLevel, Sport } from '../types';
 import { Trophy, User, Award, RotateCcw } from 'lucide-react';
-
-type SportOption = 'Badminton' | 'Table Tennis' | 'Football' | 'Pickleball';
 
 interface ProfileScreenProps {
   user: UserProfile;
@@ -17,14 +15,14 @@ export default function ProfileScreen({
   matchesPlayedCount,
   onRetakeAssessment
 }: ProfileScreenProps) {
-  const availableSports: SportOption[] = ['Badminton', 'Table Tennis', 'Football', 'Pickleball'];
+  const availableSports: Sport[] = ['Badminton', 'Table Tennis', 'Football', 'Pickleball'];
   const [name, setName] = useState(user.name);
   const selectedAvatar = user.avatar;
   const [skill, setSkill] = useState<SkillLevel>(user.skillLevel);
   const [about, setAbout] = useState(user.about ?? '');
-  const [sportsPlayed, setSportsPlayed] = useState<SportOption[]>(
-    (user.sportsPlayed ?? []).filter((sport): sport is SportOption =>
-      availableSports.includes(sport as SportOption)
+  const [sportsPlayed, setSportsPlayed] = useState<Sport[]>(
+    (user.sportsPlayed ?? []).filter((sport): sport is Sport =>
+      availableSports.includes(sport as Sport)
     )
   );
   const [matchPreferences, setMatchPreferences] = useState(user.matchPreferences ?? '');
@@ -32,8 +30,8 @@ export default function ProfileScreen({
   const [industry, setIndustry] = useState(user.industry ?? '');
   const [isSavedSuccessfully, setIsSavedSuccessfully] = useState(false);
 
-  const toggleSport = (sport: SportOption) => {
-    setSportsPlayed((currentSports: SportOption[]) =>
+  const toggleSport = (sport: Sport) => {
+    setSportsPlayed((currentSports: Sport[]) =>
       currentSports.includes(sport)
         ? currentSports.filter((currentSport) => currentSport !== sport)
         : [...currentSports, sport]

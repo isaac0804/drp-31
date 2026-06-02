@@ -294,7 +294,7 @@ function SessionCard({
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-base text-white leading-snug">
-              {session.matchType === 'singles' ? 'Badminton Singles' : 'Badminton Doubles'}
+              {session.sport} {session.matchType === 'singles' ? 'Singles' : 'Doubles'}
             </h3>
             <p className="flex items-center gap-1 mt-1 text-[11px] text-on-surface-variant/55">
               <MapPin className="w-3 h-3 shrink-0" />
