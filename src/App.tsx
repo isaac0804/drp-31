@@ -38,6 +38,7 @@ export default function App() {
   const [selectedPlayerProfile, setSelectedPlayerProfile] = useState<UserProfile | null>(null);
   const [selectedPlayerMatchesCount, setSelectedPlayerMatchesCount] = useState(0);
   const [editingSession, setEditingSession] = useState<MatchSession | null>(null);
+  const [exploreViewMode, setExploreViewMode] = useState<'list' | 'map'>('list');
   
   // Sidebar state
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -281,6 +282,8 @@ export default function App() {
                   setActiveScreen('host');
                 }}
                 currentUserId={user.id}
+                viewMode={exploreViewMode}
+                onViewModeChange={setExploreViewMode}
               />
             )}
 
