@@ -70,7 +70,7 @@ export default function ProfileScreen({
               <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-bold tracking-widest bg-primary-fixed/10 text-primary-fixed uppercase font-mono border border-primary-fixed/20">
                 {skill}
               </span>
-              {user.skillScore && (
+              {user.skillScore != null && (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-bold tracking-widest bg-surface-container-highest text-on-surface-variant uppercase font-mono border border-outline-variant/20">
                   {user.skillScore} / 10
                 </span>
