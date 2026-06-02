@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { MatchSession, SkillLevel } from '../types';
-import { MapPin, Plus, ListFilter, Users, CalendarDays, Trash } from 'lucide-react';
+import { MatchSession, SkillLevel, GenderPreference } from '../types';
+import { MapPin, Plus, ListFilter, CalendarDays } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface ExploreScreenProps {
@@ -16,20 +16,22 @@ export default function ExploreScreen({
   onNavigateToHost,
   currentUserId
 }: ExploreScreenProps) {
-  const [selectedFilter, setSelectedFilter] = useState<'all' | SkillLevel>('all');
+  const [selectedSkill, setSelectedSkill] = useState<'all' | SkillLevel>('all');
+  const [selectedGender, setSelectedGender] = useState<'all' | GenderPreference>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Handle filtering
   const filteredSessions = useMemo(() => {
     return sessions.filter((s) => {
-      const matchesSkill = selectedFilter === 'all' || s.skillLevel === selectedFilter;
+      const matchesSkill = selectedSkill === 'all' || s.skillLevel === selectedSkill;
+      const matchesGender = selectedGender === 'all' || (s.gender ?? 'open') === selectedGender;
       const matchesSearch =
         s.venue.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.host.name.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesSkill && matchesSearch;
+      return matchesSkill && matchesGender && matchesSearch;
     });
-  }, [sessions, selectedFilter, searchQuery]);
+  }, [sessions, selectedSkill, selectedGender, searchQuery]);
 
   // Calendar formatter helper
   const getParsedDate = (dateStr: string) => {
@@ -67,19 +69,44 @@ export default function ExploreScreen({
           </span>
         </div>
 
-        {/* Horizontal Filters Scroll */}
+        {/* Skill Level Filter Pills */}
         <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
           {([
-            { value: 'all', label: 'All Matches' },
+            { value: 'all', label: 'All Levels' },
             { value: 'beginner', label: 'Beginner' },
             { value: 'intermediate', label: 'Intermediate' },
             { value: 'pro', label: 'Pro' }
           ] as const).map((filter) => {
-            const isActive = selectedFilter === filter.value;
+            const isActive = selectedSkill === filter.value;
             return (
               <button
                 key={filter.value}
-                onClick={() => setSelectedFilter(filter.value)}
+                onClick={() => setSelectedSkill(filter.value)}
+                className={`whitespace-nowrap px-4 py-2 rounded-full border text-xs font-bold tracking-wider uppercase transition-all duration-150 cursor-pointer ${
+                  isActive
+                    ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+                    : 'border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary-fixed/50 hover:text-primary-fixed'
+                }`}
+              >
+                {filter.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Gender Filter Pills */}
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
+          {([
+            { value: 'all', label: 'Any Gender' },
+            { value: 'male', label: 'Male Only' },
+            { value: 'female', label: 'Female Only' },
+            { value: 'open', label: 'Open' }
+          ] as const).map((filter) => {
+            const isActive = selectedGender === filter.value;
+            return (
+              <button
+                key={filter.value}
+                onClick={() => setSelectedGender(filter.value)}
                 className={`whitespace-nowrap px-4 py-2 rounded-full border text-xs font-bold tracking-wider uppercase transition-all duration-150 cursor-pointer ${
                   isActive
                     ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
@@ -102,7 +129,7 @@ export default function ExploreScreen({
             </div>
             <h3 className="font-sans font-bold text-base text-on-surface">No Matches Found</h3>
             <p className="text-xs text-on-surface-variant/80 max-w-sm">
-              We couldn't find any sessions matching "{selectedFilter}" level in this venue search. Be the first to host one!
+              No sessions match your current filters. Try adjusting your search or be the first to host one!
             </p>
             <button
               onClick={onNavigateToHost}
@@ -186,13 +213,16 @@ export default function ExploreScreen({
 
                 {/* Bottom Row: Badges, Skill Level and Spots Progress Bar */}
                 <div className="flex justify-between items-end mt-2 pt-2 border-t border-outline-variant/10">
-                  {/* Skill level and gameplay mode badge */}
-                  <div className="flex gap-2">
+                  {/* Skill level, gameplay mode, and gender badges */}
+                  <div className="flex gap-2 flex-wrap">
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide border border-primary-fixed/30 bg-primary-fixed/5 text-primary-fixed uppercase font-sans">
                       {session.skillLevel}
                     </span>
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide bg-surface-variant text-on-surface-variant uppercase font-sans">
                       {session.matchType}
+                    </span>
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide bg-surface-variant text-on-surface-variant uppercase font-sans">
+                      {session.gender === 'male' ? '♂ Male' : session.gender === 'female' ? '♀ Female' : '⚥ Open'}
                     </span>
                   </div>
 
