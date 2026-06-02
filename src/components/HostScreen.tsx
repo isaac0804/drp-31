@@ -59,11 +59,11 @@ export default function HostScreen({
   }, [editingSession]);
 
   // Snap player count to a valid value for the given match type
+  const minPlayers = matchType === 'singles' ? 2 : 4;
+
   const snapPlayersToMatchType = (type: MatchType, current: number) => {
-    if (type === 'singles') return 2;
-    // Doubles: must be even and at least 4
-    const snapped = current % 2 !== 0 ? current + 1 : current;
-    return Math.min(10, Math.max(4, snapped));
+    const min = type === 'singles' ? 2 : 4;
+    return Math.max(min, current);
   };
 
   const handleMatchTypeChange = (type: MatchType) => {
@@ -72,13 +72,11 @@ export default function HostScreen({
   };
 
   const handleDecrement = () => {
-    if (matchType === 'singles') return;
-    setPlayersNeeded((prev) => Math.max(4, prev - 2));
+    setPlayersNeeded((prev) => Math.max(minPlayers, prev - 1));
   };
 
   const handleIncrement = () => {
-    if (matchType === 'singles') return;
-    setPlayersNeeded((prev) => Math.min(10, prev + 2));
+    setPlayersNeeded((prev) => Math.min(20, prev + 1));
   };
 
   const handleSubmit = (e: FormEvent) => {
@@ -387,38 +385,30 @@ export default function HostScreen({
               Total Players
             </label>
             <span className="text-xs text-on-surface-variant font-mono">
-              {matchType === 'singles' ? 'Fixed at 2 for singles' : 'Even numbers only · max 10'}
+              Min {minPlayers} · max 20 · includes rotation
             </span>
           </div>
-          {matchType === 'singles' ? (
-            <div className="flex items-center justify-center bg-surface-variant/30 rounded-lg border border-outline-variant/20 p-4">
-              <span className="font-sans font-black text-lg text-on-surface-variant">
-                2 Players (1v1)
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between bg-surface-variant/50 rounded-lg border border-outline-variant/40 p-2">
-              <button
-                onClick={handleDecrement}
-                type="button"
-                disabled={playersNeeded <= 4}
-                className="w-10 h-10 flex items-center justify-center rounded-md bg-surface-bright text-on-surface hover:bg-surface-container transition-colors active:scale-95 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-              <span className="font-sans font-black text-lg text-on-surface w-16 text-center">
-                {playersNeeded}
-              </span>
-              <button
-                onClick={handleIncrement}
-                type="button"
-                disabled={playersNeeded >= 10}
-                className="w-10 h-10 flex items-center justify-center rounded-md bg-surface-bright text-on-surface hover:bg-surface-container transition-colors active:scale-95 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-          )}
+          <div className="flex items-center justify-between bg-surface-variant/50 rounded-lg border border-outline-variant/40 p-2">
+            <button
+              onClick={handleDecrement}
+              type="button"
+              disabled={playersNeeded <= minPlayers}
+              className="w-10 h-10 flex items-center justify-center rounded-md bg-surface-bright text-on-surface hover:bg-surface-container transition-colors active:scale-95 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <Minus className="w-4 h-4" />
+            </button>
+            <span className="font-sans font-black text-lg text-on-surface w-16 text-center">
+              {playersNeeded}
+            </span>
+            <button
+              onClick={handleIncrement}
+              type="button"
+              disabled={playersNeeded >= 20}
+              className="w-10 h-10 flex items-center justify-center rounded-md bg-surface-bright text-on-surface hover:bg-surface-container transition-colors active:scale-95 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Note Area */}
