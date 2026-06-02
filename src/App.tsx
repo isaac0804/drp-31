@@ -32,6 +32,7 @@ export default function App() {
   const [activeScreen, setActiveScreen] = useState<string>('explore'); // explore, host, sessions, details, profile
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [editingSession, setEditingSession] = useState<MatchSession | null>(null);
+  const [exploreViewMode, setExploreViewMode] = useState<'list' | 'map'>('list');
   
   // Sidebar state
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -250,6 +251,8 @@ export default function App() {
                   setActiveScreen('host');
                 }}
                 currentUserId={user.id}
+                viewMode={exploreViewMode}
+                onViewModeChange={setExploreViewMode}
               />
             )}
 
