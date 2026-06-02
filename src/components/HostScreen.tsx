@@ -18,7 +18,7 @@ export default function HostScreen({
   const isEditing = !!editingSession;
 
   // Controlled states loaded from existing session or sensible defaults
-  const [date, setDate] = useState('2024-10-24');
+  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [timeStart, setTimeStart] = useState('18:00');
   const [timeEnd, setTimeEnd] = useState('20:00');
   const [venue, setVenue] = useState('');
@@ -26,8 +26,10 @@ export default function HostScreen({
   const [skillLevel, setSkillLevel] = useState<SkillLevel>('intermediate');
   const [matchType, setMatchType] = useState<MatchType>('doubles');
   const [gender, setGender] = useState<GenderPreference>('open');
-  const [playersNeeded, setPlayersNeeded] = useState(3);
+  const [playersNeeded, setPlayersNeeded] = useState(4);
   const [hostNote, setHostNote] = useState('');
+
+  const today = new Date().toISOString().split('T')[0];
 
   // Synchronize state when editing session switches
   useEffect(() => {
@@ -40,12 +42,9 @@ export default function HostScreen({
       setSkillLevel(editingSession.skillLevel);
       setMatchType(editingSession.matchType);
       setGender(editingSession.gender ?? 'open');
-
-      // Calculate players needed based on the maximum slots
-      setPlayersNeeded(editingSession.maxPlayers);
+      setPlayersNeeded(snapPlayersToMatchType(editingSession.matchType, editingSession.maxPlayers));
       setHostNote(editingSession.hostNote);
     } else {
-      // Sensible defaults
       setDate(new Date().toISOString().split('T')[0]);
       setTimeStart('18:30');
       setTimeEnd('20:30');
@@ -54,18 +53,32 @@ export default function HostScreen({
       setSkillLevel('intermediate');
       setMatchType('doubles');
       setGender('open');
-      setPlayersNeeded(3);
+      setPlayersNeeded(4);
       setHostNote('');
     }
   }, [editingSession]);
 
-  // Adjust max players automatically when match type changes
+  // Snap player count to a valid value for the given match type
+  const snapPlayersToMatchType = (type: MatchType, current: number) => {
+    if (type === 'singles') return 2;
+    // Doubles: must be even and at least 4
+    const snapped = current % 2 !== 0 ? current + 1 : current;
+    return Math.min(10, Math.max(4, snapped));
+  };
+
   const handleMatchTypeChange = (type: MatchType) => {
     setMatchType(type);
-    if (!isEditing) {
-      // Default singles to 2 players maximum, doubles to 4
-      setPlayersNeeded(type === 'singles' ? 2 : 4);
-    }
+    setPlayersNeeded((prev) => snapPlayersToMatchType(type, prev));
+  };
+
+  const handleDecrement = () => {
+    if (matchType === 'singles') return;
+    setPlayersNeeded((prev) => Math.max(4, prev - 2));
+  };
+
+  const handleIncrement = () => {
+    if (matchType === 'singles') return;
+    setPlayersNeeded((prev) => Math.min(10, prev + 2));
   };
 
   const handleSubmit = (e: FormEvent) => {
@@ -73,6 +86,16 @@ export default function HostScreen({
 
     if (!venue.trim()) {
       alert('Please specify a badminton court venue name.');
+      return;
+    }
+
+    if (date < today) {
+      alert('Session date cannot be in the past.');
+      return;
+    }
+
+    if (timeEnd <= timeStart) {
+      alert('End time must be after start time.');
       return;
     }
 
@@ -139,6 +162,7 @@ export default function HostScreen({
               <input
                 type="date"
                 required
+                min={today}
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 className="w-full bg-transparent text-on-surface font-sans text-sm p-3 outline-none border-none focus:ring-0 appearance-none [&::-webkit-calendar-picker-indicator]:invert-[0.8] cursor-pointer"
@@ -356,35 +380,45 @@ export default function HostScreen({
           </div>
         </div>
 
-        {/* Number of Pax (Stepper control with styled buttons) */}
+        {/* Number of Players */}
         <div className="space-y-1.5">
           <div className="flex justify-between items-center">
             <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
-              Total Court Slots Available
+              Total Players
             </label>
             <span className="text-xs text-on-surface-variant font-mono">
-              (Capacity caps at 10)
+              {matchType === 'singles' ? 'Fixed at 2 for singles' : 'Even numbers only · max 10'}
             </span>
           </div>
-          <div className="flex items-center justify-between bg-surface-variant/50 rounded-lg border border-outline-variant/40 p-2">
-            <button
-              onClick={() => setPlayersNeeded((prev) => Math.max(1, prev - 1))}
-              type="button"
-              className="w-10 h-10 flex items-center justify-center rounded-md bg-surface-bright text-on-surface hover:bg-surface-container transition-colors active:scale-95 cursor-pointer"
-            >
-              <Minus className="w-4 h-4" />
-            </button>
-            <span className="font-sans font-black text-lg text-on-surface w-16 text-center">
-              {playersNeeded}
-            </span>
-            <button
-              onClick={() => setPlayersNeeded((prev) => Math.min(10, prev + 1))}
-              type="button"
-              className="w-10 h-10 flex items-center justify-center rounded-md bg-surface-bright text-on-surface hover:bg-surface-container transition-colors active:scale-95 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
+          {matchType === 'singles' ? (
+            <div className="flex items-center justify-center bg-surface-variant/30 rounded-lg border border-outline-variant/20 p-4">
+              <span className="font-sans font-black text-lg text-on-surface-variant">
+                2 Players (1v1)
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between bg-surface-variant/50 rounded-lg border border-outline-variant/40 p-2">
+              <button
+                onClick={handleDecrement}
+                type="button"
+                disabled={playersNeeded <= 4}
+                className="w-10 h-10 flex items-center justify-center rounded-md bg-surface-bright text-on-surface hover:bg-surface-container transition-colors active:scale-95 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <span className="font-sans font-black text-lg text-on-surface w-16 text-center">
+                {playersNeeded}
+              </span>
+              <button
+                onClick={handleIncrement}
+                type="button"
+                disabled={playersNeeded >= 10}
+                className="w-10 h-10 flex items-center justify-center rounded-md bg-surface-bright text-on-surface hover:bg-surface-container transition-colors active:scale-95 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Note Area */}
