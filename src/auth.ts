@@ -61,6 +61,12 @@ export async function signInWithGoogle(): Promise<UserProfile> {
   return getOrCreateUserProfile(credential.user.uid, credential.user);
 }
 
+export async function getUserProfileById(uid: string): Promise<UserProfile | null> {
+  const snapshot = await getDoc(getUserRef(uid));
+  if (!snapshot.exists()) return null;
+  return snapshot.data() as UserProfile;
+}
+
 export async function updateCurrentUser(updatedUser: UserProfile): Promise<void> {
   await setDoc(getUserRef(updatedUser.id), {
     ...updatedUser,
