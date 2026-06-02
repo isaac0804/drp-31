@@ -128,9 +128,32 @@ export default function SessionMapView({ sessions, onSelectSession, currentUserI
     }
   }, [sessions, currentUserId]);
 
+  const legend = (
+    <div className="flex flex-col gap-1.5 bg-surface-container-high/90 backdrop-blur-sm rounded-xl px-3 py-2.5 border border-outline-variant/20 shadow-lg">
+      {[
+        { color: '#CAF300', label: 'Open' },
+        { color: '#F59E0B', label: 'My session' },
+        { color: '#6B7280', label: 'Full' },
+      ].map(({ color, label }) => (
+        <div key={label} className="flex items-center gap-2">
+          <div
+            className="w-3 h-3 rounded-full shrink-0"
+            style={{ background: color, border: '2px solid rgba(255,255,255,0.8)', boxShadow: '0 1px 4px rgba(0,0,0,0.4)' }}
+          />
+          <span className="text-[10px] font-bold text-on-surface uppercase tracking-wide">{label}</span>
+        </div>
+      ))}
+    </div>
+  );
+
   if (fullScreen) {
     return (
-      <div ref={mapContainerRef} className="w-full h-full" />
+      <div className="relative w-full h-full">
+        <div ref={mapContainerRef} className="absolute inset-0" />
+        <div className="absolute bottom-10 left-3 z-[450] pointer-events-none">
+          {legend}
+        </div>
+      </div>
     );
   }
 
@@ -138,11 +161,16 @@ export default function SessionMapView({ sessions, onSelectSession, currentUserI
 
   return (
     <div className="space-y-2">
-      <div
-        ref={mapContainerRef}
-        className="w-full rounded-xl overflow-hidden border border-outline-variant/30"
-        style={{ height: 420 }}
-      />
+      <div className="relative">
+        <div
+          ref={mapContainerRef}
+          className="w-full rounded-xl overflow-hidden border border-outline-variant/30"
+          style={{ height: 420 }}
+        />
+        <div className="absolute bottom-3 left-3 z-[450] pointer-events-none">
+          {legend}
+        </div>
+      </div>
       {unlocatedCount > 0 && (
         <p className="text-xs text-on-surface-variant text-center">
           {unlocatedCount} session{unlocatedCount > 1 ? 's' : ''} without a map pin — visible in list view
