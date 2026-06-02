@@ -6,11 +6,11 @@ export interface UserProfile {
   name: string;
   avatar: string;
   skillLevel: SkillLevel;
-  about: string;
-  sportsPlayed: string[];
-  matchPreferences: string;
-  sportingHistory: string;
-  industry: string;
+  about?: string;
+  sportsPlayed?: string[];
+  matchPreferences?: string;
+  sportingHistory?: string;
+  industry?: string;
 }
 
 export interface Player {
