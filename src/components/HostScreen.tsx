@@ -1,6 +1,7 @@
 import React, { useState, useEffect, FormEvent } from 'react';
-import { MatchSession, SkillLevel, MatchType, GenderPreference } from '../types';
+import { MatchSession, SkillLevel, MatchType, GenderPreference, SessionLocation } from '../types';
 import { Calendar, Clock, MapPin, Smile, Dumbbell, Flame, Zap, Plus, Minus, Check, ArrowLeft, AlignLeft, User, Users } from 'lucide-react';
+import LocationPicker from './LocationPicker';
 
 const getLocalDateString = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -38,8 +39,7 @@ export default function HostScreen({
   const [date, setDate] = useState(() => getLocalDateString());
   const [timeStart, setTimeStart] = useState(() => getDefaultTimes().start);
   const [timeEnd, setTimeEnd] = useState(() => getDefaultTimes().end);
-  const [venue, setVenue] = useState('');
-  const [address, setAddress] = useState('');
+  const [location, setLocation] = useState<SessionLocation | null>(null);
   const [skillLevel, setSkillLevel] = useState<SkillLevel>('intermediate');
   const [matchType, setMatchType] = useState<MatchType>('doubles');
   const [gender, setGender] = useState<GenderPreference>('open');
@@ -71,8 +71,7 @@ export default function HostScreen({
       setDate(editingSession.date);
       setTimeStart(editingSession.timeStart);
       setTimeEnd(editingSession.timeEnd);
-      setVenue(editingSession.venue);
-      setAddress(editingSession.address);
+      setLocation(editingSession.location ?? { lat: 0, lng: 0, name: editingSession.venue, address: editingSession.address });
       setSkillLevel(editingSession.skillLevel);
       setMatchType(editingSession.matchType);
       setGender(editingSession.gender ?? 'open');
@@ -83,8 +82,7 @@ export default function HostScreen({
       setDate(getLocalDateString());
       setTimeStart(start);
       setTimeEnd(end);
-      setVenue('');
-      setAddress('');
+      setLocation(null);
       setSkillLevel('intermediate');
       setMatchType('doubles');
       setGender('open');
@@ -111,8 +109,8 @@ export default function HostScreen({
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
 
-    if (!venue.trim()) {
-      alert('Please specify a badminton court venue name.');
+    if (!location) {
+      alert('Please select a venue on the map.');
       return;
     }
 
@@ -139,8 +137,9 @@ export default function HostScreen({
       date,
       timeStart,
       timeEnd,
-      venue,
-      address,
+      venue: location.name,
+      address: location.address,
+      location,
       skillLevel,
       matchType,
       gender,
@@ -286,43 +285,13 @@ export default function HostScreen({
           </div>
         </div>
 
-        {/* Venue Information Field */}
+        {/* Location Picker */}
         <div className="space-y-1.5">
-          <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
-            Venue Name
+          <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider flex items-center gap-1.5">
+            <MapPin className="w-3.5 h-3.5" />
+            Venue / Location
           </label>
-          <div className="relative rounded-lg bg-surface-variant/60 border border-outline-variant/40 flex items-center focus-within:border-primary-fixed focus-within:ring-1 focus-within:ring-primary-fixed transition-all overflow-hidden">
-            <span className="pl-3 text-on-surface-variant shrink-0">
-              <MapPin className="w-4 h-4" />
-            </span>
-            <input
-              type="text"
-              required
-              placeholder="e.g. Downtown Sports Hub"
-              value={venue}
-              onChange={(e) => setVenue(e.target.value)}
-              className="w-full bg-transparent text-on-surface font-sans text-sm p-3 outline-none border-none focus:ring-0 placeholder-on-surface-variant/50"
-            />
-          </div>
-        </div>
-
-        {/* Detailed Address Location Field */}
-        <div className="space-y-1.5">
-          <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
-            Court No / Address Details
-          </label>
-          <div className="relative rounded-lg bg-surface-variant/60 border border-outline-variant/40 flex items-center focus-within:border-primary-fixed focus-within:ring-1 focus-within:ring-primary-fixed transition-all overflow-hidden">
-            <span className="pl-3 text-on-surface-variant shrink-0">
-              <MapPin className="w-4 h-4" />
-            </span>
-            <input
-              type="text"
-              placeholder="e.g. Court 3 • 123 Smash Ave, Metro"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="w-full bg-transparent text-on-surface font-sans text-sm p-3 outline-none border-none focus:ring-0 placeholder-on-surface-variant/50"
-            />
-          </div>
+          <LocationPicker value={location} onChange={setLocation} />
         </div>
 
         {/* Skill Level Selection */}

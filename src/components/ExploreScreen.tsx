@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { MatchSession, SkillLevel, GenderPreference } from '../types';
-import { MapPin, Plus, ListFilter, CalendarDays } from 'lucide-react';
+import { MapPin, Plus, ListFilter, CalendarDays, List, Map } from 'lucide-react';
 import { motion } from 'motion/react';
+import SessionMapView from './SessionMapView';
 
 interface ExploreScreenProps {
   sessions: MatchSession[];
@@ -19,6 +20,7 @@ export default function ExploreScreen({
   const [selectedSkill, setSelectedSkill] = useState<'all' | SkillLevel>('all');
   const [selectedGender, setSelectedGender] = useState<'all' | GenderPreference>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
 
   // Handle filtering
   const filteredSessions = useMemo(() => {
@@ -55,18 +57,46 @@ export default function ExploreScreen({
     <div className="flex flex-col gap-6">
       {/* Search and Quick Filters bar */}
       <div className="flex flex-col gap-3">
-        {/* Search input to easily find arenas */}
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search venue, club, or host..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-surface-container-high border border-outline-variant/30 text-on-surface text-sm rounded-xl py-3 pl-4 pr-10 outline-none focus:ring-1 focus:ring-primary-fixed/80 placeholder-on-surface-variant/50 transition-all font-sans"
-          />
-          <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60">
-            <ListFilter className="w-4 h-4" />
-          </span>
+        {/* Search input + list/map toggle */}
+        <div className="flex gap-2 items-center">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="Search venue, club, or host..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-surface-container-high border border-outline-variant/30 text-on-surface text-sm rounded-xl py-3 pl-4 pr-10 outline-none focus:ring-1 focus:ring-primary-fixed/80 placeholder-on-surface-variant/50 transition-all font-sans"
+            />
+            <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60">
+              <ListFilter className="w-4 h-4" />
+            </span>
+          </div>
+
+          {/* List / Map toggle */}
+          <div className="flex rounded-xl border border-outline-variant/40 overflow-hidden shrink-0">
+            <button
+              onClick={() => setViewMode('list')}
+              aria-pressed={viewMode === 'list'}
+              className={`p-2.5 transition-colors cursor-pointer ${
+                viewMode === 'list'
+                  ? 'bg-primary-fixed text-on-primary-fixed'
+                  : 'bg-surface-container text-on-surface-variant hover:bg-surface-bright'
+              }`}
+            >
+              <List className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('map')}
+              aria-pressed={viewMode === 'map'}
+              className={`p-2.5 transition-colors cursor-pointer ${
+                viewMode === 'map'
+                  ? 'bg-primary-fixed text-on-primary-fixed'
+                  : 'bg-surface-container text-on-surface-variant hover:bg-surface-bright'
+              }`}
+            >
+              <Map className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Skill Level Filter Pills */}
@@ -121,8 +151,17 @@ export default function ExploreScreen({
         </div>
       </div>
 
+      {/* Map View */}
+      {viewMode === 'map' && (
+        <SessionMapView
+          sessions={filteredSessions}
+          onSelectSession={onSelectSession}
+          currentUserId={currentUserId}
+        />
+      )}
+
       {/* Main List Feed */}
-      <section className="flex flex-col gap-4">
+      {viewMode === 'list' && <section className="flex flex-col gap-4">
         {filteredSessions.length === 0 ? (
           <div className="border-2 border-dashed border-outline-variant/20 rounded-2xl p-10 text-center flex flex-col items-center justify-center gap-3">
             <div className="w-12 h-12 rounded-full bg-surface-variant/30 flex items-center justify-center text-on-surface-variant/70">
@@ -261,7 +300,7 @@ export default function ExploreScreen({
             );
           })
         )}
-      </section>
+      </section>}
 
       {/* Floating Action Button for speedy creation flow */}
       <button
