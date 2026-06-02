@@ -42,7 +42,7 @@ export interface MatchSession {
   address: string;
   skillLevel: SkillLevel;
   matchType: MatchType;
-  gender: GenderPreference;
+  gender?: GenderPreference;
   maxPlayers: number; // 2 for singles, 4 for doubles (or user specified)
   host: Player;
   playersJoined: Player[];

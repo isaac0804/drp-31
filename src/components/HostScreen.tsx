@@ -316,6 +316,7 @@ export default function HostScreen({
           <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
+              aria-pressed={gender === 'male'}
               onClick={() => setGender('male')}
               className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all cursor-pointer ${
                 gender === 'male'
@@ -328,6 +329,7 @@ export default function HostScreen({
             </button>
             <button
               type="button"
+              aria-pressed={gender === 'female'}
               onClick={() => setGender('female')}
               className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all cursor-pointer ${
                 gender === 'female'
@@ -340,6 +342,7 @@ export default function HostScreen({
             </button>
             <button
               type="button"
+              aria-pressed={gender === 'open'}
               onClick={() => setGender('open')}
               className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all cursor-pointer ${
                 gender === 'open'

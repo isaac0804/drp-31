@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { MatchSession, SkillLevel, GenderPreference } from '../types';
-import { MapPin, Plus, ListFilter, Users, CalendarDays } from 'lucide-react';
+import { MapPin, Plus, ListFilter, CalendarDays } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface ExploreScreenProps {
