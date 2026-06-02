@@ -75,6 +75,7 @@ export default function ExploreScreen({
             { value: 'all', label: 'All Levels' },
             { value: 'beginner', label: 'Beginner' },
             { value: 'intermediate', label: 'Intermediate' },
+            { value: 'advanced', label: 'Advanced' },
             { value: 'pro', label: 'Pro' }
           ] as const).map((filter) => {
             const isActive = selectedSkill === filter.value;

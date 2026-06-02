@@ -1,6 +1,21 @@
-import { useState, useEffect, FormEvent } from 'react';
+import React, { useState, useEffect, FormEvent } from 'react';
 import { MatchSession, SkillLevel, MatchType, GenderPreference } from '../types';
-import { Calendar, Clock, MapPin, Smile, Dumbbell, Flame, Plus, Minus, Check, ArrowLeft, AlignLeft, User, Users } from 'lucide-react';
+import { Calendar, Clock, MapPin, Smile, Dumbbell, Flame, Zap, Plus, Minus, Check, ArrowLeft, AlignLeft, User, Users } from 'lucide-react';
+
+const getLocalDateString = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+const getDefaultTimes = () => {
+  const now = new Date();
+  const h = now.getHours();
+  const m = now.getMinutes();
+  if (h < 17) return { start: '18:30', end: '20:30' };
+  const startH = m < 30 ? h : h + 1;
+  const startM = m < 30 ? 30 : 0;
+  const fmt = (hh: number, mm: number) =>
+    `${String(hh % 24).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+  return { start: fmt(startH, startM), end: fmt(startH + 2, startM) };
+};
 
 interface HostScreenProps {
   onPostSession: (session: Omit<MatchSession, 'id' | 'host' | 'playersJoined'>) => void;
@@ -18,9 +33,9 @@ export default function HostScreen({
   const isEditing = !!editingSession;
 
   // Controlled states loaded from existing session or sensible defaults
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [timeStart, setTimeStart] = useState('18:00');
-  const [timeEnd, setTimeEnd] = useState('20:00');
+  const [date, setDate] = useState(() => getLocalDateString());
+  const [timeStart, setTimeStart] = useState(() => getDefaultTimes().start);
+  const [timeEnd, setTimeEnd] = useState(() => getDefaultTimes().end);
   const [venue, setVenue] = useState('');
   const [address, setAddress] = useState('');
   const [skillLevel, setSkillLevel] = useState<SkillLevel>('intermediate');
@@ -29,7 +44,7 @@ export default function HostScreen({
   const [playersNeeded, setPlayersNeeded] = useState(4);
   const [hostNote, setHostNote] = useState('');
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
 
   const snapPlayersToMatchType = (type: MatchType, current: number) => {
     const min = type === 'singles' ? 2 : 4;
@@ -62,9 +77,10 @@ export default function HostScreen({
       setPlayersNeeded(snapPlayersToMatchType(editingSession.matchType, editingSession.maxPlayers));
       setHostNote(editingSession.hostNote);
     } else {
-      setDate(new Date().toISOString().split('T')[0]);
-      setTimeStart('18:30');
-      setTimeEnd('20:30');
+      const { start, end } = getDefaultTimes();
+      setDate(getLocalDateString());
+      setTimeStart(start);
+      setTimeEnd(end);
       setVenue('');
       setAddress('');
       setSkillLevel('intermediate');
@@ -166,7 +182,7 @@ export default function HostScreen({
         onSubmit={handleSubmit}
         className="space-y-6 bg-surface-container-high p-5 md:p-6 rounded-xl border border-outline-variant/15 shadow-xl"
       >
-        {/* Date & Time Picker Group */}
+        {/* Row 1: Date + Match Type */}
         <div className="grid grid-cols-2 gap-4">
           {/* Date Picker */}
           <div className="space-y-1.5">
@@ -188,55 +204,7 @@ export default function HostScreen({
             </div>
           </div>
 
-          {/* Time Picker */}
-          <div className="space-y-1.5">
-            <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
-              Start Time
-            </label>
-            <div className="relative rounded-lg bg-surface-variant/60 border border-outline-variant/40 flex items-center focus-within:border-primary-fixed focus-within:ring-1 focus-within:ring-primary-fixed transition-all overflow-hidden">
-              <span className="pl-3 text-on-surface-variant shrink-0">
-                <Clock className="w-4 h-4" />
-              </span>
-              <input
-                type="time"
-                required
-                value={timeStart}
-                onChange={(e) => setTimeStart(e.target.value)}
-                className="w-full bg-transparent text-on-surface font-sans text-sm p-3 outline-none border-none focus:ring-0 appearance-none inline-block"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Dynamic Duration or Time End Row to match screenshot styling */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Time End */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
-                End Time
-              </label>
-              {getDuration(timeStart, timeEnd) && (
-                <span className="text-[10px] font-mono text-primary-fixed">
-                  {getDuration(timeStart, timeEnd)}
-                </span>
-              )}
-            </div>
-            <div className="relative rounded-lg bg-surface-variant/60 border border-outline-variant/40 flex items-center focus-within:border-primary-fixed focus-within:ring-1 focus-within:ring-primary-fixed transition-all overflow-hidden">
-              <span className="pl-3 text-on-surface-variant shrink-0">
-                <Clock className="w-4 h-4" />
-              </span>
-              <input
-                type="time"
-                required
-                value={timeEnd}
-                onChange={(e) => setTimeEnd(e.target.value)}
-                className="w-full bg-transparent text-on-surface font-sans text-sm p-3 outline-none border-none focus:ring-0 appearance-none inline-block"
-              />
-            </div>
-          </div>
-
-          {/* Gameplay Match Type Selector */}
+          {/* Match Type Selector */}
           <div className="space-y-1.5">
             <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
               Match Type
@@ -251,7 +219,7 @@ export default function HostScreen({
                     : 'bg-surface-variant/30 text-on-surface-variant/80 border-outline-variant/40 hover:bg-surface-bright'
                 }`}
               >
-                Singles (1v1)
+                Singles
               </button>
               <button
                 type="button"
@@ -262,11 +230,60 @@ export default function HostScreen({
                     : 'bg-surface-variant/30 text-on-surface-variant/80 border-outline-variant/40 hover:bg-surface-bright'
                 }`}
               >
-                Doubles (2v2)
+                Doubles
               </button>
             </div>
           </div>
         </div>
+
+        {/* Row 2: Start Time + End Time (logically paired) */}
+        {(() => {
+          const duration = getDuration(timeStart, timeEnd);
+          return (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
+                  Start Time
+                </label>
+                <div className="relative rounded-lg bg-surface-variant/60 border border-outline-variant/40 flex items-center focus-within:border-primary-fixed focus-within:ring-1 focus-within:ring-primary-fixed transition-all overflow-hidden">
+                  <span className="pl-3 text-on-surface-variant shrink-0">
+                    <Clock className="w-4 h-4" />
+                  </span>
+                  <input
+                    type="time"
+                    required
+                    value={timeStart}
+                    onChange={(e) => setTimeStart(e.target.value)}
+                    className="w-full bg-transparent text-on-surface font-sans text-sm p-3 outline-none border-none focus:ring-0 appearance-none inline-block"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
+                    End Time
+                  </label>
+                  {duration && (
+                    <span className="text-[10px] font-mono text-primary-fixed">{duration}</span>
+                  )}
+                </div>
+                <div className="relative rounded-lg bg-surface-variant/60 border border-outline-variant/40 flex items-center focus-within:border-primary-fixed focus-within:ring-1 focus-within:ring-primary-fixed transition-all overflow-hidden">
+                  <span className="pl-3 text-on-surface-variant shrink-0">
+                    <Clock className="w-4 h-4" />
+                  </span>
+                  <input
+                    type="time"
+                    required
+                    value={timeEnd}
+                    onChange={(e) => setTimeEnd(e.target.value)}
+                    className="w-full bg-transparent text-on-surface font-sans text-sm p-3 outline-none border-none focus:ring-0 appearance-none inline-block"
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Venue Information Field */}
         <div className="space-y-1.5">
@@ -307,53 +324,32 @@ export default function HostScreen({
           </div>
         </div>
 
-        {/* Skill Level Selection (Glassmorphism Cards matching screenshot exactly) */}
+        {/* Skill Level Selection */}
         <div className="space-y-1.5">
           <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
             Skill Level
           </label>
-          <div className="grid grid-cols-3 gap-2">
-            {/* Beginner Card */}
-            <button
-              type="button"
-              onClick={() => setSkillLevel('beginner')}
-              className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all cursor-pointer ${
-                skillLevel === 'beginner'
-                  ? 'bg-primary-fixed/10 border-primary-fixed text-primary-fixed'
-                  : 'border-outline-variant/50 bg-surface-variant text-on-surface-variant hover:bg-surface-bright text-on-surface'
-              }`}
-            >
-              <Smile className="w-5 h-5 mb-1" />
-              <span className="font-sans font-black text-[10px] uppercase tracking-wider">Beginner</span>
-            </button>
-
-            {/* Intermediate Card */}
-            <button
-              type="button"
-              onClick={() => setSkillLevel('intermediate')}
-              className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all cursor-pointer ${
-                skillLevel === 'intermediate'
-                  ? 'bg-primary-fixed/10 border-primary-fixed text-primary-fixed'
-                  : 'border-outline-variant/50 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
-              }`}
-            >
-              <Dumbbell className="w-5 h-5 mb-1" />
-              <span className="font-sans font-black text-[10px] uppercase tracking-wider">Intermediate</span>
-            </button>
-
-            {/* Advanced / Pro Card */}
-            <button
-              type="button"
-              onClick={() => setSkillLevel('pro')}
-              className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all cursor-pointer ${
-                skillLevel === 'pro'
-                  ? 'bg-primary-fixed/10 border-primary-fixed text-primary-fixed'
-                  : 'border-outline-variant/50 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
-              }`}
-            >
-              <Flame className="w-5 h-5 mb-1" />
-              <span className="font-sans font-black text-[10px] uppercase tracking-wider">Pro</span>
-            </button>
+          <div className="grid grid-cols-4 gap-2">
+            {([
+              { value: 'beginner', label: 'Beginner', icon: <Smile className="w-5 h-5 mb-1" /> },
+              { value: 'intermediate', label: 'Inter', icon: <Dumbbell className="w-5 h-5 mb-1" /> },
+              { value: 'advanced', label: 'Advanced', icon: <Zap className="w-5 h-5 mb-1" /> },
+              { value: 'pro', label: 'Pro', icon: <Flame className="w-5 h-5 mb-1" /> },
+            ] as { value: SkillLevel; label: string; icon: React.ReactNode }[]).map(({ value, label, icon }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setSkillLevel(value)}
+                className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all cursor-pointer ${
+                  skillLevel === value
+                    ? 'bg-primary-fixed/10 border-primary-fixed text-primary-fixed'
+                    : 'border-outline-variant/50 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
+                }`}
+              >
+                {icon}
+                <span className="font-sans font-black text-[10px] uppercase tracking-wider">{label}</span>
+              </button>
+            ))}
           </div>
         </div>
 
