@@ -15,17 +15,20 @@ export default function ProfileScreen({
   onUpdateProfile,
   matchesPlayedCount
 }: ProfileScreenProps) {
+  const availableSports: SportOption[] = ['Badminton', 'Table Tennis', 'Football', 'Pickleball'];
   const [name, setName] = useState(user.name);
   const selectedAvatar = user.avatar;
   const [skill, setSkill] = useState<SkillLevel>(user.skillLevel);
   const [about, setAbout] = useState(user.about ?? '');
-  const [sportsPlayed, setSportsPlayed] = useState<SportOption[]>(user.sportsPlayed as SportOption[] ?? []);
+  const [sportsPlayed, setSportsPlayed] = useState<SportOption[]>(
+    (user.sportsPlayed ?? []).filter((sport): sport is SportOption =>
+      availableSports.includes(sport as SportOption)
+    )
+  );
   const [matchPreferences, setMatchPreferences] = useState(user.matchPreferences ?? '');
   const [sportingHistory, setSportingHistory] = useState(user.sportingHistory ?? '');
   const [industry, setIndustry] = useState(user.industry ?? '');
   const [isSavedSuccessfully, setIsSavedSuccessfully] = useState(false);
-
-  const availableSports: SportOption[] = ['Badminton', 'Table Tennis', 'Football', 'Pickleball'];
 
   const toggleSport = (sport: SportOption) => {
     setSportsPlayed((currentSports: SportOption[]) =>
