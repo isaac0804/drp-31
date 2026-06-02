@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { SessionLocation } from '../types';
-import { Search, MapPin, X } from 'lucide-react';
+import { Search, MapPin, X, Navigation } from 'lucide-react';
 
 const SPORT_CENTRES: SessionLocation[] = [
   { name: 'Ethos Sport – Imperial College', address: 'Princes Gardens, London SW7 2AZ', lat: 51.4988, lng: -0.1765 },
@@ -45,11 +45,15 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
   const onChangeRef = useRef(onChange);
   useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
 
+  // Track whether the map has been revealed so we know when to invalidateSize
+  const mapWasShownRef = useRef(false);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<NominatimResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Initialise Leaflet once (map container is always in the DOM, just height-0 until needed)
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
@@ -85,8 +89,7 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
         .then((r) => r.json())
         .then((data) => {
           onChangeRef.current({
-            lat,
-            lng,
+            lat, lng,
             name: (data.name || data.display_name?.split(',')[0]) ?? 'Custom Location',
             address: data.display_name ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`,
           });
@@ -101,9 +104,11 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
       map.remove();
       mapRef.current = null;
       selectedMarkerRef.current = null;
+      mapWasShownRef.current = false;
     };
   }, []);
 
+  // Update marker; invalidateSize the first time the map becomes visible
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -113,7 +118,16 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
       selectedMarkerRef.current = null;
     }
 
-    if (!value) return;
+    if (!value) {
+      mapWasShownRef.current = false;
+      return;
+    }
+
+    // First reveal: wait for the CSS expand transition (300ms) then fix Leaflet's size
+    if (!mapWasShownRef.current) {
+      mapWasShownRef.current = true;
+      setTimeout(() => map.invalidateSize(), 320);
+    }
 
     const isPreset = SPORT_CENTRES.some((c) => c.lat === value.lat && c.lng === value.lng);
     const marker = L.marker([value.lat, value.lng], { icon: isPreset ? selectedPresetIcon : customIcon }).addTo(map);
@@ -145,7 +159,8 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
     onChange({ lat, lng, name, address: result.display_name });
     setSearchQuery(name);
     setSearchResults([]);
-    mapRef.current?.setView([lat, lng], 15, { animate: true });
+    // Pan after invalidateSize has had time to run
+    setTimeout(() => mapRef.current?.setView([lat, lng], 15, { animate: true }), 340);
   };
 
   return (
@@ -196,13 +211,6 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
         )}
       </div>
 
-      {/* Map */}
-      <div
-        ref={mapContainerRef}
-        className="w-full rounded-xl overflow-hidden border border-outline-variant/30"
-        style={{ height: 260 }}
-      />
-
       {/* Preset chips */}
       <div className="space-y-1.5">
         <p className="text-[10px] font-sans font-extrabold text-on-surface-variant uppercase tracking-wider">
@@ -215,7 +223,7 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
               type="button"
               onClick={() => {
                 onChange(centre);
-                mapRef.current?.setView([centre.lat, centre.lng], 15, { animate: true });
+                setTimeout(() => mapRef.current?.setView([centre.lat, centre.lng], 15, { animate: true }), 340);
               }}
               className={`text-[11px] font-sans font-bold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
                 value?.name === centre.name
@@ -229,7 +237,24 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
         </div>
       </div>
 
-      {/* Selected location preview */}
+      {/* Map — hidden until a location is chosen, then expands smoothly */}
+      <div className={`overflow-hidden transition-all duration-300 ease-in-out rounded-xl ${value ? 'max-h-[260px]' : 'max-h-0'}`}>
+        <div
+          ref={mapContainerRef}
+          className="w-full border border-outline-variant/30 rounded-xl overflow-hidden"
+          style={{ height: 240 }}
+        />
+      </div>
+
+      {/* Tap-to-pinpoint hint — shown only when map is visible */}
+      {value && (
+        <p className="text-[11px] text-on-surface-variant/70 flex items-center gap-1.5">
+          <Navigation className="w-3 h-3 shrink-0" />
+          Tap anywhere on the map to fine-tune the exact pin location.
+        </p>
+      )}
+
+      {/* Selected location display */}
       {value && (
         <div className="flex items-start gap-2 px-3 py-2 bg-surface-variant/40 rounded-lg border border-outline-variant/20">
           <MapPin className="w-4 h-4 text-primary-fixed mt-0.5 shrink-0" />
