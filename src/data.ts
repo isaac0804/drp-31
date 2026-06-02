@@ -1,4 +1,6 @@
-import { MatchSession, UserProfile } from './types';
+import { MatchSession, UserProfile, Sport } from './types';
+
+export const SPORTS: Sport[] = ['Badminton', 'Table Tennis', 'Football', 'Pickleball'];
 
 export const AVATARS = [
   {
@@ -59,6 +61,7 @@ export const INITIAL_SESSIONS: MatchSession[] = [
     timeEnd: '20:00',
     venue: 'Uni Sports Hall, Court 3',
     address: 'University Campus Dr, Sector 4',
+    sport: 'Badminton',
     skillLevel: 'intermediate',
     matchType: 'doubles',
     gender: 'open',
@@ -81,6 +84,7 @@ export const INITIAL_SESSIONS: MatchSession[] = [
     timeEnd: '22:30',
     venue: 'City West Rec Center',
     address: '56 West Boulevard, Metro',
+    sport: 'Badminton',
     skillLevel: 'beginner',
     matchType: 'singles',
     gender: 'open',
@@ -102,6 +106,7 @@ export const INITIAL_SESSIONS: MatchSession[] = [
     timeEnd: '21:00',
     venue: 'Eastside Club',
     address: '44 Enterprise Way, Industrial East',
+    sport: 'Badminton',
     skillLevel: 'pro',
     matchType: 'doubles',
     gender: 'male',
@@ -126,6 +131,7 @@ export const INITIAL_SESSIONS: MatchSession[] = [
     timeEnd: '19:30',
     venue: 'Downtown City Club',
     address: 'Court 4 • 123 Smash Ave, Metro',
+    sport: 'Badminton',
     skillLevel: 'intermediate',
     matchType: 'doubles',
     gender: 'open',

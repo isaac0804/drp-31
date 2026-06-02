@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { MatchSession, SkillLevel, GenderPreference } from '../types';
+import { MatchSession, SkillLevel, GenderPreference, Sport } from '../types';
+import { SPORTS } from '../data';
 import { MapPin, Plus, ListFilter, CalendarDays } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -16,6 +17,7 @@ export default function ExploreScreen({
   onNavigateToHost,
   currentUserId
 }: ExploreScreenProps) {
+  const [selectedSport, setSelectedSport] = useState<'all' | Sport>('all');
   const [selectedSkill, setSelectedSkill] = useState<'all' | SkillLevel>('all');
   const [selectedGender, setSelectedGender] = useState<'all' | GenderPreference>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,13 +25,14 @@ export default function ExploreScreen({
   // Handle filtering
   const filteredSessions = useMemo(() => {
     return sessions.filter((s) => {
+      const matchesSport = selectedSport === 'all' || s.sport === selectedSport;
       const matchesSkill = selectedSkill === 'all' || s.skillLevel === selectedSkill;
       const matchesGender = selectedGender === 'all' || (s.gender ?? 'open') === selectedGender;
       const matchesSearch =
         s.venue.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.host.name.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesSkill && matchesGender && matchesSearch;
+      return matchesSport && matchesSkill && matchesGender && matchesSearch;
     });
   }, [sessions, selectedSkill, selectedGender, searchQuery]);
 
@@ -67,6 +70,26 @@ export default function ExploreScreen({
           <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60">
             <ListFilter className="w-4 h-4" />
           </span>
+        </div>
+
+        {/* Sport Filter Pills */}
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
+          {([{ value: 'all', label: 'All Sports' }, ...SPORTS.map((s) => ({ value: s, label: s }))] as { value: 'all' | Sport; label: string }[]).map((filter) => {
+            const isActive = selectedSport === filter.value;
+            return (
+              <button
+                key={filter.value}
+                onClick={() => setSelectedSport(filter.value)}
+                className={`whitespace-nowrap px-4 py-2 rounded-full border text-xs font-bold tracking-wider uppercase transition-all duration-150 cursor-pointer ${
+                  isActive
+                    ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+                    : 'border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary-fixed/50 hover:text-primary-fixed'
+                }`}
+              >
+                {filter.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Skill Level Filter Pills */}
@@ -216,6 +239,9 @@ export default function ExploreScreen({
                 <div className="flex justify-between items-end mt-2 pt-2 border-t border-outline-variant/10">
                   {/* Skill level, gameplay mode, and gender badges */}
                   <div className="flex gap-2 flex-wrap">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide bg-surface-container-highest text-on-surface-variant uppercase font-sans border border-outline-variant/20">
+                      {session.sport}
+                    </span>
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide border border-primary-fixed/30 bg-primary-fixed/5 text-primary-fixed uppercase font-sans">
                       {session.skillLevel}
                     </span>

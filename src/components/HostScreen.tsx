@@ -1,5 +1,6 @@
 import React, { useState, useEffect, FormEvent } from 'react';
-import { MatchSession, SkillLevel, MatchType, GenderPreference } from '../types';
+import { MatchSession, SkillLevel, MatchType, GenderPreference, Sport } from '../types';
+import { SPORTS } from '../data';
 import { Calendar, Clock, MapPin, Smile, Dumbbell, Flame, Zap, Plus, Minus, Check, ArrowLeft, AlignLeft, User, Users } from 'lucide-react';
 
 const getLocalDateString = (d = new Date()) =>
@@ -40,6 +41,7 @@ export default function HostScreen({
   const [timeEnd, setTimeEnd] = useState(() => getDefaultTimes().end);
   const [venue, setVenue] = useState('');
   const [address, setAddress] = useState('');
+  const [sport, setSport] = useState<Sport>('Badminton');
   const [skillLevel, setSkillLevel] = useState<SkillLevel>('intermediate');
   const [matchType, setMatchType] = useState<MatchType>('doubles');
   const [gender, setGender] = useState<GenderPreference>('open');
@@ -73,6 +75,7 @@ export default function HostScreen({
       setTimeEnd(editingSession.timeEnd);
       setVenue(editingSession.venue);
       setAddress(editingSession.address);
+      setSport(editingSession.sport);
       setSkillLevel(editingSession.skillLevel);
       setMatchType(editingSession.matchType);
       setGender(editingSession.gender ?? 'open');
@@ -85,6 +88,7 @@ export default function HostScreen({
       setTimeEnd(end);
       setVenue('');
       setAddress('');
+      setSport('Badminton');
       setSkillLevel('intermediate');
       setMatchType('doubles');
       setGender('open');
@@ -141,6 +145,7 @@ export default function HostScreen({
       timeEnd,
       venue,
       address,
+      sport,
       skillLevel,
       matchType,
       gender,
@@ -171,7 +176,7 @@ export default function HostScreen({
             </button>
           )}
           <h2 className="font-sans font-black text-2xl md:text-3xl text-white tracking-tight">
-            {isEditing ? 'Edit Badminton Match' : 'Host a Badminton Match'}
+            {isEditing ? 'Edit Session' : 'Host a Session'}
           </h2>
         </div>
         <p className="text-sm text-on-surface-variant/80">
@@ -186,6 +191,30 @@ export default function HostScreen({
         onSubmit={handleSubmit}
         className="space-y-6 bg-surface-container-high p-5 md:p-6 rounded-xl border border-outline-variant/15 shadow-xl"
       >
+        {/* Sport Picker */}
+        <div className="space-y-1.5">
+          <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
+            Sport
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {SPORTS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                aria-pressed={sport === s}
+                onClick={() => setSport(s)}
+                className={`py-3 px-3 rounded-lg text-xs font-bold uppercase border transition-all cursor-pointer text-left ${
+                  sport === s
+                    ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+                    : 'bg-surface-variant/30 text-on-surface-variant/80 border-outline-variant/40 hover:bg-surface-bright'
+                }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Row 1: Date + Match Type */}
         <div className="grid grid-cols-2 gap-4">
           {/* Date Picker */}
