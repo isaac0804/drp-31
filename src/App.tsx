@@ -209,6 +209,7 @@ export default function App() {
           setActiveScreen(screen);
         }}
         onSignOut={handleSignOut}
+        onRetakeAssessment={() => setShowAssessment(true)}
         matchesCount={matchesCount}
       />
 

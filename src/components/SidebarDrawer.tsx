@@ -1,4 +1,4 @@
-import { X, Play, Trophy, Users, Award, Zap, LogOut } from 'lucide-react';
+import { X, Play, Trophy, Users, Award, Zap, LogOut, Target } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface SidebarDrawerProps {
@@ -7,6 +7,7 @@ interface SidebarDrawerProps {
   activeScreen: string;
   onNavigate: (screen: string) => void;
   onSignOut: () => void;
+  onRetakeAssessment: () => void;
   matchesCount: number;
 }
 
@@ -16,6 +17,7 @@ export default function SidebarDrawer({
   activeScreen,
   onNavigate,
   onSignOut,
+  onRetakeAssessment,
   matchesCount
 }: SidebarDrawerProps) {
   return (
@@ -115,6 +117,20 @@ export default function SidebarDrawer({
                 >
                   <Users className="w-4 h-4" />
                   Athletic Profile
+                </button>
+              </div>
+
+              {/* Skill Assessment */}
+              <div>
+                <button
+                  onClick={() => {
+                    onRetakeAssessment();
+                    onClose();
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-sans font-semibold text-sm uppercase tracking-wide hover:bg-surface-variant text-on-surface-variant hover:text-on-surface"
+                >
+                  <Target className="w-4 h-4" />
+                  Skill Assessment
                 </button>
               </div>
 
