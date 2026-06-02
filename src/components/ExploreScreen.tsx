@@ -9,18 +9,21 @@ interface ExploreScreenProps {
   onSelectSession: (id: string) => void;
   onNavigateToHost: () => void;
   currentUserId: string;
+  viewMode: 'list' | 'map';
+  onViewModeChange: (mode: 'list' | 'map') => void;
 }
 
 export default function ExploreScreen({
   sessions,
   onSelectSession,
   onNavigateToHost,
-  currentUserId
+  currentUserId,
+  viewMode,
+  onViewModeChange,
 }: ExploreScreenProps) {
   const [selectedSkill, setSelectedSkill] = useState<'all' | SkillLevel>('all');
   const [selectedGender, setSelectedGender] = useState<'all' | GenderPreference>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
 
   // Handle filtering
   const filteredSessions = useMemo(() => {
@@ -75,7 +78,7 @@ export default function ExploreScreen({
           {/* List / Map toggle */}
           <div className="flex rounded-xl border border-outline-variant/40 overflow-hidden shrink-0">
             <button
-              onClick={() => setViewMode('list')}
+              onClick={() => onViewModeChange('list')}
               aria-pressed={viewMode === 'list'}
               className={`p-2.5 transition-colors cursor-pointer ${
                 viewMode === 'list'
@@ -86,7 +89,7 @@ export default function ExploreScreen({
               <List className="w-4 h-4" />
             </button>
             <button
-              onClick={() => setViewMode('map')}
+              onClick={() => onViewModeChange('map')}
               aria-pressed={viewMode === 'map'}
               className={`p-2.5 transition-colors cursor-pointer ${
                 viewMode === 'map'
