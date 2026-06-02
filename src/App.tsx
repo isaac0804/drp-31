@@ -334,6 +334,7 @@ export default function App() {
                 user={user}
                 onUpdateProfile={handleUpdateProfile}
                 matchesPlayedCount={myParticipatedMatchesCount}
+                onRetakeAssessment={() => setShowAssessment(true)}
               />
             )}
           </motion.div>
