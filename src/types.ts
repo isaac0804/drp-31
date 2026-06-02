@@ -50,4 +50,5 @@ export interface MatchSession {
   host: Player;
   playersJoined: Player[];
   hostNote: string;
+  isPrivate?: boolean;
 }
