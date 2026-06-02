@@ -31,6 +31,23 @@ export default function HostScreen({
 
   const today = new Date().toISOString().split('T')[0];
 
+  const snapPlayersToMatchType = (type: MatchType, current: number) => {
+    const min = type === 'singles' ? 2 : 4;
+    return Math.max(min, current);
+  };
+
+  const getDuration = (start: string, end: string): string => {
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = end.split(':').map(Number);
+    const diff = eh * 60 + em - (sh * 60 + sm);
+    if (diff <= 0) return '';
+    const h = Math.floor(diff / 60);
+    const m = diff % 60;
+    if (h === 0) return `${m}m`;
+    if (m === 0) return `${h}h`;
+    return `${h}h ${m}m`;
+  };
+
   // Synchronize state when editing session switches
   useEffect(() => {
     if (editingSession) {
@@ -58,13 +75,7 @@ export default function HostScreen({
     }
   }, [editingSession]);
 
-  // Snap player count to a valid value for the given match type
   const minPlayers = matchType === 'singles' ? 2 : 4;
-
-  const snapPlayersToMatchType = (type: MatchType, current: number) => {
-    const min = type === 'singles' ? 2 : 4;
-    return Math.max(min, current);
-  };
 
   const handleMatchTypeChange = (type: MatchType) => {
     setMatchType(type);
@@ -92,6 +103,15 @@ export default function HostScreen({
       return;
     }
 
+    if (date === today) {
+      const now = new Date();
+      const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      if (timeStart <= currentTime) {
+        alert('Start time must be in the future for today\'s sessions.');
+        return;
+      }
+    }
+
     if (timeEnd <= timeStart) {
       alert('End time must be after start time.');
       return;
@@ -102,7 +122,7 @@ export default function HostScreen({
       timeStart,
       timeEnd,
       venue,
-      address: address || 'Main Badminton Arena, Court 1',
+      address,
       skillLevel,
       matchType,
       gender,
@@ -192,9 +212,16 @@ export default function HostScreen({
         <div className="grid grid-cols-2 gap-4">
           {/* Time End */}
           <div className="space-y-1.5">
-            <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
-              End Time
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
+                End Time
+              </label>
+              {getDuration(timeStart, timeEnd) && (
+                <span className="text-[10px] font-mono text-primary-fixed">
+                  {getDuration(timeStart, timeEnd)}
+                </span>
+              )}
+            </div>
             <div className="relative rounded-lg bg-surface-variant/60 border border-outline-variant/40 flex items-center focus-within:border-primary-fixed focus-within:ring-1 focus-within:ring-primary-fixed transition-all overflow-hidden">
               <span className="pl-3 text-on-surface-variant shrink-0">
                 <Clock className="w-4 h-4" />
@@ -325,7 +352,7 @@ export default function HostScreen({
               }`}
             >
               <Flame className="w-5 h-5 mb-1" />
-              <span className="font-sans font-black text-[10px] uppercase tracking-wider">Advanced</span>
+              <span className="font-sans font-black text-[10px] uppercase tracking-wider">Pro</span>
             </button>
           </div>
         </div>
