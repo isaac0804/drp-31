@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react';
-import { UserProfile, SkillLevel, Sport } from '../types';
-import { Trophy, User, Award, RotateCcw } from 'lucide-react';
+import { UserProfile, Sport, SportSkill } from '../types';
+import { Trophy, User, Award, RotateCcw, Target } from 'lucide-react';
 
 interface ProfileScreenProps {
   user: UserProfile;
@@ -18,7 +18,6 @@ export default function ProfileScreen({
   const availableSports: Sport[] = ['Badminton', 'Table Tennis', 'Football', 'Pickleball'];
   const [name, setName] = useState(user.name);
   const selectedAvatar = user.avatar;
-  const [skill, setSkill] = useState<SkillLevel>(user.skillLevel);
   const [about, setAbout] = useState(user.about ?? '');
   const [sportsPlayed, setSportsPlayed] = useState<Sport[]>(
     (user.sportsPlayed ?? []).filter((sport): sport is Sport =>
@@ -43,7 +42,7 @@ export default function ProfileScreen({
     onUpdateProfile({
       name,
       avatar: selectedAvatar,
-      skillLevel: skill,
+      skillLevel: user.skillLevel,
       about,
       sportsPlayed,
       matchPreferences,
@@ -88,18 +87,61 @@ export default function ProfileScreen({
 
           <div>
             <h3 className="font-sans font-extrabold text-base text-on-surface">{name || 'Guest Athlete'}</h3>
-            <div className="flex items-center justify-center gap-2 mt-1 flex-wrap">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-bold tracking-widest bg-primary-fixed/10 text-primary-fixed uppercase font-mono border border-primary-fixed/20">
-                {skill}
-              </span>
-              {user.skillScore != null && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-bold tracking-widest bg-surface-container-highest text-on-surface-variant uppercase font-mono border border-outline-variant/20">
-                  {user.skillScore} / 10
-                </span>
-              )}
-            </div>
           </div>
         </div>
+
+        {/* Per-sport skill ratings */}
+        {(() => {
+          const SPORTS: Sport[] = ['Badminton', 'Table Tennis', 'Football', 'Pickleball'];
+          const assessed = SPORTS.filter((s) => user.skillsBySport?.[s] != null);
+          const unassessed = SPORTS.filter((s) => user.skillsBySport?.[s] == null);
+          if (assessed.length === 0) return null;
+          return (
+            <section className="bg-surface-container-high rounded-xl p-4 border border-outline-variant/15 space-y-3">
+              <h4 className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
+                Skill Ratings
+              </h4>
+              <div className="grid grid-cols-2 gap-2">
+                {assessed.map((sport) => {
+                  const entry = user.skillsBySport![sport] as SportSkill;
+                  return (
+                    <div
+                      key={sport}
+                      className="bg-surface-container-low border border-outline-variant/15 rounded-xl p-3 space-y-1.5"
+                    >
+                      <p className="font-sans font-extrabold text-xs text-on-surface">{sport}</p>
+                      <div className="flex items-end gap-1.5">
+                        <span className="font-mono font-black text-2xl text-primary-fixed leading-none">
+                          {entry.skillScore}
+                        </span>
+                        <span className="font-mono text-[10px] text-primary-fixed/60 mb-0.5">/ 10</span>
+                      </div>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold tracking-widest bg-primary-fixed/10 text-primary-fixed uppercase font-mono border border-primary-fixed/20">
+                        {entry.skillLevel}
+                      </span>
+                    </div>
+                  );
+                })}
+                {unassessed.map((sport) => (
+                  <button
+                    key={sport}
+                    type="button"
+                    onClick={onRetakeAssessment}
+                    className="bg-surface-container-low/50 border border-dashed border-outline-variant/30 rounded-xl p-3 text-left hover:border-primary-fixed/40 hover:bg-primary-fixed/5 transition-all cursor-pointer group space-y-1.5"
+                  >
+                    <p className="font-sans font-extrabold text-xs text-on-surface-variant group-hover:text-on-surface">
+                      {sport}
+                    </p>
+                    <div className="flex items-center gap-1 text-on-surface-variant/50 group-hover:text-primary-fixed transition-colors">
+                      <Target className="w-3 h-3" />
+                      <span className="font-mono text-[9px] uppercase tracking-wider">Assess</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </section>
+          );
+        })()}
 
         {/* Matches Played - show count directly in grey container */}
         <section className="bg-surface-container-low rounded-xl p-4 border border-outline-variant/15 text-center">
