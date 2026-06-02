@@ -53,6 +53,8 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
   const [isSearching, setIsSearching] = useState(false);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  useEffect(() => () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); }, []);
+
   // Initialise Leaflet once (map container is always in the DOM, just height-0 until needed)
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -226,7 +228,7 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
                 setTimeout(() => mapRef.current?.setView([centre.lat, centre.lng], 15, { animate: true }), 340);
               }}
               className={`text-[11px] font-sans font-bold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
-                value?.name === centre.name
+                value?.lat === centre.lat && value?.lng === centre.lng
                   ? 'bg-primary-fixed/15 border-primary-fixed text-primary-fixed'
                   : 'border-outline-variant/40 text-on-surface-variant hover:bg-surface-bright'
               }`}

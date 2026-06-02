@@ -47,8 +47,7 @@ body {
 }
 
 /* Strip Leaflet popup chrome so our custom dark HTML shows cleanly */
-.session-map-popup .leaflet-popup-content-wrapper,
-.leaflet-popup-content-wrapper {
+.session-map-popup .leaflet-popup-content-wrapper {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;

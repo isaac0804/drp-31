@@ -94,7 +94,7 @@ export default function HostScreen({
       setDate(editingSession.date);
       setTimeStart(editingSession.timeStart);
       setTimeEnd(editingSession.timeEnd);
-      setLocation(editingSession.location ?? { lat: 0, lng: 0, name: editingSession.venue, address: editingSession.address });
+      setLocation(editingSession.location ?? null);
       setSport(editingSession.sport);
       setSkillLevel(editingSession.skillLevel);
       setMatchType(editingSession.matchType);

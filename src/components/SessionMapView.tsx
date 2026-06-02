@@ -5,6 +5,10 @@ import { MatchSession } from '../types';
 
 const IMPERIAL_CENTER: [number, number] = [51.4988, -0.1749];
 
+function esc(s: string) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 function makeSessionIcon(isFull: boolean) {
   const color = isFull ? '#EF4444' : '#22C55E';
   return L.divIcon({
@@ -24,17 +28,17 @@ function buildPopupHtml(session: MatchSession) {
 
   return `
     <div style="font-family:Inter,sans-serif;color:#e2e2e2;background:#282a2b;padding:12px 14px;border-radius:12px;min-width:190px;max-width:220px;border:1px solid rgba(255,255,255,0.08)">
-      <div style="font-weight:700;font-size:13px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${session.location!.name}</div>
-      <div style="font-size:11px;color:#8a9090;margin-bottom:8px">${session.date} · ${session.timeStart}–${session.timeEnd}</div>
+      <div style="font-weight:700;font-size:13px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(session.location!.name)}</div>
+      <div style="font-size:11px;color:#8a9090;margin-bottom:8px">${esc(session.date)} · ${esc(session.timeStart)}–${esc(session.timeEnd)}</div>
       <div style="display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap">
-        <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;background:rgba(202,243,0,0.1);color:#caf300;border:1px solid rgba(202,243,0,0.3);text-transform:uppercase;letter-spacing:0.05em">${session.skillLevel}</span>
-        <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;background:#333535;color:#8a9090;text-transform:uppercase;letter-spacing:0.05em">${session.matchType}</span>
-        <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;background:#333535;color:#8a9090;text-transform:uppercase;letter-spacing:0.05em">${gender}</span>
+        <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;background:rgba(202,243,0,0.1);color:#caf300;border:1px solid rgba(202,243,0,0.3);text-transform:uppercase;letter-spacing:0.05em">${esc(session.skillLevel)}</span>
+        <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;background:#333535;color:#8a9090;text-transform:uppercase;letter-spacing:0.05em">${esc(session.matchType)}</span>
+        <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;background:#333535;color:#8a9090;text-transform:uppercase;letter-spacing:0.05em">${esc(gender)}</span>
       </div>
-      <div style="font-size:11px;color:${spotsColor};font-weight:600;margin-bottom:10px">${spotsLabel}</div>
+      <div style="font-size:11px;color:${spotsColor};font-weight:600;margin-bottom:10px">${esc(spotsLabel)}</div>
       <button
         class="session-map-view-btn"
-        data-session-id="${session.id}"
+        data-session-id="${esc(session.id)}"
         style="width:100%;padding:7px 0;background:#caf300;color:#121414;font-weight:800;font-size:11px;border:none;border-radius:8px;cursor:pointer;text-transform:uppercase;letter-spacing:0.07em"
       >
         View Session
