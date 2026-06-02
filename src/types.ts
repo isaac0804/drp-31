@@ -1,4 +1,5 @@
 export type SkillLevel = 'beginner' | 'intermediate' | 'advanced' | 'pro';
+export type Sport = 'Badminton' | 'Table Tennis' | 'Football' | 'Pickleball';
 export type PlayAgain = 'yes' | 'no';
 export type SkillAccuracy = 'too-high' | 'accurate' | 'too-low';
 
@@ -41,6 +42,7 @@ export interface MatchSession {
   timeEnd: string; // "HH:MM" 24 hour
   venue: string;
   address: string;
+  sport: Sport;
   skillLevel: SkillLevel;
   matchType: MatchType;
   gender?: GenderPreference;
@@ -48,4 +50,5 @@ export interface MatchSession {
   host: Player;
   playersJoined: Player[];
   hostNote: string;
+  isPrivate?: boolean;
 }

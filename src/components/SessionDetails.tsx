@@ -119,7 +119,7 @@ export default function SessionDetails({
             </span>
           </div>
           <h1 className="font-sans font-black text-2xl md:text-3xl text-primary leading-tight uppercase tracking-tight">
-            Badminton {session.matchType === 'singles' ? 'Singles Duel' : 'Doubles Match'}
+            {session.sport} {session.matchType === 'singles' ? 'Singles' : 'Doubles'}
           </h1>
         </div>
       </section>
