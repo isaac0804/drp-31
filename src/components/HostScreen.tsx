@@ -12,8 +12,10 @@ const getDefaultTimes = () => {
   if (h < 17) return { start: '18:30', end: '20:30' };
   const startH = m < 30 ? h : h + 1;
   const startM = m < 30 ? 30 : 0;
+  // Fall back if adding 2h would cross midnight
+  if (startH + 2 >= 24) return { start: '18:30', end: '20:30' };
   const fmt = (hh: number, mm: number) =>
-    `${String(hh % 24).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+    `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
   return { start: fmt(startH, startM), end: fmt(startH + 2, startM) };
 };
 
@@ -153,6 +155,8 @@ export default function HostScreen({
     }
   };
 
+  const duration = getDuration(timeStart, timeEnd);
+
   return (
     <article className="space-y-6">
       {/* Page Title Header */}
@@ -212,6 +216,7 @@ export default function HostScreen({
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
+                aria-pressed={matchType === 'singles'}
                 onClick={() => handleMatchTypeChange('singles')}
                 className={`py-3 rounded-lg text-xs font-bold uppercase border transition-all cursor-pointer ${
                   matchType === 'singles'
@@ -223,6 +228,7 @@ export default function HostScreen({
               </button>
               <button
                 type="button"
+                aria-pressed={matchType === 'doubles'}
                 onClick={() => handleMatchTypeChange('doubles')}
                 className={`py-3 rounded-lg text-xs font-bold uppercase border transition-all cursor-pointer ${
                   matchType === 'doubles'
@@ -237,53 +243,48 @@ export default function HostScreen({
         </div>
 
         {/* Row 2: Start Time + End Time (logically paired) */}
-        {(() => {
-          const duration = getDuration(timeStart, timeEnd);
-          return (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
-                  Start Time
-                </label>
-                <div className="relative rounded-lg bg-surface-variant/60 border border-outline-variant/40 flex items-center focus-within:border-primary-fixed focus-within:ring-1 focus-within:ring-primary-fixed transition-all overflow-hidden">
-                  <span className="pl-3 text-on-surface-variant shrink-0">
-                    <Clock className="w-4 h-4" />
-                  </span>
-                  <input
-                    type="time"
-                    required
-                    value={timeStart}
-                    onChange={(e) => setTimeStart(e.target.value)}
-                    className="w-full bg-transparent text-on-surface font-sans text-sm p-3 outline-none border-none focus:ring-0 appearance-none inline-block"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
-                    End Time
-                  </label>
-                  {duration && (
-                    <span className="text-[10px] font-mono text-primary-fixed">{duration}</span>
-                  )}
-                </div>
-                <div className="relative rounded-lg bg-surface-variant/60 border border-outline-variant/40 flex items-center focus-within:border-primary-fixed focus-within:ring-1 focus-within:ring-primary-fixed transition-all overflow-hidden">
-                  <span className="pl-3 text-on-surface-variant shrink-0">
-                    <Clock className="w-4 h-4" />
-                  </span>
-                  <input
-                    type="time"
-                    required
-                    value={timeEnd}
-                    onChange={(e) => setTimeEnd(e.target.value)}
-                    className="w-full bg-transparent text-on-surface font-sans text-sm p-3 outline-none border-none focus:ring-0 appearance-none inline-block"
-                  />
-                </div>
-              </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
+              Start Time
+            </label>
+            <div className="relative rounded-lg bg-surface-variant/60 border border-outline-variant/40 flex items-center focus-within:border-primary-fixed focus-within:ring-1 focus-within:ring-primary-fixed transition-all overflow-hidden">
+              <span className="pl-3 text-on-surface-variant shrink-0">
+                <Clock className="w-4 h-4" />
+              </span>
+              <input
+                type="time"
+                required
+                value={timeStart}
+                onChange={(e) => setTimeStart(e.target.value)}
+                className="w-full bg-transparent text-on-surface font-sans text-sm p-3 outline-none border-none focus:ring-0 appearance-none inline-block"
+              />
             </div>
-          );
-        })()}
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
+                End Time
+              </label>
+              {duration && (
+                <span className="text-[10px] font-mono text-primary-fixed">{duration}</span>
+              )}
+            </div>
+            <div className="relative rounded-lg bg-surface-variant/60 border border-outline-variant/40 flex items-center focus-within:border-primary-fixed focus-within:ring-1 focus-within:ring-primary-fixed transition-all overflow-hidden">
+              <span className="pl-3 text-on-surface-variant shrink-0">
+                <Clock className="w-4 h-4" />
+              </span>
+              <input
+                type="time"
+                required
+                value={timeEnd}
+                onChange={(e) => setTimeEnd(e.target.value)}
+                className="w-full bg-transparent text-on-surface font-sans text-sm p-3 outline-none border-none focus:ring-0 appearance-none inline-block"
+              />
+            </div>
+          </div>
+        </div>
 
         {/* Venue Information Field */}
         <div className="space-y-1.5">
@@ -332,22 +333,23 @@ export default function HostScreen({
           <div className="grid grid-cols-4 gap-2">
             {([
               { value: 'beginner', label: 'Beginner', icon: <Smile className="w-5 h-5 mb-1" /> },
-              { value: 'intermediate', label: 'Inter', icon: <Dumbbell className="w-5 h-5 mb-1" /> },
+              { value: 'intermediate', label: 'Intermediate', icon: <Dumbbell className="w-5 h-5 mb-1" /> },
               { value: 'advanced', label: 'Advanced', icon: <Zap className="w-5 h-5 mb-1" /> },
               { value: 'pro', label: 'Pro', icon: <Flame className="w-5 h-5 mb-1" /> },
             ] as { value: SkillLevel; label: string; icon: React.ReactNode }[]).map(({ value, label, icon }) => (
               <button
                 key={value}
                 type="button"
+                aria-pressed={skillLevel === value}
                 onClick={() => setSkillLevel(value)}
-                className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all cursor-pointer ${
+                className={`flex flex-col items-center justify-center p-2 rounded-lg border transition-all cursor-pointer ${
                   skillLevel === value
                     ? 'bg-primary-fixed/10 border-primary-fixed text-primary-fixed'
                     : 'border-outline-variant/50 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
                 }`}
               >
                 {icon}
-                <span className="font-sans font-black text-[10px] uppercase tracking-wider">{label}</span>
+                <span className="font-sans font-black text-[9px] uppercase tracking-tight leading-tight text-center">{label}</span>
               </button>
             ))}
           </div>
