@@ -48,9 +48,7 @@ export default function App() {
       setUser(currentUser);
       setIsAuthLoading(false);
       setAuthError(null);
-      if (currentUser && !currentUser.skillScore) {
-        setShowAssessment(true);
-      }
+      setShowAssessment(!!currentUser && currentUser.skillScore == null);
     }, (error) => {
       setUser(null);
       setIsAuthLoading(false);
