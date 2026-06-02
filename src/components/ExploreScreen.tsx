@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { MatchSession, SkillLevel, GenderPreference } from '../types';
-import { MapPin, Plus, ListFilter, CalendarDays, List, Map } from 'lucide-react';
-import { motion } from 'motion/react';
+import { MapPin, Plus, CalendarDays, List, Map, SlidersHorizontal, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import SessionMapView from './SessionMapView';
 
 interface ExploreScreenProps {
@@ -24,6 +24,9 @@ export default function ExploreScreen({
   const [selectedSkill, setSelectedSkill] = useState<'all' | SkillLevel>('all');
   const [selectedGender, setSelectedGender] = useState<'all' | GenderPreference>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const activeFilterCount = (selectedSkill !== 'all' ? 1 : 0) + (selectedGender !== 'all' ? 1 : 0);
 
   // Handle filtering
   const filteredSessions = useMemo(() => {
@@ -58,101 +61,166 @@ export default function ExploreScreen({
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Search and Quick Filters bar */}
-      <div className="flex flex-col gap-3">
-        {/* Search input + list/map toggle */}
-        <div className="flex gap-2 items-center">
-          <div className="relative flex-1">
-            <input
-              type="text"
-              placeholder="Search venue, club, or host..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-surface-container-high border border-outline-variant/30 text-on-surface text-sm rounded-xl py-3 pl-4 pr-10 outline-none focus:ring-1 focus:ring-primary-fixed/80 placeholder-on-surface-variant/50 transition-all font-sans"
-            />
-            <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60">
-              <ListFilter className="w-4 h-4" />
+      {/* Search bar row */}
+      <div className="flex gap-2 items-center">
+        <input
+          type="text"
+          placeholder="Search venue, club, or host..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="flex-1 min-w-0 bg-surface-container-high border border-outline-variant/30 text-on-surface text-sm rounded-xl py-3 px-4 outline-none focus:ring-1 focus:ring-primary-fixed/80 placeholder-on-surface-variant/50 transition-all font-sans"
+        />
+
+        {/* Filter button */}
+        <button
+          onClick={() => setIsFilterOpen(true)}
+          aria-label="Open filters"
+          className={`relative p-2.5 rounded-xl border transition-colors cursor-pointer shrink-0 ${
+            activeFilterCount > 0
+              ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+              : 'border-outline-variant/40 bg-surface-container text-on-surface-variant hover:bg-surface-bright'
+          }`}
+        >
+          <SlidersHorizontal className="w-4 h-4" />
+          {activeFilterCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-primary-fixed text-on-primary-fixed text-[9px] font-black flex items-center justify-center">
+              {activeFilterCount}
             </span>
-          </div>
+          )}
+        </button>
 
-          {/* List / Map toggle */}
-          <div className="flex rounded-xl border border-outline-variant/40 overflow-hidden shrink-0">
-            <button
-              onClick={() => onViewModeChange('list')}
-              aria-pressed={viewMode === 'list'}
-              className={`p-2.5 transition-colors cursor-pointer ${
-                viewMode === 'list'
-                  ? 'bg-primary-fixed text-on-primary-fixed'
-                  : 'bg-surface-container text-on-surface-variant hover:bg-surface-bright'
-              }`}
-            >
-              <List className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => onViewModeChange('map')}
-              aria-pressed={viewMode === 'map'}
-              className={`p-2.5 transition-colors cursor-pointer ${
-                viewMode === 'map'
-                  ? 'bg-primary-fixed text-on-primary-fixed'
-                  : 'bg-surface-container text-on-surface-variant hover:bg-surface-bright'
-              }`}
-            >
-              <Map className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Skill Level Filter Pills */}
-        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
-          {([
-            { value: 'all', label: 'All Levels' },
-            { value: 'beginner', label: 'Beginner' },
-            { value: 'intermediate', label: 'Intermediate' },
-            { value: 'advanced', label: 'Advanced' },
-            { value: 'pro', label: 'Pro' }
-          ] as const).map((filter) => {
-            const isActive = selectedSkill === filter.value;
-            return (
-              <button
-                key={filter.value}
-                onClick={() => setSelectedSkill(filter.value)}
-                className={`whitespace-nowrap px-4 py-2 rounded-full border text-xs font-bold tracking-wider uppercase transition-all duration-150 cursor-pointer ${
-                  isActive
-                    ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
-                    : 'border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary-fixed/50 hover:text-primary-fixed'
-                }`}
-              >
-                {filter.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Gender Filter Pills */}
-        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
-          {([
-            { value: 'all', label: 'Any Gender' },
-            { value: 'male', label: 'Male Only' },
-            { value: 'female', label: 'Female Only' },
-            { value: 'open', label: 'Open' }
-          ] as const).map((filter) => {
-            const isActive = selectedGender === filter.value;
-            return (
-              <button
-                key={filter.value}
-                onClick={() => setSelectedGender(filter.value)}
-                className={`whitespace-nowrap px-4 py-2 rounded-full border text-xs font-bold tracking-wider uppercase transition-all duration-150 cursor-pointer ${
-                  isActive
-                    ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
-                    : 'border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary-fixed/50 hover:text-primary-fixed'
-                }`}
-              >
-                {filter.label}
-              </button>
-            );
-          })}
+        {/* List / Map toggle */}
+        <div className="flex rounded-xl border border-outline-variant/40 overflow-hidden shrink-0">
+          <button
+            onClick={() => onViewModeChange('list')}
+            aria-pressed={viewMode === 'list'}
+            className={`p-2.5 transition-colors cursor-pointer ${
+              viewMode === 'list'
+                ? 'bg-primary-fixed text-on-primary-fixed'
+                : 'bg-surface-container text-on-surface-variant hover:bg-surface-bright'
+            }`}
+          >
+            <List className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onViewModeChange('map')}
+            aria-pressed={viewMode === 'map'}
+            className={`p-2.5 transition-colors cursor-pointer ${
+              viewMode === 'map'
+                ? 'bg-primary-fixed text-on-primary-fixed'
+                : 'bg-surface-container text-on-surface-variant hover:bg-surface-bright'
+            }`}
+          >
+            <Map className="w-4 h-4" />
+          </button>
         </div>
       </div>
+
+      {/* Filter bottom sheet */}
+      <AnimatePresence>
+        {isFilterOpen && (
+          <>
+            <motion.div
+              key="backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setIsFilterOpen(false)}
+              className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm"
+            />
+            <motion.div
+              key="sheet"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+              className="fixed bottom-0 left-0 right-0 z-50 bg-surface-container-high rounded-t-2xl px-5 pt-5 pb-10 max-w-3xl mx-auto"
+            >
+              {/* Handle bar */}
+              <div className="w-10 h-1 rounded-full bg-outline-variant/50 mx-auto mb-5" />
+
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-sans font-black text-lg text-on-surface">Filter Sessions</h3>
+                <button
+                  onClick={() => setIsFilterOpen(false)}
+                  className="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-variant transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Skill Level */}
+              <div className="space-y-2.5 mb-6">
+                <p className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Skill Level</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { value: 'all', label: 'All Levels' },
+                    { value: 'beginner', label: 'Beginner' },
+                    { value: 'intermediate', label: 'Intermediate' },
+                    { value: 'advanced', label: 'Advanced' },
+                    { value: 'pro', label: 'Pro' },
+                  ] as const).map((f) => (
+                    <button
+                      key={f.value}
+                      onClick={() => setSelectedSkill(f.value)}
+                      className={`py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wide transition-all cursor-pointer ${
+                        selectedSkill === f.value
+                          ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+                          : 'border-outline-variant/40 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Gender */}
+              <div className="space-y-2.5 mb-8">
+                <p className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Gender</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    { value: 'all', label: 'Any Gender' },
+                    { value: 'male', label: 'Male Only' },
+                    { value: 'female', label: 'Female Only' },
+                    { value: 'open', label: 'Open to All' },
+                  ] as const).map((f) => (
+                    <button
+                      key={f.value}
+                      onClick={() => setSelectedGender(f.value)}
+                      className={`py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wide transition-all cursor-pointer ${
+                        selectedGender === f.value
+                          ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+                          : 'border-outline-variant/40 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setSelectedSkill('all'); setSelectedGender('all'); }}
+                  className="flex-1 py-3 rounded-full border border-outline-variant/50 text-on-surface-variant text-sm font-bold uppercase tracking-wider transition-all hover:bg-surface-variant cursor-pointer"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={() => setIsFilterOpen(false)}
+                  className="flex-1 py-3 rounded-full bg-primary-fixed text-on-primary-fixed text-sm font-extrabold uppercase tracking-wider transition-all hover:bg-primary-fixed-dim active:scale-95 cursor-pointer"
+                >
+                  Done
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Map View */}
       {viewMode === 'map' && (
