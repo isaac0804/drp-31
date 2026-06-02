@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { UserProfile, SkillLevel } from '../types';
-import { Trophy, User, Award } from 'lucide-react';
+import { Trophy, User, Award, RotateCcw } from 'lucide-react';
 
 type SportOption = 'Badminton' | 'Table Tennis' | 'Football' | 'Pickleball';
 
@@ -8,12 +8,14 @@ interface ProfileScreenProps {
   user: UserProfile;
   onUpdateProfile: (updated: Partial<UserProfile>) => void;
   matchesPlayedCount: number;
+  onRetakeAssessment: () => void;
 }
 
 export default function ProfileScreen({
   user,
   onUpdateProfile,
-  matchesPlayedCount
+  matchesPlayedCount,
+  onRetakeAssessment
 }: ProfileScreenProps) {
   const availableSports: SportOption[] = ['Badminton', 'Table Tennis', 'Football', 'Pickleball'];
   const [name, setName] = useState(user.name);
@@ -88,9 +90,16 @@ export default function ProfileScreen({
 
           <div>
             <h3 className="font-sans font-extrabold text-base text-on-surface">{name || 'Guest Athlete'}</h3>
-            <span className="inline-flex items-center px-2.5 py-0.5 mt-1 rounded text-[10px] font-bold tracking-widest bg-primary-fixed/10 text-primary-fixed uppercase font-mono border border-primary-fixed/20">
-              {skill}
-            </span>
+            <div className="flex items-center justify-center gap-2 mt-1 flex-wrap">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-bold tracking-widest bg-primary-fixed/10 text-primary-fixed uppercase font-mono border border-primary-fixed/20">
+                {skill}
+              </span>
+              {user.skillScore != null && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-bold tracking-widest bg-surface-container-highest text-on-surface-variant uppercase font-mono border border-outline-variant/20">
+                  {user.skillScore} / 10
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -226,7 +235,7 @@ export default function ProfileScreen({
 
           {/* Save Button - separate visual section */}
           <div className="bg-transparent">
-            <div className="pt-2">
+            <div className="pt-2 space-y-2">
               <button
                 type="button"
                 onClick={() => handleSave()}
@@ -240,6 +249,14 @@ export default function ProfileScreen({
                   ✓ Character profile saved and synchronized!
                 </p>
               )}
+              <button
+                type="button"
+                onClick={onRetakeAssessment}
+                className="w-full border border-outline-variant/50 bg-surface-variant/30 hover:bg-surface-bright text-on-surface-variant font-sans font-extrabold text-xs uppercase tracking-widest py-3 px-6 rounded-full transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Retake Skill Assessment
+              </button>
             </div>
           </div>
         </div>

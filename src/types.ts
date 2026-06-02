@@ -20,6 +20,7 @@ export interface UserProfile {
   name: string;
   avatar: string;
   skillLevel: SkillLevel;
+  skillScore?: number; // 1–10 from assessment
   about?: string;
   sportsPlayed?: string[];
   matchPreferences?: string;
