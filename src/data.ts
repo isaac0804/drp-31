@@ -1,4 +1,6 @@
-import { MatchSession, UserProfile } from './types';
+import { MatchSession, UserProfile, Sport } from './types';
+
+export const SPORTS: Sport[] = ['Badminton', 'Table Tennis', 'Football', 'Pickleball'];
 
 export const AVATARS = [
   {
@@ -59,6 +61,7 @@ export const INITIAL_SESSIONS: MatchSession[] = [
     timeEnd: '20:00',
     venue: 'Ethos Sport – Imperial College',
     address: 'Princes Gardens, London SW7 2AZ',
+    sport: 'Badminton',
     location: { lat: 51.4988, lng: -0.1765, name: 'Ethos Sport – Imperial College', address: 'Princes Gardens, London SW7 2AZ' },
     skillLevel: 'intermediate',
     matchType: 'doubles',
@@ -82,6 +85,7 @@ export const INITIAL_SESSIONS: MatchSession[] = [
     timeEnd: '22:30',
     venue: 'Queen Mother Sports Centre',
     address: '223 Vauxhall Bridge Rd, London SW1V 1EL',
+    sport: 'Badminton',
     location: { lat: 51.4931, lng: -0.1412, name: 'Queen Mother Sports Centre', address: '223 Vauxhall Bridge Rd, London SW1V 1EL' },
     skillLevel: 'beginner',
     matchType: 'singles',
@@ -104,6 +108,7 @@ export const INITIAL_SESSIONS: MatchSession[] = [
     timeEnd: '21:00',
     venue: 'Westway Sports & Fitness Centre',
     address: '1 Crowthorne Rd, London W10 6RP',
+    sport: 'Badminton',
     location: { lat: 51.5180, lng: -0.2183, name: 'Westway Sports & Fitness Centre', address: '1 Crowthorne Rd, London W10 6RP' },
     skillLevel: 'pro',
     matchType: 'doubles',
@@ -129,6 +134,7 @@ export const INITIAL_SESSIONS: MatchSession[] = [
     timeEnd: '19:30',
     venue: 'Chelsea Sports Centre',
     address: 'Chelsea Manor St, London SW3 5PL',
+    sport: 'Badminton',
     location: { lat: 51.4837, lng: -0.1742, name: 'Chelsea Sports Centre', address: 'Chelsea Manor St, London SW3 5PL' },
     skillLevel: 'intermediate',
     matchType: 'doubles',

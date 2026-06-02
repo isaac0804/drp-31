@@ -1,6 +1,7 @@
 import React, { useState, useEffect, FormEvent } from 'react';
-import { MatchSession, SkillLevel, MatchType, GenderPreference, SessionLocation } from '../types';
-import { Calendar, Clock, MapPin, Smile, Dumbbell, Flame, Zap, Plus, Minus, Check, ArrowLeft, AlignLeft, User, Users } from 'lucide-react';
+import { MatchSession, SkillLevel, MatchType, GenderPreference, Sport, SessionLocation } from '../types';
+import { SPORTS } from '../data';
+import { Calendar, Clock, MapPin, Smile, Dumbbell, Flame, Zap, Plus, Minus, Check, ArrowLeft, AlignLeft, User, Users, Globe, Lock, Copy } from 'lucide-react';
 import LocationPicker from './LocationPicker';
 
 const getLocalDateString = (d = new Date()) =>
@@ -21,7 +22,7 @@ const getDefaultTimes = () => {
 };
 
 interface HostScreenProps {
-  onPostSession: (session: Omit<MatchSession, 'id' | 'host' | 'playersJoined'>) => void;
+  onPostSession: (session: Omit<MatchSession, 'host' | 'playersJoined'>) => void;
   onUpdateSession: (id: string, updatedFields: Partial<MatchSession>) => void;
   editingSession?: MatchSession | null;
   onCancelEdit?: () => void;
@@ -40,11 +41,33 @@ export default function HostScreen({
   const [timeStart, setTimeStart] = useState(() => getDefaultTimes().start);
   const [timeEnd, setTimeEnd] = useState(() => getDefaultTimes().end);
   const [location, setLocation] = useState<SessionLocation | null>(null);
+  const [sport, setSport] = useState<Sport>('Badminton');
   const [skillLevel, setSkillLevel] = useState<SkillLevel>('intermediate');
   const [matchType, setMatchType] = useState<MatchType>('doubles');
   const [gender, setGender] = useState<GenderPreference>('open');
   const [playersNeeded, setPlayersNeeded] = useState(4);
   const [hostNote, setHostNote] = useState('');
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [sessionId, setSessionId] = useState(() => `session_${Date.now()}`);
+  const [copied, setCopied] = useState(false);
+  const [showInvitePopup, setShowInvitePopup] = useState(false);
+
+  const inviteLink = `${window.location.origin}/?invite=${sessionId}`;
+
+  const copyInviteLink = () => {
+    navigator.clipboard.writeText(inviteLink).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    }).catch(() => {});
+  };
+
+  const handlePrivacyChange = (priv: boolean) => {
+    setIsPrivate(priv);
+    if (priv) {
+      setShowInvitePopup(true);
+      copyInviteLink();
+    }
+  };
 
   const today = getLocalDateString();
 
@@ -72,22 +95,28 @@ export default function HostScreen({
       setTimeStart(editingSession.timeStart);
       setTimeEnd(editingSession.timeEnd);
       setLocation(editingSession.location ?? { lat: 0, lng: 0, name: editingSession.venue, address: editingSession.address });
+      setSport(editingSession.sport);
       setSkillLevel(editingSession.skillLevel);
       setMatchType(editingSession.matchType);
       setGender(editingSession.gender ?? 'open');
       setPlayersNeeded(snapPlayersToMatchType(editingSession.matchType, editingSession.maxPlayers));
       setHostNote(editingSession.hostNote);
+      setIsPrivate(editingSession.isPrivate ?? false);
+      setSessionId(editingSession.id);
     } else {
       const { start, end } = getDefaultTimes();
       setDate(getLocalDateString());
       setTimeStart(start);
       setTimeEnd(end);
       setLocation(null);
+      setSport('Badminton');
       setSkillLevel('intermediate');
       setMatchType('doubles');
       setGender('open');
       setPlayersNeeded(4);
       setHostNote('');
+      setIsPrivate(false);
+      setSessionId(`session_${Date.now()}`);
     }
   }, [editingSession]);
 
@@ -134,17 +163,20 @@ export default function HostScreen({
     }
 
     const compiledData = {
+      id: sessionId,
       date,
       timeStart,
       timeEnd,
       venue: location.name,
       address: location.address,
+      sport,
       location,
       skillLevel,
       matchType,
       gender,
       maxPlayers: playersNeeded,
-      hostNote: hostNote || `Friendly ${skillLevel} ${matchType} game! Come join us.`
+      hostNote: hostNote || `Friendly ${skillLevel} ${matchType} game! Come join us.`,
+      isPrivate,
     };
 
     if (isEditing && editingSession) {
@@ -170,7 +202,7 @@ export default function HostScreen({
             </button>
           )}
           <h2 className="font-sans font-black text-2xl md:text-3xl text-white tracking-tight">
-            {isEditing ? 'Edit Badminton Match' : 'Host a Badminton Match'}
+            {isEditing ? 'Edit Session' : 'Host a Session'}
           </h2>
         </div>
         <p className="text-sm text-on-surface-variant/80">
@@ -185,6 +217,30 @@ export default function HostScreen({
         onSubmit={handleSubmit}
         className="space-y-6 bg-surface-container-high p-5 md:p-6 rounded-xl border border-outline-variant/15 shadow-xl"
       >
+        {/* Sport Picker */}
+        <div className="space-y-1.5">
+          <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
+            Sport
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {SPORTS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                aria-pressed={sport === s}
+                onClick={() => setSport(s)}
+                className={`py-3 px-3 rounded-lg text-xs font-bold uppercase border transition-all cursor-pointer text-left ${
+                  sport === s
+                    ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+                    : 'bg-surface-variant/30 text-on-surface-variant/80 border-outline-variant/40 hover:bg-surface-bright'
+                }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Row 1: Date + Match Type */}
         <div className="grid grid-cols-2 gap-4">
           {/* Date Picker */}
@@ -424,6 +480,56 @@ export default function HostScreen({
           </div>
         </div>
 
+        {/* Privacy Section */}
+        <div className="space-y-1.5">
+          <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
+            Privacy
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              aria-pressed={!isPrivate}
+              onClick={() => handlePrivacyChange(false)}
+              className={`flex flex-col items-center justify-center gap-1 py-4 rounded-lg border transition-all cursor-pointer ${
+                !isPrivate
+                  ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+                  : 'bg-surface-variant/30 text-on-surface-variant/80 border-outline-variant/40 hover:bg-surface-bright'
+              }`}
+            >
+              <Globe className="w-6 h-6" />
+              <span className="font-sans font-black text-[10px] uppercase tracking-wider">Public</span>
+            </button>
+            <button
+              type="button"
+              aria-pressed={isPrivate}
+              onClick={() => handlePrivacyChange(true)}
+              className={`flex flex-col items-center justify-center gap-1 py-4 rounded-lg border transition-all cursor-pointer ${
+                isPrivate
+                  ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+                  : 'bg-surface-variant/30 text-on-surface-variant/80 border-outline-variant/40 hover:bg-surface-bright'
+              }`}
+            >
+              <Lock className="w-6 h-6" />
+              <span className="font-sans font-black text-[10px] uppercase tracking-wider">Private</span>
+            </button>
+          </div>
+          <div className="flex items-center justify-between pt-0.5">
+            <p className="text-[11px] text-on-surface-variant/70">
+              {isPrivate ? 'Only players with the invite link can join.' : 'Visible to everyone.'}
+            </p>
+            {isPrivate && (
+              <button
+                type="button"
+                onClick={() => { setShowInvitePopup(true); copyInviteLink(); }}
+                className="flex items-center gap-1 text-[11px] font-bold text-primary-fixed hover:text-primary-fixed-dim transition-colors"
+              >
+                <Copy className="w-3 h-3" />
+                View link
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Action Button Area */}
         <div className="pt-2">
           <button
@@ -435,6 +541,57 @@ export default function HostScreen({
           </button>
         </div>
       </form>
+
+      {/* Invite link popup */}
+      {showInvitePopup && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-5"
+          onClick={() => setShowInvitePopup(false)}
+        >
+          <div
+            className="w-full max-w-sm bg-surface-container-high border border-outline-variant/30 rounded-2xl p-5 space-y-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="font-sans font-black text-sm uppercase tracking-widest text-on-surface">
+                Invite Link
+              </h3>
+              <span className={`text-[11px] font-bold transition-opacity ${copied ? 'text-primary-fixed opacity-100' : 'opacity-0'}`}>
+                Copied!
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-lg bg-surface-variant/50 border border-outline-variant/40 px-3 py-2.5">
+              <input
+                type="text"
+                readOnly
+                value={inviteLink}
+                onFocus={(e) => e.target.select()}
+                className="flex-1 bg-transparent text-on-surface-variant font-mono text-xs outline-none border-none select-all truncate"
+              />
+              <button
+                type="button"
+                onClick={copyInviteLink}
+                className="shrink-0 p-1.5 rounded-md bg-surface-bright hover:bg-surface-container text-on-surface transition-colors"
+              >
+                {copied ? <Check className="w-4 h-4 text-primary-fixed" /> : <Copy className="w-4 h-4" />}
+              </button>
+            </div>
+
+            <p className="text-[11px] text-on-surface-variant/70">
+              Share this link with players you want to invite. Only those with the link can join.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setShowInvitePopup(false)}
+              className="w-full py-3 rounded-full bg-primary-fixed text-on-primary-fixed font-sans font-extrabold text-xs uppercase tracking-widest transition-all active:scale-95"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
     </article>
   );
 }

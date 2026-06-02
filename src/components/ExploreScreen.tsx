@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { MatchSession, SkillLevel, GenderPreference } from '../types';
+import { MatchSession, SkillLevel, GenderPreference, Sport } from '../types';
+import { SPORTS } from '../data';
 import { MapPin, Plus, CalendarDays, List, Map, SlidersHorizontal, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import SessionMapView from './SessionMapView';
@@ -21,23 +22,26 @@ export default function ExploreScreen({
   viewMode,
   onViewModeChange,
 }: ExploreScreenProps) {
+  const [selectedSport, setSelectedSport] = useState<'all' | Sport>('all');
   const [selectedSkill, setSelectedSkill] = useState<'all' | SkillLevel>('all');
   const [selectedGender, setSelectedGender] = useState<'all' | GenderPreference>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const activeFilterCount = (selectedSkill !== 'all' ? 1 : 0) + (selectedGender !== 'all' ? 1 : 0);
+  const activeFilterCount = (selectedSport !== 'all' ? 1 : 0) + (selectedSkill !== 'all' ? 1 : 0) + (selectedGender !== 'all' ? 1 : 0);
 
   // Handle filtering
   const filteredSessions = useMemo(() => {
     return sessions.filter((s) => {
+      if (s.isPrivate) return false;
+      const matchesSport = selectedSport === 'all' || s.sport === selectedSport;
       const matchesSkill = selectedSkill === 'all' || s.skillLevel === selectedSkill;
       const matchesGender = selectedGender === 'all' || (s.gender ?? 'open') === selectedGender;
       const matchesSearch =
         s.venue.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.host.name.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesSkill && matchesGender && matchesSearch;
+      return matchesSport && matchesSkill && matchesGender && matchesSearch;
     });
   }, [sessions, selectedSkill, selectedGender, searchQuery]);
 
@@ -148,6 +152,25 @@ export default function ExploreScreen({
             </div>
 
             <div className="space-y-2.5 mb-6">
+              <p className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Sport</p>
+              <div className="grid grid-cols-2 gap-2">
+                {([{ value: 'all', label: 'All Sports' }, ...SPORTS.map((s) => ({ value: s, label: s }))] as { value: 'all' | Sport; label: string }[]).map((f) => (
+                  <button
+                    key={f.value}
+                    onClick={() => setSelectedSport(f.value)}
+                    className={`py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wide transition-all cursor-pointer ${
+                      selectedSport === f.value
+                        ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+                        : 'border-outline-variant/40 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2.5 mb-6">
               <p className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Skill Level</p>
               <div className="grid grid-cols-3 gap-2">
                 {([
@@ -198,7 +221,7 @@ export default function ExploreScreen({
 
             <div className="flex gap-3">
               <button
-                onClick={() => { setSelectedSkill('all'); setSelectedGender('all'); }}
+                onClick={() => { setSelectedSport('all'); setSelectedSkill('all'); setSelectedGender('all'); }}
                 className="flex-1 py-3 rounded-full border border-outline-variant/50 text-on-surface-variant text-sm font-bold uppercase tracking-wider transition-all hover:bg-surface-variant cursor-pointer"
               >
                 Reset
@@ -345,6 +368,9 @@ export default function ExploreScreen({
 
                 <div className="flex justify-between items-end mt-2 pt-2 border-t border-outline-variant/10">
                   <div className="flex gap-2 flex-wrap">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide bg-surface-container-highest text-on-surface-variant uppercase font-sans border border-outline-variant/20">
+                      {session.sport}
+                    </span>
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide border border-primary-fixed/30 bg-primary-fixed/5 text-primary-fixed uppercase font-sans">
                       {session.skillLevel}
                     </span>

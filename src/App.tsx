@@ -40,9 +40,26 @@ export default function App() {
   // Assessment — shown for new users who have no skillScore yet
   const [showAssessment, setShowAssessment] = useState(false);
 
+  // Invite link: ?invite=<sessionId> in the URL
+  const [pendingInviteId, setPendingInviteId] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('invite');
+  });
+
   useEffect(() => {
     return subscribeToSessions(setSessions, (err) => console.error('Sessions error:', err));
   }, []);
+
+  useEffect(() => {
+    if (!pendingInviteId || sessions.length === 0) return;
+    const session = sessions.find((s) => s.id === pendingInviteId);
+    if (session) {
+      setSelectedSessionId(pendingInviteId);
+      setActiveScreen('details');
+      setPendingInviteId(null);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [pendingInviteId, sessions]);
 
   useEffect(() => {
     return subscribeToCurrentUser((currentUser) => {
@@ -94,13 +111,12 @@ export default function App() {
     // onAuthStateChanged will fire with null and set user to null automatically
   };
 
-  const handlePostSession = (newSessionData: Omit<MatchSession, 'id' | 'host' | 'playersJoined'>) => {
+  const handlePostSession = (newSessionData: Omit<MatchSession, 'host' | 'playersJoined'>) => {
     if (!user) return;
 
     const hostPlayer: Player = { id: user.id, name: user.name, avatar: user.avatar };
     const finishedSession: MatchSession = {
       ...newSessionData,
-      id: `session_${Date.now()}`,
       host: hostPlayer,
       playersJoined: [hostPlayer],
     };
