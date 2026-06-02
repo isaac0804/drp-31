@@ -361,7 +361,7 @@ export default function HostScreen({
             className="w-full bg-primary-fixed hover:bg-primary-fixed-dim text-on-primary-fixed font-sans font-extrabold text-sm uppercase tracking-widest py-4 px-6 rounded-full shadow-[0_4px_16px_rgba(202,243,0,0.25)] transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
           >
             <Check className="w-5 h-5 stroke-[3px]" />
-            {isEditing ? 'Save Class Updates' : 'Post Session'}
+            {isEditing ? 'Save Updates' : 'Post Session'}
           </button>
         </div>
       </form>
