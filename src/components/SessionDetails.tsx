@@ -79,7 +79,7 @@ export default function SessionDetails({
   };
 
   return (
-    <article className="pb-36">
+    <article className="pb-52 md:pb-36">
       {/* Top sticky navigation bar */}
       <header className="fixed top-0 left-0 w-full z-45 bg-surface/90 backdrop-blur-xl border-b border-outline-variant/30">
         <div className="flex justify-between items-center px-4 h-16 w-full max-w-7xl mx-auto">
@@ -245,7 +245,7 @@ export default function SessionDetails({
       </div>
 
       {/* Stationary Bottom Fixed Action CTA */}
-      <div className="fixed bottom-0 left-0 w-full p-4 pb-safe bg-surface/90 backdrop-blur-md border-t border-outline-variant/20 z-40">
+      <div className="fixed bottom-20 md:bottom-0 left-0 w-full p-4 pb-safe bg-surface/90 backdrop-blur-md border-t border-outline-variant/20 z-40">
         <div className="w-full max-w-3xl mx-auto flex gap-3">
           {isHost ? (
             <div className="w-full text-center text-xs font-sans text-on-surface-variant py-4 bg-surface-container-highest rounded-full border border-outline-variant/20">

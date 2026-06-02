@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { MatchSession, SkillLevel, MatchType } from '../types';
-import { Calendar, Clock, MapPin, Smile, Dumbbell, Flame, Plus, Minus, Check, ArrowLeft, AlignLeft } from 'lucide-react';
+import { MatchSession, SkillLevel, MatchType, GenderPreference } from '../types';
+import { Calendar, Clock, MapPin, Smile, Dumbbell, Flame, Plus, Minus, Check, ArrowLeft, AlignLeft, User, Users } from 'lucide-react';
 
 interface HostScreenProps {
   onPostSession: (session: Omit<MatchSession, 'id' | 'host' | 'playersJoined'>) => void;
@@ -25,6 +25,7 @@ export default function HostScreen({
   const [address, setAddress] = useState('');
   const [skillLevel, setSkillLevel] = useState<SkillLevel>('intermediate');
   const [matchType, setMatchType] = useState<MatchType>('doubles');
+  const [gender, setGender] = useState<GenderPreference>('open');
   const [playersNeeded, setPlayersNeeded] = useState(3);
   const [hostNote, setHostNote] = useState('');
 
@@ -38,7 +39,8 @@ export default function HostScreen({
       setAddress(editingSession.address);
       setSkillLevel(editingSession.skillLevel);
       setMatchType(editingSession.matchType);
-      
+      setGender(editingSession.gender ?? 'open');
+
       // Calculate players needed based on the maximum slots
       setPlayersNeeded(editingSession.maxPlayers);
       setHostNote(editingSession.hostNote);
@@ -51,6 +53,7 @@ export default function HostScreen({
       setAddress('');
       setSkillLevel('intermediate');
       setMatchType('doubles');
+      setGender('open');
       setPlayersNeeded(3);
       setHostNote('');
     }
@@ -81,6 +84,7 @@ export default function HostScreen({
       address: address || 'Main Badminton Arena, Court 1',
       skillLevel,
       matchType,
+      gender,
       maxPlayers: playersNeeded,
       hostNote: hostNote || `Friendly ${skillLevel} ${matchType} game! Come join us.`
     };
@@ -300,6 +304,51 @@ export default function HostScreen({
             >
               <Flame className="w-5 h-5 mb-1" />
               <span className="font-sans font-black text-[10px] uppercase tracking-wider">Advanced</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Gender Preference Selection */}
+        <div className="space-y-1.5">
+          <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
+            Gender Preference
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => setGender('male')}
+              className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all cursor-pointer ${
+                gender === 'male'
+                  ? 'bg-primary-fixed/10 border-primary-fixed text-primary-fixed'
+                  : 'border-outline-variant/50 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
+              }`}
+            >
+              <User className="w-5 h-5 mb-1" />
+              <span className="font-sans font-black text-[10px] uppercase tracking-wider">Male Only</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setGender('female')}
+              className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all cursor-pointer ${
+                gender === 'female'
+                  ? 'bg-primary-fixed/10 border-primary-fixed text-primary-fixed'
+                  : 'border-outline-variant/50 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
+              }`}
+            >
+              <User className="w-5 h-5 mb-1" />
+              <span className="font-sans font-black text-[10px] uppercase tracking-wider">Female Only</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setGender('open')}
+              className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all cursor-pointer ${
+                gender === 'open'
+                  ? 'bg-primary-fixed/10 border-primary-fixed text-primary-fixed'
+                  : 'border-outline-variant/50 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
+              }`}
+            >
+              <Users className="w-5 h-5 mb-1" />
+              <span className="font-sans font-black text-[10px] uppercase tracking-wider">Open to All</span>
             </button>
           </div>
         </div>
