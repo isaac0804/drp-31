@@ -5,8 +5,8 @@ import { MatchSession } from '../types';
 
 const IMPERIAL_CENTER: [number, number] = [51.4988, -0.1749];
 
-function makeSessionIcon(isFull: boolean, isHosted: boolean) {
-  const color = isFull ? '#6B7280' : isHosted ? '#F59E0B' : '#CAF300';
+function makeSessionIcon(isFull: boolean) {
+  const color = isFull ? '#EF4444' : '#22C55E';
   return L.divIcon({
     html: `<div style="width:16px;height:16px;background:${color};border:2.5px solid rgba(255,255,255,0.85);border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.5);transform:translate(-50%,-50%)"></div>`,
     className: '',
@@ -97,9 +97,7 @@ export default function SessionMapView({ sessions, onSelectSession, currentUserI
     locatedSessions.forEach((session) => {
       const { lat, lng } = session.location!;
       const isFull = session.playersJoined.length >= session.maxPlayers;
-      const isHosted = session.host.id === currentUserId;
-
-      const marker = L.marker([lat, lng], { icon: makeSessionIcon(isFull, isHosted) }).addTo(layerGroup);
+      const marker = L.marker([lat, lng], { icon: makeSessionIcon(isFull) }).addTo(layerGroup);
 
       const popup = L.popup({
         className: 'session-map-popup',
@@ -131,9 +129,8 @@ export default function SessionMapView({ sessions, onSelectSession, currentUserI
   const legend = (
     <div className="flex flex-col gap-1.5 bg-surface-container-high/90 backdrop-blur-sm rounded-xl px-3 py-2.5 border border-outline-variant/20 shadow-lg">
       {[
-        { color: '#CAF300', label: 'Open' },
-        { color: '#F59E0B', label: 'My session' },
-        { color: '#6B7280', label: 'Full' },
+        { color: '#22C55E', label: 'Open' },
+        { color: '#EF4444', label: 'Full' },
       ].map(({ color, label }) => (
         <div key={label} className="flex items-center gap-2">
           <div
