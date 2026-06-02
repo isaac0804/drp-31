@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MatchSession, UserProfile, Player } from './types';
+import { MatchSession, UserProfile, Player, Sport } from './types';
 import { signInWithGoogle, signOut, subscribeToCurrentUser, updateCurrentUser, getUserProfileById } from './auth';
 import { DEFAULT_USER } from './data';
 import {
@@ -107,8 +107,12 @@ export default function App() {
       .catch((err) => console.error('Session cascade error:', err));
   };
 
-  const handleAssessmentComplete = async (score: number, skillLevel: UserProfile['skillLevel']) => {
-    await handleUpdateProfile({ skillScore: score, skillLevel });
+  const handleAssessmentComplete = async (sport: Sport, score: number, skillLevel: UserProfile['skillLevel']) => {
+    await handleUpdateProfile({
+      skillsBySport: { ...(user?.skillsBySport ?? {}), [sport]: { skillLevel, skillScore: score } },
+      skillLevel,
+      skillScore: score,
+    });
     setShowAssessment(false);
   };
 
@@ -226,7 +230,7 @@ export default function App() {
   }
 
   if (showAssessment) {
-    return <SkillAssessmentScreen onComplete={handleAssessmentComplete} />;
+    return <SkillAssessmentScreen onComplete={handleAssessmentComplete} onClose={() => setShowAssessment(false)} />;
   }
 
   return (

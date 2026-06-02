@@ -16,12 +16,18 @@ export interface Review {
 export type MatchType = 'singles' | 'doubles';
 export type GenderPreference = 'male' | 'female' | 'open';
 
+export interface SportSkill {
+  skillLevel: SkillLevel;
+  skillScore: number;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
   avatar: string;
   skillLevel: SkillLevel;
-  skillScore?: number; // 1–10 from assessment
+  skillScore?: number; // 1–10 from latest assessment
+  skillsBySport?: Partial<Record<Sport, SportSkill>>;
   about?: string;
   sportsPlayed?: string[];
   matchPreferences?: string;
