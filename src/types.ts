@@ -41,6 +41,13 @@ export interface Player {
   avatar: string;
 }
 
+export interface SessionLocation {
+  lat: number;
+  lng: number;
+  name: string;
+  address: string;
+}
+
 export interface MatchSession {
   id: string;
   date: string; // "YYYY-MM-DD" style
@@ -49,6 +56,7 @@ export interface MatchSession {
   venue: string;
   address: string;
   sport: Sport;
+  location?: SessionLocation;
   skillLevel: SkillLevel;
   matchType: MatchType;
   gender?: GenderPreference;
@@ -56,4 +64,5 @@ export interface MatchSession {
   host: Player;
   playersJoined: Player[];
   hostNote: string;
+  isPrivate?: boolean;
 }

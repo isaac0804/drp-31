@@ -1,30 +1,39 @@
 import { useState, useMemo } from 'react';
 import { MatchSession, SkillLevel, GenderPreference, Sport } from '../types';
 import { SPORTS } from '../data';
-import { MapPin, Plus, ListFilter, CalendarDays } from 'lucide-react';
-import { motion } from 'motion/react';
+import { MapPin, Plus, CalendarDays, List, Map, SlidersHorizontal, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import SessionMapView from './SessionMapView';
 
 interface ExploreScreenProps {
   sessions: MatchSession[];
   onSelectSession: (id: string) => void;
   onNavigateToHost: () => void;
   currentUserId: string;
+  viewMode: 'list' | 'map';
+  onViewModeChange: (mode: 'list' | 'map') => void;
 }
 
 export default function ExploreScreen({
   sessions,
   onSelectSession,
   onNavigateToHost,
-  currentUserId
+  currentUserId,
+  viewMode,
+  onViewModeChange,
 }: ExploreScreenProps) {
   const [selectedSport, setSelectedSport] = useState<'all' | Sport>('all');
   const [selectedSkill, setSelectedSkill] = useState<'all' | SkillLevel>('all');
   const [selectedGender, setSelectedGender] = useState<'all' | GenderPreference>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const activeFilterCount = (selectedSport !== 'all' ? 1 : 0) + (selectedSkill !== 'all' ? 1 : 0) + (selectedGender !== 'all' ? 1 : 0);
 
   // Handle filtering
   const filteredSessions = useMemo(() => {
     return sessions.filter((s) => {
+      if (s.isPrivate) return false;
       const matchesSport = selectedSport === 'all' || s.sport === selectedSport;
       const matchesSkill = selectedSkill === 'all' || s.skillLevel === selectedSkill;
       const matchesGender = selectedGender === 'all' || (s.gender ?? 'open') === selectedGender;
@@ -54,97 +63,226 @@ export default function ExploreScreen({
     return { month: 'Oct', day: '24' };
   };
 
+  // Shared controls bar (search + filter + toggle) — used in both layouts
+  const controlsBar = (
+    <div className="flex gap-2 items-center">
+      <input
+        type="text"
+        placeholder="Search venue, club, or host..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="flex-1 min-w-0 bg-surface-container-high/90 backdrop-blur-sm border border-outline-variant/30 text-on-surface text-sm rounded-xl py-3 px-4 outline-none focus:ring-1 focus:ring-primary-fixed/80 placeholder-on-surface-variant/50 transition-all font-sans"
+      />
+
+      <button
+        onClick={() => setIsFilterOpen(true)}
+        aria-label="Open filters"
+        className={`relative p-2.5 rounded-xl border transition-colors cursor-pointer shrink-0 backdrop-blur-sm ${
+          activeFilterCount > 0
+            ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+            : 'border-outline-variant/40 bg-surface-container/90 text-on-surface-variant hover:bg-surface-bright'
+        }`}
+      >
+        <SlidersHorizontal className="w-4 h-4" />
+        {activeFilterCount > 0 && (
+          <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-primary-fixed text-on-primary-fixed text-[9px] font-black flex items-center justify-center">
+            {activeFilterCount}
+          </span>
+        )}
+      </button>
+
+      <div className="flex rounded-xl border border-outline-variant/40 overflow-hidden shrink-0">
+        <button
+          onClick={() => onViewModeChange('list')}
+          aria-pressed={viewMode === 'list'}
+          className={`p-2.5 transition-colors cursor-pointer ${
+            viewMode === 'list'
+              ? 'bg-primary-fixed text-on-primary-fixed'
+              : 'bg-surface-container/90 text-on-surface-variant hover:bg-surface-bright backdrop-blur-sm'
+          }`}
+        >
+          <List className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => onViewModeChange('map')}
+          aria-pressed={viewMode === 'map'}
+          className={`p-2.5 transition-colors cursor-pointer ${
+            viewMode === 'map'
+              ? 'bg-primary-fixed text-on-primary-fixed'
+              : 'bg-surface-container/90 text-on-surface-variant hover:bg-surface-bright backdrop-blur-sm'
+          }`}
+        >
+          <Map className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+
+  // Shared filter bottom sheet
+  const filterSheet = (
+    <AnimatePresence>
+      {isFilterOpen && (
+        <>
+          <motion.div
+            key="backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setIsFilterOpen(false)}
+            className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm"
+          />
+          <motion.div
+            key="sheet"
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+            className="fixed bottom-0 left-0 right-0 z-50 bg-surface-container-high rounded-t-2xl px-5 pt-5 pb-10 max-w-3xl mx-auto"
+          >
+            <div className="w-10 h-1 rounded-full bg-outline-variant/50 mx-auto mb-5" />
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-sans font-black text-lg text-on-surface">Filter Sessions</h3>
+              <button
+                onClick={() => setIsFilterOpen(false)}
+                className="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-variant transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-2.5 mb-6">
+              <p className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Sport</p>
+              <div className="grid grid-cols-2 gap-2">
+                {([{ value: 'all', label: 'All Sports' }, ...SPORTS.map((s) => ({ value: s, label: s }))] as { value: 'all' | Sport; label: string }[]).map((f) => (
+                  <button
+                    key={f.value}
+                    onClick={() => setSelectedSport(f.value)}
+                    className={`py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wide transition-all cursor-pointer ${
+                      selectedSport === f.value
+                        ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+                        : 'border-outline-variant/40 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2.5 mb-6">
+              <p className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Skill Level</p>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { value: 'all', label: 'All Levels' },
+                  { value: 'beginner', label: 'Beginner' },
+                  { value: 'intermediate', label: 'Intermediate' },
+                  { value: 'advanced', label: 'Advanced' },
+                  { value: 'pro', label: 'Pro' },
+                ] as const).map((f) => (
+                  <button
+                    key={f.value}
+                    onClick={() => setSelectedSkill(f.value)}
+                    className={`py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wide transition-all cursor-pointer ${
+                      selectedSkill === f.value
+                        ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+                        : 'border-outline-variant/40 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2.5 mb-8">
+              <p className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Gender</p>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { value: 'all', label: 'Any Gender' },
+                  { value: 'male', label: 'Male Only' },
+                  { value: 'female', label: 'Female Only' },
+                  { value: 'open', label: 'Open to All' },
+                ] as const).map((f) => (
+                  <button
+                    key={f.value}
+                    onClick={() => setSelectedGender(f.value)}
+                    className={`py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wide transition-all cursor-pointer ${
+                      selectedGender === f.value
+                        ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+                        : 'border-outline-variant/40 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setSelectedSport('all'); setSelectedSkill('all'); setSelectedGender('all'); }}
+                className="flex-1 py-3 rounded-full border border-outline-variant/50 text-on-surface-variant text-sm font-bold uppercase tracking-wider transition-all hover:bg-surface-variant cursor-pointer"
+              >
+                Reset
+              </button>
+              <button
+                onClick={() => setIsFilterOpen(false)}
+                className="flex-1 py-3 rounded-full bg-primary-fixed text-on-primary-fixed text-sm font-extrabold uppercase tracking-wider transition-all hover:bg-primary-fixed-dim active:scale-95 cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+
+  // FAB — shared, always fixed
+  const fab = (
+    <button
+      onClick={onNavigateToHost}
+      aria-label="Host a Badminton Match"
+      className="fixed bottom-24 right-5 md:right-8 md:bottom-8 w-14 h-14 bg-primary-fixed text-on-primary-fixed rounded-full flex items-center justify-center shadow-[0_8px_20px_rgba(202,243,0,0.3)] hover:scale-105 active:scale-95 hover:rotate-90 transition-all duration-300 z-40 group cursor-pointer"
+    >
+      <Plus className="w-7 h-7 stroke-[3px]" />
+    </button>
+  );
+
+  // ── Full-screen map layout ───────────────────────────────────────────────
+  if (viewMode === 'map') {
+    return (
+      <>
+        {/* Map fills the entire viewport, sits under header + bottom nav */}
+        <div className="fixed inset-0 z-[10]">
+          <SessionMapView
+            sessions={filteredSessions}
+            onSelectSession={onSelectSession}
+            currentUserId={currentUserId}
+            fullScreen
+          />
+        </div>
+
+        {/* Controls bar floats just below the header */}
+        <div className="fixed top-20 inset-x-0 z-[30] px-4 pt-3 pointer-events-none">
+          <div className="max-w-3xl mx-auto pointer-events-auto">
+            {controlsBar}
+          </div>
+        </div>
+
+        {filterSheet}
+        {fab}
+      </>
+    );
+  }
+
+  // ── List layout ─────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-6">
-      {/* Search and Quick Filters bar */}
-      <div className="flex flex-col gap-3">
-        {/* Search input to easily find arenas */}
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search venue, club, or host..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-surface-container-high border border-outline-variant/30 text-on-surface text-sm rounded-xl py-3 pl-4 pr-10 outline-none focus:ring-1 focus:ring-primary-fixed/80 placeholder-on-surface-variant/50 transition-all font-sans"
-          />
-          <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60">
-            <ListFilter className="w-4 h-4" />
-          </span>
-        </div>
+      {controlsBar}
+      {filterSheet}
 
-        {/* Sport Filter Pills */}
-        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
-          {([{ value: 'all', label: 'All Sports' }, ...SPORTS.map((s) => ({ value: s, label: s }))] as { value: 'all' | Sport; label: string }[]).map((filter) => {
-            const isActive = selectedSport === filter.value;
-            return (
-              <button
-                key={filter.value}
-                onClick={() => setSelectedSport(filter.value)}
-                className={`whitespace-nowrap px-4 py-2 rounded-full border text-xs font-bold tracking-wider uppercase transition-all duration-150 cursor-pointer ${
-                  isActive
-                    ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
-                    : 'border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary-fixed/50 hover:text-primary-fixed'
-                }`}
-              >
-                {filter.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Skill Level Filter Pills */}
-        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
-          {([
-            { value: 'all', label: 'All Levels' },
-            { value: 'beginner', label: 'Beginner' },
-            { value: 'intermediate', label: 'Intermediate' },
-            { value: 'advanced', label: 'Advanced' },
-            { value: 'pro', label: 'Pro' }
-          ] as const).map((filter) => {
-            const isActive = selectedSkill === filter.value;
-            return (
-              <button
-                key={filter.value}
-                onClick={() => setSelectedSkill(filter.value)}
-                className={`whitespace-nowrap px-4 py-2 rounded-full border text-xs font-bold tracking-wider uppercase transition-all duration-150 cursor-pointer ${
-                  isActive
-                    ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
-                    : 'border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary-fixed/50 hover:text-primary-fixed'
-                }`}
-              >
-                {filter.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Gender Filter Pills */}
-        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
-          {([
-            { value: 'all', label: 'Any Gender' },
-            { value: 'male', label: 'Male Only' },
-            { value: 'female', label: 'Female Only' },
-            { value: 'open', label: 'Open' }
-          ] as const).map((filter) => {
-            const isActive = selectedGender === filter.value;
-            return (
-              <button
-                key={filter.value}
-                onClick={() => setSelectedGender(filter.value)}
-                className={`whitespace-nowrap px-4 py-2 rounded-full border text-xs font-bold tracking-wider uppercase transition-all duration-150 cursor-pointer ${
-                  isActive
-                    ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
-                    : 'border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary-fixed/50 hover:text-primary-fixed'
-                }`}
-              >
-                {filter.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Main List Feed */}
       <section className="flex flex-col gap-4">
         {filteredSessions.length === 0 ? (
           <div className="border-2 border-dashed border-outline-variant/20 rounded-2xl p-10 text-center flex flex-col items-center justify-center gap-3">
@@ -181,17 +319,14 @@ export default function ExploreScreen({
                   isFull ? 'opacity-70' : ''
                 }`}
               >
-                {/* Background active glow for user-owned sessions */}
                 {isHostedByMe && (
                   <div className="absolute top-0 right-0 bg-primary-fixed text-on-primary-fixed text-[9px] font-bold px-2 py-0.5 rounded-bl uppercase tracking-wider">
                     My Session
                   </div>
                 )}
 
-                {/* Top Row: Date/Time Badge & Host Badge */}
                 <div className="flex justify-between items-start">
                   <div className="flex gap-3 items-center">
-                    {/* Date Block */}
                     <div className="w-12 h-12 rounded-lg bg-surface-container-lowest flex flex-col items-center justify-center border border-outline-variant/20 shrink-0">
                       <span className="font-sans font-extrabold text-[10px] text-on-surface-variant uppercase tracking-wider">
                         {month}
@@ -200,8 +335,6 @@ export default function ExploreScreen({
                         {day}
                       </span>
                     </div>
-
-                    {/* Venue & Time Information */}
                     <div>
                       <h3
                         className={`font-sans font-bold text-base leading-snug text-on-surface group-hover:text-primary-fixed transition-colors ${
@@ -218,8 +351,6 @@ export default function ExploreScreen({
                       </p>
                     </div>
                   </div>
-
-                  {/* Host Avatar Badge with status ring */}
                   <div
                     className={`w-9 h-9 rounded-full overflow-hidden shrink-0 border-2 ${
                       isFull ? 'border-outline-variant/40' : 'border-primary-fixed group-hover:scale-105 transition-transform'
@@ -235,9 +366,7 @@ export default function ExploreScreen({
                   </div>
                 </div>
 
-                {/* Bottom Row: Badges, Skill Level and Spots Progress Bar */}
                 <div className="flex justify-between items-end mt-2 pt-2 border-t border-outline-variant/10">
-                  {/* Skill level, gameplay mode, and gender badges */}
                   <div className="flex gap-2 flex-wrap">
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide bg-surface-container-highest text-on-surface-variant uppercase font-sans border border-outline-variant/20">
                       {session.sport}
@@ -252,8 +381,6 @@ export default function ExploreScreen({
                       {session.gender === 'male' ? '♂ Male' : session.gender === 'female' ? '♀ Female' : '⚥ Open'}
                     </span>
                   </div>
-
-                  {/* Visual Stepper capacity display */}
                   <div className="text-right flex flex-col items-end gap-1.5 min-w-[90px]">
                     <span className="font-sans font-extrabold text-[11px] text-on-surface tracking-wide">
                       {isFull ? (
@@ -262,24 +389,17 @@ export default function ExploreScreen({
                         `${spotsFilled}/${maxPlayers} Players`
                       )}
                     </span>
-                    
-                    {/* Progress Indicator Dots matching original screen visual */}
                     <div className="flex gap-1">
-                      {Array.from({ length: maxPlayers }).map((_, stepIdx) => {
-                        const isFilled = stepIdx < spotsFilled;
-                        return (
-                          <div
-                            key={stepIdx}
-                            className={`w-6 h-1.5 rounded-full transition-colors ${
-                              isFilled
-                                ? isFull
-                                  ? 'bg-outline/50'
-                                  : 'bg-primary-fixed'
-                                : 'bg-surface-variant/90'
-                            }`}
-                          />
-                        );
-                      })}
+                      {Array.from({ length: maxPlayers }).map((_, stepIdx) => (
+                        <div
+                          key={stepIdx}
+                          className={`w-6 h-1.5 rounded-full transition-colors ${
+                            stepIdx < spotsFilled
+                              ? isFull ? 'bg-outline/50' : 'bg-primary-fixed'
+                              : 'bg-surface-variant/90'
+                          }`}
+                        />
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -289,14 +409,7 @@ export default function ExploreScreen({
         )}
       </section>
 
-      {/* Floating Action Button for speedy creation flow */}
-      <button
-        onClick={onNavigateToHost}
-        aria-label="Host a Badminton Match"
-        className="fixed bottom-24 right-5 md:right-8 md:bottom-8 w-14 h-14 bg-primary-fixed text-on-primary-fixed rounded-full flex items-center justify-center shadow-[0_8px_20px_rgba(202,243,0,0.3)] hover:scale-105 active:scale-95 hover:rotate-90 transition-all duration-300 z-40 group cursor-pointer"
-      >
-        <Plus className="w-7 h-7 stroke-[3px]" />
-      </button>
+      {fab}
     </div>
   );
 }
