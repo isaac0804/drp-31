@@ -1,5 +1,5 @@
 import { MatchSession, Player } from '../types';
-import { ArrowLeft, Calendar, MapPin, Plus, Trophy, Pencil, CalendarPlus } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Plus, Trophy, Pencil, CalendarPlus, Navigation } from 'lucide-react';
 
 interface SessionDetailsProps {
   session: MatchSession;
@@ -79,6 +79,15 @@ export default function SessionDetails({
       location: s.address,
     });
     return `https://calendar.google.com/calendar/render?${params.toString()}`;
+  };
+
+  // Open the venue in Google Maps. Prefer precise coordinates when the session
+  // has a pinned location, otherwise fall back to a text search of the address.
+  const buildMapsUrl = (s: MatchSession) => {
+    const query = s.location
+      ? `${s.location.lat},${s.location.lng}`
+      : `${s.venue} ${s.address}`;
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
   };
 
   // Custom date presenter matching design:
@@ -179,6 +188,15 @@ export default function SessionDetails({
               <div className="font-sans text-xs text-on-surface-variant mt-0.5">
                 {session.address}
               </div>
+              <a
+                href={buildMapsUrl(session)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 mt-1.5 text-xs font-bold text-on-surface-variant hover:text-primary-fixed transition-colors group"
+              >
+                <Navigation className="w-3.5 h-3.5 shrink-0 group-hover:text-primary-fixed" />
+                Open in Google Maps
+              </a>
             </div>
             {isHost && (
               <button

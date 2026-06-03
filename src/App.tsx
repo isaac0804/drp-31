@@ -13,6 +13,7 @@ import {
   updateSessionsForPlayer,
 } from './sessions';
 import { getReviewsForPlayer } from './reviews';
+import { seedDummySessions, unseedDummySessions } from './devSeed';
 
 // Component imports
 import Header from './components/Header';
@@ -85,6 +86,22 @@ export default function App() {
       setAuthError(error.message);
     });
   }, []);
+
+  // Dev-only: expose dummy-session seeders on the console, bound to the live
+  // signed-in account so the sessions are hosted by the real user.
+  // Run `seedDummySessions()` / `unseedDummySessions()` from the browser console.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const w = window as unknown as Record<string, unknown>;
+    if (user) {
+      const host: Player = { id: user.id, name: user.name, avatar: user.avatar };
+      w.seedDummySessions = () => seedDummySessions(host);
+      w.unseedDummySessions = () => unseedDummySessions();
+    } else {
+      delete w.seedDummySessions;
+      delete w.unseedDummySessions;
+    }
+  }, [user]);
 
   const handleSignIn = async () => {
     setIsAuthLoading(true);
