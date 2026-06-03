@@ -1,6 +1,5 @@
 import { MatchSession, Player } from '../types';
-import { ArrowLeft, Calendar, MapPin, Smile, Dumbbell, Flame, Check, Plus, Trophy } from 'lucide-react';
-import { motion } from 'motion/react';
+import { ArrowLeft, Calendar, MapPin, Plus, Trophy, Pencil, CalendarPlus } from 'lucide-react';
 
 interface SessionDetailsProps {
   session: MatchSession;
@@ -9,6 +8,7 @@ interface SessionDetailsProps {
   onJoin: (sessionId: string) => void;
   onLeave: (sessionId: string) => void;
   onViewPlayerProfile: (player: Player) => void;
+  onEdit?: (session: MatchSession) => void;
 }
 
 export default function SessionDetails({
@@ -17,7 +17,8 @@ export default function SessionDetails({
   onBack,
   onJoin,
   onLeave,
-  onViewPlayerProfile
+  onViewPlayerProfile,
+  onEdit,
 }: SessionDetailsProps) {
   const isJoined = session.playersJoined.some((p) => p.id === currentUser.id);
   const isHost = session.host.id === currentUser.id;
@@ -67,6 +68,18 @@ export default function SessionDetails({
   };
 
   const formattedDuration = calculateDuration(session.timeStart, session.timeEnd);
+
+  const buildGCalUrl = (s: MatchSession) => {
+    const fmt = (d: string, t: string) => d.replace(/-/g, '') + 'T' + t.replace(':', '') + '00';
+    const params = new URLSearchParams({
+      action: 'TEMPLATE',
+      text: `${s.sport} ${s.matchType} · ${s.skillLevel}`,
+      dates: `${fmt(s.date, s.timeStart)}/${fmt(s.date, s.timeEnd)}`,
+      details: `Hosted by ${s.host.name}\n\n${s.hostNote}`,
+      location: s.address,
+    });
+    return `https://calendar.google.com/calendar/render?${params.toString()}`;
+  };
 
   // Custom date presenter matching design:
   const getVerboseDate = (dateStr: string) => {
@@ -133,7 +146,7 @@ export default function SessionDetails({
             <div className="w-10 h-10 rounded-lg bg-surface flex items-center justify-center text-primary-fixed shrink-0">
               <Calendar className="w-5 h-5" />
             </div>
-            <div>
+            <div className="flex-1">
               <div className="font-sans font-bold text-sm md:text-base text-on-surface">
                 {getVerboseDate(session.date)}
               </div>
@@ -141,6 +154,15 @@ export default function SessionDetails({
                 {session.timeStart} - {session.timeEnd} ({formattedDuration})
               </div>
             </div>
+            {isHost && (
+              <button
+                onClick={() => onEdit?.(session)}
+                aria-label="Edit session"
+                className="p-2 rounded-lg text-on-surface-variant hover:text-primary-fixed hover:bg-primary-fixed/10 transition-colors cursor-pointer shrink-0"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           <div className="h-px bg-outline-variant/20 w-full" />
@@ -150,7 +172,7 @@ export default function SessionDetails({
             <div className="w-10 h-10 rounded-lg bg-surface flex items-center justify-center text-primary-fixed shrink-0 animate-pulse">
               <MapPin className="w-5 h-5" />
             </div>
-            <div>
+            <div className="flex-1">
               <div className="font-sans font-bold text-sm md:text-base text-on-surface">
                 {session.venue}
               </div>
@@ -158,7 +180,28 @@ export default function SessionDetails({
                 {session.address}
               </div>
             </div>
+            {isHost && (
+              <button
+                onClick={() => onEdit?.(session)}
+                aria-label="Edit location"
+                className="p-2 rounded-lg text-on-surface-variant hover:text-primary-fixed hover:bg-primary-fixed/10 transition-colors cursor-pointer shrink-0"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+            )}
           </div>
+
+          <div className="h-px bg-outline-variant/20 w-full" />
+
+          <a
+            href={buildGCalUrl(session)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-xs font-bold text-on-surface-variant hover:text-primary-fixed transition-colors group"
+          >
+            <CalendarPlus className="w-4 h-4 shrink-0 group-hover:text-primary-fixed" />
+            Add to Google Calendar
+          </a>
         </div>
 
         {/* Players Slot Section */}

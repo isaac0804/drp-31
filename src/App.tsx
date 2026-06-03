@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MatchSession, UserProfile, Player, Sport } from './types';
+import { MatchSession, Review, UserProfile, Player, Sport } from './types';
 import { signInWithGoogle, signOut, subscribeToCurrentUser, updateCurrentUser, getUserProfileById } from './auth';
 import { DEFAULT_USER } from './data';
 import {
@@ -12,6 +12,7 @@ import {
   leaveSession,
   updateSessionsForPlayer,
 } from './sessions';
+import { getReviewsForPlayer } from './reviews';
 
 // Component imports
 import Header from './components/Header';
@@ -37,6 +38,8 @@ export default function App() {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [selectedPlayerProfile, setSelectedPlayerProfile] = useState<UserProfile | null>(null);
   const [selectedPlayerMatchesCount, setSelectedPlayerMatchesCount] = useState(0);
+  const [selectedPlayerReviews, setSelectedPlayerReviews] = useState<Review[]>([]);
+  const [myReviews, setMyReviews] = useState<Review[]>([]);
   const [editingSession, setEditingSession] = useState<MatchSession | null>(null);
   const [exploreViewMode, setExploreViewMode] = useState<'list' | 'map'>('list');
   
@@ -71,6 +74,11 @@ export default function App() {
       setIsAuthLoading(false);
       setAuthError(null);
       if (currentUser && currentUser.skillScore == null) setActiveScreen('assessment');
+      if (currentUser) {
+        getReviewsForPlayer(currentUser.id).then(setMyReviews).catch(console.error);
+      } else {
+        setMyReviews([]);
+      }
     }, (error) => {
       setUser(null);
       setIsAuthLoading(false);
@@ -140,7 +148,8 @@ export default function App() {
 
     updateSession(id, updatedFields).catch((err) => console.error('Update session error:', err));
     setEditingSession(null);
-    setActiveScreen('sessions');
+    setSelectedSessionId(id);
+    setActiveScreen('details');
   };
 
   const handleCancelSession = (id: string) => {
@@ -174,6 +183,7 @@ export default function App() {
       avatar: player.avatar,
     };
     setSelectedPlayerProfile(fallbackProfile);
+    setSelectedPlayerReviews([]);
     setSelectedPlayerMatchesCount(
       sessions.filter((session: MatchSession) =>
         session.host.id === player.id || session.playersJoined.some((joinedPlayer: Player) => joinedPlayer.id === player.id)
@@ -183,11 +193,16 @@ export default function App() {
 
     try {
       const storedProfile = await getUserProfileById(player.id);
-      if (storedProfile) {
-        setSelectedPlayerProfile(storedProfile);
-      }
+      if (storedProfile) setSelectedPlayerProfile(storedProfile);
     } catch (error) {
       console.error('Player profile lookup error:', error);
+    }
+
+    try {
+      const reviews = await getReviewsForPlayer(player.id);
+      setSelectedPlayerReviews(reviews);
+    } catch (error) {
+      console.error('Reviews fetch error:', error);
     }
   };
 
@@ -319,6 +334,7 @@ export default function App() {
                 onJoin={handleJoinSession}
                 onLeave={handleLeaveSession}
                 onViewPlayerProfile={handleViewPlayerProfile}
+                onEdit={handleEditTrigger}
               />
             )}
 
@@ -326,6 +342,7 @@ export default function App() {
               <PlayerProfileScreen
                 profile={selectedPlayerProfile}
                 matchesPlayedCount={selectedPlayerMatchesCount}
+                reviews={selectedPlayerReviews}
                 onBack={() => setActiveScreen('details')}
               />
             )}
@@ -336,6 +353,7 @@ export default function App() {
                 onUpdateProfile={handleUpdateProfile}
                 matchesPlayedCount={myParticipatedMatchesCount}
                 onRetakeAssessment={() => setActiveScreen('assessment')}
+                reviews={myReviews}
               />
             )}
 
@@ -343,6 +361,7 @@ export default function App() {
               <SkillAssessmentScreen
                 onComplete={handleAssessmentComplete}
                 onClose={() => setActiveScreen('explore')}
+
               />
             )}
           </motion.div>

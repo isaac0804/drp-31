@@ -1,9 +1,10 @@
-import { UserProfile } from '../types';
-import { ArrowLeft, Trophy } from 'lucide-react';
+import { Review, UserProfile } from '../types';
+import { ArrowLeft, MessageSquare, ThumbsUp, Trophy } from 'lucide-react';
 
 interface PlayerProfileScreenProps {
   profile: UserProfile;
   matchesPlayedCount: number;
+  reviews?: Review[];
   onBack: () => void;
 }
 
@@ -14,9 +15,17 @@ function renderEmpty(value?: string) {
 export default function PlayerProfileScreen({
   profile,
   matchesPlayedCount,
+  reviews = [],
   onBack
 }: PlayerProfileScreenProps) {
   const sportsPlayed = profile.sportsPlayed ?? [];
+
+  const playAgainYes = reviews.filter((r) => r.playAgain === 'yes').length;
+  const playAgainPct = reviews.length > 0 ? Math.round((playAgainYes / reviews.length) * 100) : null;
+  const accurateCount = reviews.filter((r) => r.skillAccuracy === 'accurate').length;
+  const tooHighCount = reviews.filter((r) => r.skillAccuracy === 'too-high').length;
+  const tooLowCount = reviews.filter((r) => r.skillAccuracy === 'too-low').length;
+  const feedbackItems = reviews.filter((r) => r.feedback && r.feedback.trim());
 
   return (
     <article className="space-y-6 pb-10">
@@ -134,6 +143,57 @@ export default function PlayerProfileScreen({
             <p className="mt-2 text-sm leading-relaxed text-on-surface-variant bg-surface-container-high/60 border border-outline-variant/60 rounded-lg p-3">
               {renderEmpty(profile.industry)}
             </p>
+          </section>
+
+          <section className="bg-surface-container-high rounded-xl p-4 border border-outline-variant/15">
+            <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider flex items-center gap-1.5">
+              <MessageSquare className="w-3.5 h-3.5" />
+              Peer Reviews
+              {reviews.length > 0 && (
+                <span className="ml-1 font-mono text-primary-fixed">({reviews.length})</span>
+              )}
+            </label>
+
+            {reviews.length === 0 ? (
+              <p className="mt-2 text-sm text-on-surface-variant bg-surface-container-high/60 border border-outline-variant/60 rounded-lg p-3">
+                No reviews yet.
+              </p>
+            ) : (
+              <div className="mt-3 space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-surface-container rounded-lg p-3 text-center border border-outline-variant/20">
+                    <div className="flex items-center justify-center gap-1 text-primary-fixed mb-1">
+                      <ThumbsUp className="w-3.5 h-3.5" />
+                      <span className="font-mono font-bold text-base">{playAgainPct}%</span>
+                    </div>
+                    <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">Would play again</p>
+                    <p className="text-[10px] text-on-surface-variant/60 mt-0.5">{playAgainYes}/{reviews.length} players</p>
+                  </div>
+                  <div className="bg-surface-container rounded-lg p-3 text-center border border-outline-variant/20">
+                    <div className="font-mono font-bold text-base text-primary-fixed mb-1">{accurateCount}/{reviews.length}</div>
+                    <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">Skill accurate</p>
+                    <div className="flex justify-center gap-1.5 mt-0.5">
+                      {tooHighCount > 0 && <span className="text-[9px] text-amber-400">{tooHighCount} too high</span>}
+                      {tooLowCount > 0 && <span className="text-[9px] text-sky-400">{tooLowCount} too low</span>}
+                    </div>
+                  </div>
+                </div>
+
+                {feedbackItems.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">Comments</p>
+                    {feedbackItems.map((r) => (
+                      <blockquote
+                        key={r.id}
+                        className="text-sm text-on-surface-variant bg-surface-container/60 border-l-2 border-primary-fixed/40 rounded-r-lg pl-3 pr-3 py-2 leading-relaxed"
+                      >
+                        {r.feedback}
+                      </blockquote>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </section>
         </div>
 

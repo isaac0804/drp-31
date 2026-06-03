@@ -1,7 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { MatchSession, Player } from '../types';
 import { getReviewedPlayerIds } from '../reviews';
-import { MapPin, Edit3, Trash2, Plus, Trophy, Users, LogOut, CheckCircle } from 'lucide-react';
+import { MapPin, Edit3, Trash2, Plus, Trophy, Users, LogOut, CheckCircle, CalendarPlus } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReviewTeamScreen from './ReviewTeamScreen';
 import ReviewPlayerScreen from './ReviewPlayerScreen';
@@ -21,6 +21,18 @@ function isUpcoming(dateStr: string): boolean {
   const now = new Date();
   const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   return dateStr >= todayLocal;
+}
+
+function buildGCalUrl(s: MatchSession): string {
+  const fmt = (d: string, t: string) => d.replace(/-/g, '') + 'T' + t.replace(':', '') + '00';
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: `${s.sport} ${s.matchType} · ${s.skillLevel}`,
+    dates: `${fmt(s.date, s.timeStart)}/${fmt(s.date, s.timeEnd)}`,
+    details: `Hosted by ${s.host.name}\n\n${s.hostNote}`,
+    location: s.address,
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
 function formatDate(dateStr: string): string {
@@ -322,6 +334,18 @@ function SessionCard({
             <span className="text-xs font-semibold text-on-surface">{session.timeStart} – {session.timeEnd}</span>
           </div>
         </div>
+
+        {isUpcoming(session.date) && (
+          <a
+            href={buildGCalUrl(session)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-[11px] font-bold text-on-surface-variant/60 hover:text-primary-fixed transition-colors group"
+          >
+            <CalendarPlus className="w-3.5 h-3.5 shrink-0" />
+            Add to Google Calendar
+          </a>
+        )}
 
         {actions}
       </div>
