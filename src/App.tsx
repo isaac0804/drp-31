@@ -150,7 +150,8 @@ export default function App() {
 
     updateSession(id, updatedFields).catch((err) => console.error('Update session error:', err));
     setEditingSession(null);
-    setActiveScreen('sessions');
+    setSelectedSessionId(id);
+    setActiveScreen('details');
   };
 
   const handleCancelSession = (id: string) => {
@@ -339,6 +340,7 @@ export default function App() {
                 onJoin={handleJoinSession}
                 onLeave={handleLeaveSession}
                 onViewPlayerProfile={handleViewPlayerProfile}
+                onEdit={handleEditTrigger}
               />
             )}
 
