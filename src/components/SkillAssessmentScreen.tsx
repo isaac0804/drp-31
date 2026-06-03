@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Target, RotateCcw, ChevronRight, Zap, Trophy, ArrowLeft, Home } from 'lucide-react';
+import { Target, RotateCcw, ChevronRight, Zap, Trophy, ArrowLeft } from 'lucide-react';
 import { SkillLevel, Sport } from '../types';
 
 interface Question {
@@ -385,7 +385,7 @@ export default function SkillAssessmentScreen({ onComplete, onClose }: SkillAsse
   };
 
   return (
-    <main className="min-h-screen bg-background text-on-background flex items-center justify-center px-5 py-10 antialiased">
+    <div className="w-full">
       <AnimatePresence mode="wait">
 
         {/* ── Sport Selection ── */}
@@ -396,23 +396,16 @@ export default function SkillAssessmentScreen({ onComplete, onClose }: SkillAsse
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.22 }}
-            className="w-full max-w-md"
+            className="w-full"
           >
             {/* Top nav */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center mb-6">
               <button
                 onClick={onClose}
                 className="flex items-center gap-1.5 text-on-surface-variant hover:text-on-surface text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back
-              </button>
-              <button
-                onClick={onClose}
-                className="flex items-center gap-1.5 text-on-surface-variant hover:text-on-surface text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
-              >
-                <Home className="w-4 h-4" />
-                Home
               </button>
             </div>
 
@@ -461,23 +454,16 @@ export default function SkillAssessmentScreen({ onComplete, onClose }: SkillAsse
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.22 }}
-            className="w-full max-w-md"
+            className="w-full"
           >
             {/* Top nav */}
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center mb-5">
               <button
                 onClick={handleBack}
                 className="flex items-center gap-1.5 text-on-surface-variant hover:text-on-surface text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back
-              </button>
-              <button
-                onClick={onClose}
-                className="flex items-center gap-1.5 text-on-surface-variant hover:text-on-surface text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
-              >
-                <Home className="w-4 h-4" />
-                Home
               </button>
             </div>
 
@@ -605,23 +591,16 @@ export default function SkillAssessmentScreen({ onComplete, onClose }: SkillAsse
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.96 }}
             transition={{ duration: 0.28 }}
-            className="w-full max-w-md"
+            className="w-full"
           >
             {/* Top nav */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center mb-6">
               <button
                 onClick={handleBack}
                 className="flex items-center gap-1.5 text-on-surface-variant hover:text-on-surface text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back
-              </button>
-              <button
-                onClick={onClose}
-                className="flex items-center gap-1.5 text-on-surface-variant hover:text-on-surface text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
-              >
-                <Home className="w-4 h-4" />
-                Home
               </button>
             </div>
 
@@ -722,6 +701,6 @@ export default function SkillAssessmentScreen({ onComplete, onClose }: SkillAsse
         )}
 
       </AnimatePresence>
-    </main>
+    </div>
   );
 }
