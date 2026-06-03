@@ -27,7 +27,7 @@ import PlayerProfileScreen from './components/PlayerProfileScreen';
 import AuthScreen from './components/AuthScreen';
 import SkillAssessmentScreen from './components/SkillAssessmentScreen';
 
-type ActiveScreen = 'explore' | 'host' | 'sessions' | 'details' | 'profile' | 'player-profile';
+type ActiveScreen = 'explore' | 'host' | 'sessions' | 'details' | 'profile' | 'player-profile' | 'assessment';
 
 export default function App() {
   const [sessions, setSessions] = useState<MatchSession[]>([]);
@@ -46,8 +46,6 @@ export default function App() {
   // Sidebar state
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Assessment — shown for new users who have no skillScore yet
-  const [showAssessment, setShowAssessment] = useState(false);
 
   // Invite link: ?invite=<sessionId> in the URL
   const [pendingInviteId, setPendingInviteId] = useState<string | null>(() => {
@@ -75,7 +73,7 @@ export default function App() {
       setUser(currentUser);
       setIsAuthLoading(false);
       setAuthError(null);
-      setShowAssessment(!!currentUser && currentUser.skillScore == null);
+      if (currentUser && currentUser.skillScore == null) setActiveScreen('assessment');
       if (currentUser) {
         getReviewsForPlayer(currentUser.id).then(setMyReviews).catch(console.error);
       } else {
@@ -121,7 +119,7 @@ export default function App() {
       skillLevel,
       skillScore: score,
     });
-    setShowAssessment(false);
+    setActiveScreen('explore');
   };
 
   const handleSignOut = async () => {
@@ -244,10 +242,6 @@ export default function App() {
     return <AuthScreen onSignIn={handleSignIn} error={authError} />;
   }
 
-  if (showAssessment) {
-    return <SkillAssessmentScreen onComplete={handleAssessmentComplete} onClose={() => setShowAssessment(false)} />;
-  }
-
   return (
     <div className="min-h-screen bg-background text-on-background flex flex-col relative antialiased pb-28 md:pb-6">
       {/* Universal header layout */}
@@ -274,7 +268,7 @@ export default function App() {
           setActiveScreen(screen);
         }}
         onSignOut={handleSignOut}
-        onRetakeAssessment={() => setShowAssessment(true)}
+        onRetakeAssessment={() => setActiveScreen('assessment')}
         matchesCount={matchesCount}
       />
 
@@ -358,8 +352,16 @@ export default function App() {
                 user={user}
                 onUpdateProfile={handleUpdateProfile}
                 matchesPlayedCount={myParticipatedMatchesCount}
-                onRetakeAssessment={() => setShowAssessment(true)}
+                onRetakeAssessment={() => setActiveScreen('assessment')}
                 reviews={myReviews}
+              />
+            )}
+
+            {activeScreen === 'assessment' && (
+              <SkillAssessmentScreen
+                onComplete={handleAssessmentComplete}
+                onClose={() => setActiveScreen('explore')}
+
               />
             )}
           </motion.div>
