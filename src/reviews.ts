@@ -30,6 +30,16 @@ export async function submitReview(
   await addDoc(collection(db, REVIEWS_COL), review);
 }
 
+export async function getReviewsForPlayer(playerId: string): Promise<Review[]> {
+  const q = query(
+    collection(db, REVIEWS_COL),
+    where('revieweeId', '==', playerId)
+  );
+  const snap = await getDocs(q);
+  const reviews = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Review, 'id'>) }));
+  return reviews.sort((a, b) => b.createdAt - a.createdAt);
+}
+
 export async function getReviewedPlayerIds(
   reviewerId: string,
   sessionId: string

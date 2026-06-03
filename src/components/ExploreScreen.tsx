@@ -30,24 +30,39 @@ export default function ExploreScreen({
 
   const activeFilterCount = (selectedSport !== 'all' ? 1 : 0) + (selectedSkill !== 'all' ? 1 : 0) + (selectedGender !== 'all' ? 1 : 0);
 
+  // Filter out past sessions
+  const isUpcoming = (s: MatchSession) => {
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    if (s.date > todayStr) return true;
+    if (s.date < todayStr) return false;
+    const [endH, endM] = s.timeEnd.split(':').map(Number);
+    return endH > today.getHours() || (endH === today.getHours() && endM > today.getMinutes());
+  };
+
   // Handle filtering
   const filteredSessions = useMemo(() => {
-    return sessions.filter((s) => {
-      if (s.isPrivate) return false;
-      const matchesSport = selectedSport === 'all' || s.sport === selectedSport;
-      const matchesSkill = selectedSkill === 'all' || s.skillLevel === selectedSkill;
-      const matchesGender = selectedGender === 'all' || (s.gender ?? 'open') === selectedGender;
-      const matchesSearch =
-        s.venue.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.host.name.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesSport && matchesSkill && matchesGender && matchesSearch;
-    });
-  }, [sessions, selectedSkill, selectedGender, searchQuery]);
+    return sessions
+      .filter((s) => {
+        if (s.isPrivate) return false;
+        if (!isUpcoming(s)) return false;
+        const matchesSport = selectedSport === 'all' || s.sport === selectedSport;
+        const matchesSkill = selectedSkill === 'all' || s.skillLevel === selectedSkill;
+        const matchesGender = selectedGender === 'all' || (s.gender ?? 'open') === selectedGender;
+        const matchesSearch =
+          s.venue.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          s.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          s.host.name.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesSport && matchesSkill && matchesGender && matchesSearch;
+      })
+      .sort((a, b) => {
+        const dateCmp = a.date.localeCompare(b.date);
+        return dateCmp !== 0 ? dateCmp : a.timeStart.localeCompare(b.timeStart);
+      });
+  }, [sessions, selectedSkill, selectedGender, searchQuery, selectedSport]);
 
   // Calendar formatter helper
   const getParsedDate = (dateStr: string) => {
-    // "YYYY-MM-DD" -> parse
     const parts = dateStr.split('-');
     if (parts.length === 3) {
       const year = parseInt(parts[0]);
@@ -55,12 +70,14 @@ export default function ExploreScreen({
       const day = parseInt(parts[2]);
       const date = new Date(year, monthIdx, day);
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       return {
         month: months[date.getMonth()] || 'Oct',
-        day: day.toString()
+        day: day.toString(),
+        weekDay: weekDays[date.getDay()],
       };
     }
-    return { month: 'Oct', day: '24' };
+    return { month: 'Oct', day: '24', weekDay: 'Mon' };
   };
 
   // Shared controls bar (search + filter + toggle) — used in both layouts
@@ -302,7 +319,7 @@ export default function ExploreScreen({
           </div>
         ) : (
           filteredSessions.map((session, index) => {
-            const { month, day } = getParsedDate(session.date);
+            const { month, day, weekDay } = getParsedDate(session.date);
             const spotsFilled = session.playersJoined.length;
             const maxPlayers = session.maxPlayers;
             const isFull = spotsFilled >= maxPlayers;
@@ -327,12 +344,15 @@ export default function ExploreScreen({
 
                 <div className="flex justify-between items-start">
                   <div className="flex gap-3 items-center">
-                    <div className="w-12 h-12 rounded-lg bg-surface-container-lowest flex flex-col items-center justify-center border border-outline-variant/20 shrink-0">
-                      <span className="font-sans font-extrabold text-[10px] text-on-surface-variant uppercase tracking-wider">
-                        {month}
+                    <div className="w-12 h-14 rounded-lg bg-surface-container-lowest flex flex-col items-center justify-center border border-outline-variant/20 shrink-0 gap-0.5">
+                      <span className="font-sans font-extrabold text-[10px] text-primary-fixed uppercase tracking-wider">
+                        {weekDay}
                       </span>
-                      <span className="font-mono font-black text-lg text-primary-fixed leading-none">
+                      <span className="font-mono font-black text-lg text-on-surface leading-none">
                         {day}
+                      </span>
+                      <span className="font-sans font-semibold text-[9px] text-on-surface-variant uppercase tracking-wider">
+                        {month}
                       </span>
                     </div>
                     <div>
