@@ -79,10 +79,22 @@ export default function SessionMapView({ sessions, onSelectSession, currentUserI
     layerGroupRef.current = layerGroup;
     mapRef.current = map;
 
-    // Give the browser one frame to size the container before Leaflet reads it
-    setTimeout(() => map.invalidateSize(), 0);
+    // Re-measure whenever the container's size changes. On a fresh page load
+    // Leaflet often reads the container before the layout has settled, which
+    // leaves tiles rendered in only a thin strip at the top. A ResizeObserver
+    // catches the final dimensions and a couple of rAF ticks cover the initial
+    // paint.
+    const invalidate = () => map.invalidateSize();
+    const resizeObserver = new ResizeObserver(invalidate);
+    resizeObserver.observe(mapContainerRef.current);
+    const raf1 = requestAnimationFrame(() => {
+      invalidate();
+      requestAnimationFrame(invalidate);
+    });
 
     return () => {
+      cancelAnimationFrame(raf1);
+      resizeObserver.disconnect();
       map.remove();
       mapRef.current = null;
       layerGroupRef.current = null;
