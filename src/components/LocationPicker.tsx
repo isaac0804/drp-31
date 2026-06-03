@@ -134,6 +134,10 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
     const isPreset = SPORT_CENTRES.some((c) => c.lat === value.lat && c.lng === value.lng);
     const marker = L.marker([value.lat, value.lng], { icon: isPreset ? selectedPresetIcon : customIcon }).addTo(map);
     selectedMarkerRef.current = marker;
+
+    // Keep the search input in sync with the chosen location, so pinpointing on
+    // the map or tapping a preset chip doesn't leave a stale search query behind.
+    setSearchQuery(value.name);
   }, [value]);
 
   const handleSearchChange = useCallback((q: string) => {

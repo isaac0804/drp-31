@@ -46,6 +46,12 @@ body {
   scrollbar-width: none; /* Firefox */
 }
 
+/* Lift the very dark CARTO dark_all tiles so streets/labels are readable.
+   Applied to the whole tile pane (not per-tile) to avoid visible seams. */
+.leaflet-tile-pane {
+  filter: brightness(1.55) contrast(0.92);
+}
+
 /* Strip Leaflet popup chrome so our custom dark HTML shows cleanly */
 .session-map-popup .leaflet-popup-content-wrapper {
   background: transparent !important;
