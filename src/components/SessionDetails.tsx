@@ -1,5 +1,5 @@
 import { MatchSession, Player } from '../types';
-import { ArrowLeft, Calendar, MapPin, Plus, Trophy, Pencil } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Plus, Trophy, Pencil, CalendarPlus } from 'lucide-react';
 
 interface SessionDetailsProps {
   session: MatchSession;
@@ -68,6 +68,18 @@ export default function SessionDetails({
   };
 
   const formattedDuration = calculateDuration(session.timeStart, session.timeEnd);
+
+  const buildGCalUrl = (s: MatchSession) => {
+    const fmt = (d: string, t: string) => d.replace(/-/g, '') + 'T' + t.replace(':', '') + '00';
+    const params = new URLSearchParams({
+      action: 'TEMPLATE',
+      text: `${s.sport} ${s.matchType} · ${s.skillLevel}`,
+      dates: `${fmt(s.date, s.timeStart)}/${fmt(s.date, s.timeEnd)}`,
+      details: `Hosted by ${s.host.name}\n\n${s.hostNote}`,
+      location: s.address,
+    });
+    return `https://calendar.google.com/calendar/render?${params.toString()}`;
+  };
 
   // Custom date presenter matching design:
   const getVerboseDate = (dateStr: string) => {
@@ -178,6 +190,18 @@ export default function SessionDetails({
               </button>
             )}
           </div>
+
+          <div className="h-px bg-outline-variant/20 w-full" />
+
+          <a
+            href={buildGCalUrl(session)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-xs font-bold text-on-surface-variant hover:text-primary-fixed transition-colors group"
+          >
+            <CalendarPlus className="w-4 h-4 shrink-0 group-hover:text-primary-fixed" />
+            Add to Google Calendar
+          </a>
         </div>
 
         {/* Players Slot Section */}
