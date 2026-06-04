@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { MatchSession, SkillLevel, GenderPreference, Sport, SKILL_LEVELS, SKILL_LEVEL_LABELS } from '../types';
 import { SPORTS } from '../data';
+import SkillRangePicker from './SkillRangePicker';
 import { MapPin, Plus, CalendarDays, List, Map, SlidersHorizontal, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import SessionMapView from './SessionMapView';
@@ -23,12 +24,15 @@ export default function ExploreScreen({
   onViewModeChange,
 }: ExploreScreenProps) {
   const [selectedSport, setSelectedSport] = useState<'all' | Sport>('all');
-  const [selectedSkill, setSelectedSkill] = useState<'all' | SkillLevel>('all');
+  const [selectedSkillMin, setSelectedSkillMin] = useState<SkillLevel>(SKILL_LEVELS[0]);
+  const [selectedSkillMax, setSelectedSkillMax] = useState<SkillLevel>(SKILL_LEVELS[SKILL_LEVELS.length - 1]);
   const [selectedGender, setSelectedGender] = useState<'all' | GenderPreference>('all');
+  const [hideFull, setHideFull] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const activeFilterCount = (selectedSport !== 'all' ? 1 : 0) + (selectedSkill !== 'all' ? 1 : 0) + (selectedGender !== 'all' ? 1 : 0);
+  const skillRangeIsAll = selectedSkillMin === SKILL_LEVELS[0] && selectedSkillMax === SKILL_LEVELS[SKILL_LEVELS.length - 1];
+  const activeFilterCount = (selectedSport !== 'all' ? 1 : 0) + (!skillRangeIsAll ? 1 : 0) + (selectedGender !== 'all' ? 1 : 0) + (hideFull ? 1 : 0);
 
   // Filter out past sessions
   const isUpcoming = (s: MatchSession) => {
@@ -46,12 +50,14 @@ export default function ExploreScreen({
       .filter((s) => {
         if (s.isPrivate) return false;
         if (!isUpcoming(s)) return false;
+        if (hideFull && s.playersJoined.length >= s.maxPlayers) return false;
         const matchesSport = selectedSport === 'all' || s.sport === selectedSport;
-        const matchesSkill = selectedSkill === 'all' || (() => {
-          const minIdx = SKILL_LEVELS.indexOf(s.skillLevel);
-          const maxIdx = SKILL_LEVELS.indexOf(s.skillLevelMax ?? s.skillLevel);
-          const selIdx = SKILL_LEVELS.indexOf(selectedSkill as SkillLevel);
-          return selIdx >= minIdx && selIdx <= maxIdx;
+        const matchesSkill = skillRangeIsAll || (() => {
+          const sMinIdx = SKILL_LEVELS.indexOf(s.skillLevel);
+          const sMaxIdx = SKILL_LEVELS.indexOf(s.skillLevelMax ?? s.skillLevel);
+          const fMinIdx = SKILL_LEVELS.indexOf(selectedSkillMin);
+          const fMaxIdx = SKILL_LEVELS.indexOf(selectedSkillMax);
+          return sMinIdx <= fMaxIdx && sMaxIdx >= fMinIdx;
         })();
         const matchesGender = selectedGender === 'all' || (s.gender ?? 'open') === selectedGender;
         const matchesSearch =
@@ -64,7 +70,7 @@ export default function ExploreScreen({
         const dateCmp = a.date.localeCompare(b.date);
         return dateCmp !== 0 ? dateCmp : a.timeStart.localeCompare(b.timeStart);
       });
-  }, [sessions, selectedSkill, selectedGender, searchQuery, selectedSport]);
+  }, [sessions, selectedSkillMin, selectedSkillMax, selectedGender, searchQuery, selectedSport, hideFull, skillRangeIsAll]);
 
   // Calendar formatter helper
   const getParsedDate = (dateStr: string) => {
@@ -173,7 +179,7 @@ export default function ExploreScreen({
               </button>
             </div>
 
-            <div className="space-y-2.5 mb-6">
+            <div className="space-y-2.5 mb-5">
               <p className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Sport</p>
               <div className="grid grid-cols-2 gap-2">
                 {([{ value: 'all', label: 'All Sports' }, ...SPORTS.map((s) => ({ value: s, label: s }))] as { value: 'all' | Sport; label: string }[]).map((f) => (
@@ -192,33 +198,29 @@ export default function ExploreScreen({
               </div>
             </div>
 
-            <div className="space-y-2.5 mb-6">
-              <p className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Skill Level</p>
-              <div className="grid grid-cols-3 gap-2">
-                {([{ value: 'all' as const, label: 'All Levels' }, ...SKILL_LEVELS.map((l) => ({ value: l, label: SKILL_LEVEL_LABELS[l] }))]).map((f) => (
-                  <button
-                    key={f.value}
-                    onClick={() => setSelectedSkill(f.value)}
-                    className={`py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wide transition-all cursor-pointer ${
-                      selectedSkill === f.value
-                        ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
-                        : 'border-outline-variant/40 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
+            <div className="h-px bg-outline-variant/20 mb-5" />
+            <div className="space-y-3 mb-5">
+              <div className="flex items-center justify-between">
+                <p className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Skill Level</p>
+                <span className="font-mono text-[10px] text-primary-fixed">
+                  {skillRangeIsAll ? 'All Levels' : selectedSkillMin === selectedSkillMax ? SKILL_LEVEL_LABELS[selectedSkillMin] : `${SKILL_LEVEL_LABELS[selectedSkillMin]} – ${SKILL_LEVEL_LABELS[selectedSkillMax]}`}
+                </span>
               </div>
+              <SkillRangePicker
+                min={selectedSkillMin}
+                max={selectedSkillMax}
+                onChange={(min, max) => { setSelectedSkillMin(min); setSelectedSkillMax(max); }}
+              />
             </div>
 
-            <div className="space-y-2.5 mb-8">
+            <div className="h-px bg-outline-variant/20 mb-5" />
+            <div className="space-y-2.5 mb-5">
               <p className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Gender</p>
               <div className="grid grid-cols-2 gap-2">
                 {([
                   { value: 'all', label: 'Any Gender' },
                   { value: 'male', label: 'Male Only' },
                   { value: 'female', label: 'Female Only' },
-                  { value: 'open', label: 'Open to All' },
                 ] as const).map((f) => (
                   <button
                     key={f.value}
@@ -235,9 +237,21 @@ export default function ExploreScreen({
               </div>
             </div>
 
+            <div className="h-px bg-outline-variant/20 mb-5" />
+            <button
+              type="button"
+              onClick={() => setHideFull((v) => !v)}
+              className="w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all cursor-pointer mb-6 bg-surface-variant/30 hover:bg-surface-bright border-outline-variant/40"
+            >
+              <span className="font-sans font-semibold text-sm text-on-surface uppercase tracking-wide">Hide full sessions</span>
+              <div className={`w-10 h-5 rounded-full transition-colors relative ${hideFull ? 'bg-primary-fixed' : 'bg-outline-variant/50'}`}>
+                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-background shadow transition-transform ${hideFull ? 'translate-x-5' : 'translate-x-0.5'}`} />
+              </div>
+            </button>
+
             <div className="flex gap-3">
               <button
-                onClick={() => { setSelectedSport('all'); setSelectedSkill('all'); setSelectedGender('all'); }}
+                onClick={() => { setSelectedSport('all'); setSelectedSkillMin(SKILL_LEVELS[0]); setSelectedSkillMax(SKILL_LEVELS[SKILL_LEVELS.length - 1]); setSelectedGender('all'); setHideFull(false); }}
                 className="flex-1 py-3 rounded-full border border-outline-variant/50 text-on-surface-variant text-sm font-bold uppercase tracking-wider transition-all hover:bg-surface-variant cursor-pointer"
               >
                 Reset
@@ -370,18 +384,22 @@ export default function ExploreScreen({
                       </p>
                     </div>
                   </div>
-                  <div
-                    className={`w-9 h-9 rounded-full overflow-hidden shrink-0 border-2 ${
-                      isFull ? 'border-outline-variant/40' : 'border-primary-fixed group-hover:scale-105 transition-transform'
-                    }`}
-                  >
-                    <img
-                      alt={session.host.name}
-                      title={`Hosted by ${session.host.name}`}
-                      className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
-                      src={session.host.avatar}
-                    />
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <div
+                      className={`w-9 h-9 rounded-full overflow-hidden border-2 ${
+                        isFull ? 'border-outline-variant/40' : 'border-primary-fixed group-hover:scale-105 transition-transform'
+                      }`}
+                    >
+                      <img
+                        alt={session.host.name}
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                        src={session.host.avatar}
+                      />
+                    </div>
+                    <span className="text-[10px] text-on-surface-variant/70 font-medium max-w-[80px] text-right truncate">
+                      {session.host.name}
+                    </span>
                   </div>
                 </div>
 

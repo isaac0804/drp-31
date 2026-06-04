@@ -216,11 +216,11 @@ export default function PlayerProfileScreen({
                     <p className="text-[10px] text-on-surface-variant/60 mt-0.5">{playAgainYes}/{reviews.length} players</p>
                   </div>
                   <div className="bg-surface-container rounded-lg p-3 text-center border border-outline-variant/20">
-                    <div className="font-mono font-bold text-base text-primary-fixed mb-1">{accurateCount}/{reviews.length}</div>
+                    <div className="font-mono font-bold text-base text-primary-fixed mb-1">{Math.round((accurateCount / reviews.length) * 100)}%</div>
                     <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">Skill accurate</p>
                     <div className="flex justify-center gap-1.5 mt-0.5">
-                      {tooHighCount > 0 && <span className="text-[9px] text-amber-400">{tooHighCount} too high</span>}
-                      {tooLowCount > 0 && <span className="text-[9px] text-sky-400">{tooLowCount} too low</span>}
+                      {tooHighCount > 0 && <span className="text-[9px] text-amber-400">↑ too high</span>}
+                      {tooLowCount > 0 && <span className="text-[9px] text-sky-400">↓ too low</span>}
                     </div>
                   </div>
                 </div>

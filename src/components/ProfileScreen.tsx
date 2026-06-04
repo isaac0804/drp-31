@@ -1,6 +1,15 @@
 import { useState, FormEvent } from 'react';
-import { Review, UserProfile, Sport, SportSkill } from '../types';
-import { MessageSquare, ThumbsUp, Trophy, User, Award, RotateCcw, Target } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Review, UserProfile, Sport, SportSkill, SkillLevel, SKILL_LEVEL_LABELS } from '../types';
+import { MessageSquare, ThumbsUp, Trophy, User, Award, RotateCcw, Target, X } from 'lucide-react';
+
+const TIER_LEGEND: { level: SkillLevel; description: string }[] = [
+  { level: 'beginner',           description: 'Learning the basics and fundamental technique. Best for fun, social sessions.' },
+  { level: 'lower-intermediate', description: 'Fundamentals in place but still building consistency. Regular recreational play.' },
+  { level: 'upper-intermediate', description: 'Consistent, plays with real intent. Comfortable in semi-competitive settings.' },
+  { level: 'advanced',           description: 'Strong technique and tactical understanding. Competes in club or local events.' },
+  { level: 'pro',                description: 'Elite mastery. Regional, national, or international competitive experience.' },
+];
 
 interface ProfileScreenProps {
   user: UserProfile;
@@ -30,6 +39,7 @@ export default function ProfileScreen({
   const [sportingHistory, setSportingHistory] = useState(user.sportingHistory ?? '');
   const [industry, setIndustry] = useState(user.industry ?? '');
   const [isSavedSuccessfully, setIsSavedSuccessfully] = useState(false);
+  const [legendLevel, setLegendLevel] = useState<SkillLevel | null>(null);
 
   const playAgainYes = reviews.filter((r) => r.playAgain === 'yes').length;
   const playAgainPct = reviews.length > 0 ? Math.round((playAgainYes / reviews.length) * 100) : null;
@@ -114,15 +124,17 @@ export default function ProfileScreen({
                 {assessed.map((sport) => {
                   const entry = user.skillsBySport![sport] as SportSkill;
                   return (
-                    <div
+                    <button
                       key={sport}
-                      className="bg-surface-container-low border border-outline-variant/15 rounded-xl p-3 space-y-1.5"
+                      type="button"
+                      onClick={() => setLegendLevel(entry.skillLevel)}
+                      className="bg-surface-container-low border border-outline-variant/15 rounded-xl p-3 space-y-1.5 text-left hover:border-primary-fixed/40 hover:bg-primary-fixed/5 transition-all cursor-pointer group"
                     >
                       <p className="font-sans font-extrabold text-xs text-on-surface">{sport}</p>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold tracking-widest bg-primary-fixed/10 text-primary-fixed uppercase font-mono border border-primary-fixed/20">
-                        {entry.skillLevel}
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold tracking-widest bg-primary-fixed/10 text-primary-fixed uppercase font-mono border border-primary-fixed/20 group-hover:bg-primary-fixed/20 transition-colors">
+                        {SKILL_LEVEL_LABELS[entry.skillLevel] ?? entry.skillLevel}
                       </span>
-                    </div>
+                    </button>
                   );
                 })}
                 {unassessed.map((sport) => (
@@ -182,11 +194,11 @@ export default function ProfileScreen({
                   <p className="text-[10px] text-on-surface-variant/60 mt-0.5">{playAgainYes}/{reviews.length} players</p>
                 </div>
                 <div className="bg-surface-container rounded-lg p-3 text-center border border-outline-variant/20">
-                  <div className="font-mono font-bold text-base text-primary-fixed mb-1">{accurateCount}/{reviews.length}</div>
+                  <div className="font-mono font-bold text-base text-primary-fixed mb-1">{Math.round((accurateCount / reviews.length) * 100)}%</div>
                   <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">Skill accurate</p>
                   <div className="flex justify-center gap-1.5 mt-0.5">
-                    {tooHighCount > 0 && <span className="text-[9px] text-amber-400">{tooHighCount} too high</span>}
-                    {tooLowCount > 0 && <span className="text-[9px] text-sky-400">{tooLowCount} too low</span>}
+                    {tooHighCount > 0 && <span className="text-[9px] text-amber-400">↑ too high</span>}
+                    {tooLowCount > 0 && <span className="text-[9px] text-sky-400">↓ too low</span>}
                   </div>
                 </div>
               </div>
@@ -356,6 +368,65 @@ export default function ProfileScreen({
           </div>
         </div>
       </div>
+      {/* Skill level legend popup */}
+      <AnimatePresence>
+        {legendLevel && (
+          <>
+            <motion.div
+              key="legend-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setLegendLevel(null)}
+              className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm"
+            />
+            <motion.div
+              key="legend-sheet"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+              className="fixed bottom-0 left-0 right-0 z-50 bg-surface-container-high rounded-t-2xl px-5 pt-5 pb-10 max-w-3xl mx-auto"
+            >
+              <div className="w-10 h-1 rounded-full bg-outline-variant/50 mx-auto mb-5" />
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-sans font-black text-lg text-on-surface">Skill Tier Guide</h3>
+                <button
+                  onClick={() => setLegendLevel(null)}
+                  className="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-variant transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="space-y-2">
+                {TIER_LEGEND.map(({ level, description }) => {
+                  const isActive = level === legendLevel;
+                  return (
+                    <div
+                      key={level}
+                      className={`flex gap-3 items-start p-3 rounded-xl transition-all ${
+                        isActive ? 'bg-primary-fixed/8 border border-primary-fixed/25' : 'border border-transparent'
+                      }`}
+                    >
+                      <span className={`inline-flex items-center shrink-0 px-2 py-0.5 rounded text-[9px] font-bold tracking-widest uppercase font-mono border mt-0.5 ${
+                        isActive
+                          ? 'bg-primary-fixed/15 border-primary-fixed/30 text-primary-fixed'
+                          : 'bg-surface-container-highest border-outline-variant/20 text-on-surface-variant'
+                      }`}>
+                        {SKILL_LEVEL_LABELS[level]}
+                      </span>
+                      <p className={`text-xs leading-relaxed ${isActive ? 'text-on-surface' : 'text-on-surface-variant/70'}`}>
+                        {description}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </article>
   );
 }

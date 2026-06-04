@@ -133,18 +133,20 @@ export default function SessionDetails({
         </div>
       </header>
 
-      {/* Session Title Section */}
-      <section className="pt-20 pb-6 px-4">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <span className="bg-primary-container/20 text-primary-fixed text-[10px] font-sans font-extrabold px-3 py-1 rounded-full uppercase border border-primary-fixed/30 backdrop-blur-md tracking-wider">
+      {/* Hero gradient section */}
+      <section className="relative pt-20 pb-8 px-4 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-fixed/15 via-surface to-surface pointer-events-none" />
+        <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-primary-fixed/10 blur-3xl pointer-events-none" />
+        <div className="relative flex flex-col gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="bg-primary-fixed/15 text-primary-fixed text-[10px] font-sans font-extrabold px-3 py-1 rounded-full uppercase border border-primary-fixed/30 tracking-wider">
               {skillRangeLabel}
             </span>
             <span className="bg-surface-variant text-on-surface text-[10px] font-sans font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
               {session.sport === 'Football' && session.footballFormat ? session.footballFormat : session.matchType}
             </span>
           </div>
-          <h1 className="font-sans font-black text-2xl md:text-3xl text-primary leading-tight uppercase tracking-tight">
+          <h1 className="font-sans font-black text-2xl md:text-3xl text-white leading-tight uppercase tracking-tight">
             {session.sport === 'Football' && session.footballFormat
               ? `${session.sport} ${session.footballFormat}`
               : `${session.sport} ${session.matchType === 'singles' ? 'Singles' : 'Doubles'}`
