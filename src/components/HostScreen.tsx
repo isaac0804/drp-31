@@ -222,7 +222,7 @@ export default function HostScreen({
       skillLevel,
       skillLevelMax,
       matchType,
-      footballFormat: sport === 'Football' ? FOOTBALL_FORMATS.find(f => f.label === footballFormat)?.display : undefined,
+      ...(sport === 'Football' ? { footballFormat: FOOTBALL_FORMATS.find(f => f.label === footballFormat)?.display } : {}),
       gender,
       maxPlayers: playersNeeded,
       hostNote: hostNote || `Friendly ${skillLevel} ${sport} game! Come join us.`,

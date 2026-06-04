@@ -171,6 +171,15 @@ export default function SessionDetails({
               <div className="font-mono text-xs text-on-surface-variant mt-0.5">
                 {session.timeStart} - {session.timeEnd} ({formattedDuration})
               </div>
+              <a
+                href={buildGCalUrl(session)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 mt-1.5 text-xs font-bold text-on-surface-variant hover:text-primary-fixed transition-colors group"
+              >
+                <CalendarPlus className="w-3.5 h-3.5 shrink-0 group-hover:text-primary-fixed" />
+                Add to Google Calendar
+              </a>
             </div>
             {isHost && (
               <button
@@ -218,17 +227,6 @@ export default function SessionDetails({
             )}
           </div>
 
-          <div className="h-px bg-outline-variant/20 w-full" />
-
-          <a
-            href={buildGCalUrl(session)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 text-xs font-bold text-on-surface-variant hover:text-primary-fixed transition-colors group"
-          >
-            <CalendarPlus className="w-4 h-4 shrink-0 group-hover:text-primary-fixed" />
-            Add to Google Calendar
-          </a>
         </div>
 
         {/* Players Slot Section */}

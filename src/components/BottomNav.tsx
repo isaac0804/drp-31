@@ -1,8 +1,10 @@
 import { Compass, Trophy, User } from 'lucide-react';
 
+type ActiveScreen = 'explore' | 'host' | 'sessions' | 'details' | 'profile' | 'player-profile' | 'assessment';
+
 interface BottomNavProps {
-  activeScreen: string;
-  onNavigate: (screen: string) => void;
+  activeScreen: ActiveScreen;
+  onNavigate: (screen: ActiveScreen) => void;
 }
 
 export default function BottomNav({ activeScreen, onNavigate }: BottomNavProps) {
