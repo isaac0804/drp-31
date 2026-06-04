@@ -1,5 +1,5 @@
-import { Review, UserProfile } from '../types';
-import { ArrowLeft, MessageSquare, ThumbsUp, Trophy } from 'lucide-react';
+import { Review, UserProfile, Sport, SportSkill } from '../types';
+import { ArrowLeft, MessageSquare, ThumbsUp, Trophy, Target } from 'lucide-react';
 
 interface PlayerProfileScreenProps {
   profile: UserProfile;
@@ -71,11 +71,63 @@ export default function PlayerProfileScreen({
 
           <div>
             <h3 className="font-sans font-extrabold text-base text-on-surface">{profile.name}</h3>
-            <span className="inline-flex items-center px-2.5 py-0.5 mt-1 rounded text-[10px] font-bold tracking-widest bg-primary-fixed/10 text-primary-fixed uppercase font-mono border border-primary-fixed/20">
-              {profile.skillLevel}
-            </span>
           </div>
         </div>
+
+        {/* Per-sport skill ratings */}
+        {(() => {
+          const SPORTS: Sport[] = ['Badminton', 'Table Tennis', 'Football', 'Pickleball'];
+          const assessed = SPORTS.filter((s) => profile.skillsBySport?.[s] != null);
+          const unassessed = SPORTS.filter((s) => profile.skillsBySport?.[s] == null);
+          if (assessed.length === 0 && !profile.skillLevel) return null;
+          return (
+            <section className="bg-surface-container-high rounded-xl p-4 border border-outline-variant/15 space-y-3">
+              <h4 className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
+                Skill Ratings
+              </h4>
+              {assessed.length === 0 ? (
+                <p className="text-sm text-on-surface-variant bg-surface-container-high/60 border border-outline-variant/60 rounded-lg p-3">
+                  No assessments completed yet.
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  {assessed.map((sport) => {
+                    const entry = profile.skillsBySport![sport] as SportSkill;
+                    return (
+                      <div
+                        key={sport}
+                        className="bg-surface-container-low border border-outline-variant/15 rounded-xl p-3 space-y-1.5"
+                      >
+                        <p className="font-sans font-extrabold text-xs text-on-surface">{sport}</p>
+                        <div className="flex items-end gap-1.5">
+                          <span className="font-mono font-black text-2xl text-primary-fixed leading-none">
+                            {entry.skillScore}
+                          </span>
+                          <span className="font-mono text-[10px] text-primary-fixed/60 mb-0.5">/ 10</span>
+                        </div>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold tracking-widest bg-primary-fixed/10 text-primary-fixed uppercase font-mono border border-primary-fixed/20">
+                          {entry.skillLevel}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {unassessed.map((sport) => (
+                    <div
+                      key={sport}
+                      className="bg-surface-container-low/50 border border-dashed border-outline-variant/30 rounded-xl p-3 space-y-1.5"
+                    >
+                      <p className="font-sans font-extrabold text-xs text-on-surface-variant">{sport}</p>
+                      <div className="flex items-center gap-1 text-on-surface-variant/40">
+                        <Target className="w-3 h-3" />
+                        <span className="font-mono text-[9px] uppercase tracking-wider">Not assessed</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          );
+        })()}
 
         <section className="bg-surface-container-low rounded-xl p-4 border border-outline-variant/15 text-center">
           <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">

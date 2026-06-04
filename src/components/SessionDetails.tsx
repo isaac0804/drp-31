@@ -1,9 +1,9 @@
-import { MatchSession, Player } from '../types';
+import { MatchSession, Player, UserProfile } from '../types';
 import { ArrowLeft, Calendar, MapPin, Plus, Trophy, Pencil, CalendarPlus, Navigation } from 'lucide-react';
 
 interface SessionDetailsProps {
   session: MatchSession;
-  currentUser: Player;
+  currentUser: UserProfile;
   onBack: () => void;
   onJoin: (sessionId: string) => void;
   onLeave: (sessionId: string) => void;
@@ -26,6 +26,9 @@ export default function SessionDetails({
   const maxPlayers = session.maxPlayers;
   const isFull = spotsFilled >= maxPlayers;
 
+  const userSportLevel = currentUser.skillsBySport?.[session.sport]?.skillLevel ?? currentUser.skillLevel;
+  const levelMatch = userSportLevel === session.skillLevel;
+
   // Calculate percentage for progress meter
   const fillPercentage = Math.min((spotsFilled / maxPlayers) * 100, 100);
 
@@ -39,6 +42,7 @@ export default function SessionDetails({
         id: playerJoined.id,
         name: playerJoined.name,
         avatar: playerJoined.avatar,
+        skillLevel: playerJoined.skillLevel,
         isHost: isPlayerHost
       };
     }
@@ -250,29 +254,29 @@ export default function SessionDetails({
                     type="button"
                     onClick={() => onViewPlayerProfile(slot)}
                     key={slot.id || sIdx}
-                    className={`flex flex-col items-center gap-2 p-3 bg-surface-container-low rounded-lg border-2 relative select-none transition-all hover:scale-[1.02] cursor-pointer ${
+                    className={`flex flex-col items-center gap-3 p-4 bg-surface-container-low rounded-xl border-2 relative select-none transition-all hover:scale-[1.02] cursor-pointer ${
                       slot.isHost ? 'border-primary-fixed/50' : 'border-outline-variant/20'
                     }`}
                   >
                     {slot.isHost && (
-                      <div className="absolute -top-2 bg-primary-fixed text-on-primary-fixed font-sans font-black text-[9px] leading-tight px-2 py-0.5 rounded-full uppercase tracking-widest shadow-sm">
+                      <div className="absolute -top-2.5 bg-primary-fixed text-on-primary-fixed font-sans font-black text-[9px] leading-tight px-2.5 py-0.5 rounded-full uppercase tracking-widest shadow-sm">
                         Host
                       </div>
                     )}
                     <img
                       alt={slot.name}
                       referrerPolicy="no-referrer"
-                      className={`w-12 h-12 rounded-full object-cover ${
+                      className={`w-16 h-16 rounded-full object-cover ${
                         slot.isHost ? 'border-2 border-primary-fixed' : ''
                       }`}
                       src={slot.avatar}
                     />
                     <div className="text-center">
-                      <div className="font-sans font-bold text-xs text-on-surface max-w-[120px] truncate">
+                      <div className="font-sans font-bold text-sm text-on-surface max-w-[120px] truncate">
                         {slot.name}
                       </div>
-                      <div className="text-[9px] font-mono text-on-surface-variant uppercase mt-0.5">
-                        {slot.isHost ? 'Level Pro' : 'Athlete'}
+                      <div className="text-[10px] font-mono text-primary-fixed/80 uppercase tracking-wider mt-0.5">
+                        {slot.skillLevel ?? session.skillLevel}
                       </div>
                     </div>
                   </button>
@@ -281,10 +285,10 @@ export default function SessionDetails({
                 return (
                   <div
                     key={sIdx}
-                    className="flex flex-col items-center justify-center gap-2 p-3 bg-surface border-2 border-dashed border-outline-variant/30 rounded-lg opacity-60 min-h-[96px] select-none"
+                    className="flex flex-col items-center justify-center gap-2 p-4 bg-surface border-2 border-dashed border-outline-variant/30 rounded-xl opacity-60 min-h-[120px] select-none"
                   >
-                    <div className="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface-variant">
-                      <Plus className="w-4 h-4" />
+                    <div className="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface-variant">
+                      <Plus className="w-5 h-5" />
                     </div>
                     <div className="font-sans text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
                       Open Slot
@@ -324,18 +328,25 @@ export default function SessionDetails({
               Leave court session
             </button>
           ) : (
-            <button
-              onClick={() => onJoin(session.id)}
-              disabled={isFull}
-              className={`w-full font-sans font-black text-xs uppercase tracking-widest py-4 rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                isFull
-                  ? 'bg-surface-variant text-on-surface-variant cursor-not-allowed opacity-60'
-                  : 'bg-primary-fixed text-on-primary-fixed hover:bg-primary-fixed-dim shadow-[0_4px_20px_rgba(202,243,0,0.3)] hover:scale-101 active:scale-98'
-              }`}
-            >
-              {isFull ? 'Match is full' : 'Join court session'}
-              {!isFull && <Trophy className="w-4 h-4" />}
-            </button>
+            <div className="w-full flex flex-col items-center gap-2">
+              <button
+                onClick={() => onJoin(session.id)}
+                disabled={isFull || !levelMatch}
+                className={`w-full font-sans font-black text-xs uppercase tracking-widest py-4 rounded-full transition-all flex items-center justify-center gap-2 ${
+                  isFull || !levelMatch
+                    ? 'bg-surface-variant text-on-surface-variant cursor-not-allowed opacity-60'
+                    : 'bg-primary-fixed text-on-primary-fixed hover:bg-primary-fixed-dim shadow-[0_4px_20px_rgba(202,243,0,0.3)] hover:scale-101 active:scale-98 cursor-pointer'
+                }`}
+              >
+                {isFull ? 'Match is full' : !levelMatch ? `${session.skillLevel} only` : 'Join session'}
+                {!isFull && levelMatch && <Trophy className="w-4 h-4" />}
+              </button>
+              {!isFull && !levelMatch && (
+                <p className="text-[11px] text-on-surface-variant/70 text-center">
+                  Your {session.sport} level is <span className="text-primary-fixed font-bold">{userSportLevel}</span> — this session requires <span className="font-bold text-on-surface">{session.skillLevel}</span>
+                </p>
+              )}
+            </div>
           )}
         </div>
       </div>
