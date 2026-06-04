@@ -357,6 +357,10 @@ export default function App() {
                   setEditingSession(null);
                   setActiveScreen('host');
                 }}
+                onSelectSession={(id) => {
+                  setSelectedSessionId(id);
+                  setActiveScreen('details');
+                }}
               />
             )}
 

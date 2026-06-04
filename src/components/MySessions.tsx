@@ -13,6 +13,7 @@ interface MySessionsProps {
   onCancelSession: (id: string) => void;
   onLeaveSession: (id: string) => void;
   onNavigateToHost: () => void;
+  onSelectSession: (id: string) => void;
 }
 
 type Tab = 'hosting' | 'joined' | 'finished';
@@ -54,6 +55,7 @@ export default function MySessions({
   onCancelSession,
   onLeaveSession,
   onNavigateToHost,
+  onSelectSession,
 }: MySessionsProps) {
   const [activeTab, setActiveTab] = useState<Tab>('hosting');
   const [reviewingSession, setReviewingSession] = useState<MatchSession | null>(null);
@@ -177,7 +179,7 @@ export default function MySessions({
                     key={session.id}
                     session={session}
                     index={i}
-                    
+                    onClick={() => onSelectSession(session.id)}
                     badge="HOST"
                     badgeStyle="bg-primary-fixed/10 text-primary-fixed border border-primary-fixed/25"
                     actions={
@@ -220,7 +222,7 @@ export default function MySessions({
                     key={session.id}
                     session={session}
                     index={i}
-                    
+                    onClick={() => onSelectSession(session.id)}
                     badge="JOINED"
                     badgeStyle="bg-primary-fixed/10 text-primary-fixed border border-primary-fixed/25"
                     actions={
@@ -255,7 +257,7 @@ export default function MySessions({
                     key={session.id}
                     session={session}
                     index={i}
-                    
+                    onClick={() => onSelectSession(session.id)}
                     badge="COMPLETED"
                     badgeStyle="bg-primary-fixed/10 text-primary-fixed border border-primary-fixed/25"
                     actions={
@@ -285,6 +287,7 @@ function SessionCard({
   badge,
   badgeStyle,
   actions,
+  onClick,
 }: {
   key?: string | number;
   session: MatchSession;
@@ -292,6 +295,7 @@ function SessionCard({
   badge: string;
   badgeStyle: string;
   actions: ReactNode;
+  onClick: () => void;
 }) {
   const spacesJoined = session.playersJoined.length;
 
@@ -300,7 +304,8 @@ function SessionCard({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, delay: index * 0.05 }}
-      className="relative bg-surface-container rounded-2xl overflow-hidden border border-outline-variant/15"
+      onClick={onClick}
+      className="relative bg-surface-container rounded-2xl overflow-hidden border border-outline-variant/15 cursor-pointer hover:border-primary-fixed/30 transition-colors"
     >
       <div className="p-4 flex flex-col gap-3">
         {/* Title + badge */}
@@ -351,7 +356,9 @@ function SessionCard({
           </a>
         )}
 
-        {actions}
+        <div onClick={(e) => e.stopPropagation()}>
+          {actions}
+        </div>
       </div>
     </motion.article>
   );
