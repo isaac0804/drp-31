@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Target, RotateCcw, ChevronRight, Zap, Trophy, ArrowLeft } from 'lucide-react';
-import { SkillLevel, Sport } from '../types';
+import { SkillLevel, Sport, SKILL_LEVEL_LABELS } from '../types';
 
 interface Question {
   id: string;
@@ -9,6 +9,8 @@ interface Question {
   subtitle: string;
   options: { label: string; score: number }[];
 }
+
+// ── Sport-specific question banks (7 questions each) ──────────────────────────
 
 const SPORT_QUESTIONS: Record<Sport, Question[]> = {
   Badminton: [
@@ -46,6 +48,30 @@ const SPORT_QUESTIONS: Record<Sport, Question[]> = {
         { label: 'I rally well and direct shots deliberately', score: 5 },
         { label: 'I use drops, smashes and spins tactically', score: 7 },
         { label: 'I dominate with full court control', score: 9 },
+      ],
+    },
+    {
+      id: 'serve',
+      question: 'How would you describe your serve?',
+      subtitle: 'Serving is often where rallies are won or lost.',
+      options: [
+        { label: 'I can only do a basic underarm clear', score: 1 },
+        { label: 'I can vary between high and low serves', score: 3 },
+        { label: 'I use push and flick serves situationally', score: 5 },
+        { label: 'I use deceptive serves to win cheap points', score: 7 },
+        { label: 'My serve is a weapon — varied, disguised and precise', score: 9 },
+      ],
+    },
+    {
+      id: 'tactics',
+      question: 'How tactical is your game?',
+      subtitle: 'Do you play with intent or just react?',
+      options: [
+        { label: 'I just try to get the shuttle back', score: 1 },
+        { label: 'I sometimes aim for gaps', score: 3 },
+        { label: 'I consistently vary pace and placement', score: 5 },
+        { label: 'I read my opponent and exploit weaknesses', score: 7 },
+        { label: 'I control the entire tempo and geometry of the rally', score: 9 },
       ],
     },
     {
@@ -112,6 +138,30 @@ const SPORT_QUESTIONS: Record<Sport, Question[]> = {
       ],
     },
     {
+      id: 'serve',
+      question: 'How would you describe your serve?',
+      subtitle: 'A strong serve can win points outright at higher levels.',
+      options: [
+        { label: 'I just try to get it over the net', score: 1 },
+        { label: 'I can vary short and long consistently', score: 3 },
+        { label: 'I use side-spin and vary the speed', score: 5 },
+        { label: 'I disguise the spin direction to force errors', score: 7 },
+        { label: 'My serves are weapons — varied, deceptive and precise', score: 9 },
+      ],
+    },
+    {
+      id: 'reading',
+      question: 'How well do you read and anticipate your opponent?',
+      subtitle: 'Mental sharpness is as important as technique at higher levels.',
+      options: [
+        { label: 'I just react to wherever the ball goes', score: 1 },
+        { label: 'I sometimes anticipate obvious shots', score: 3 },
+        { label: 'I read patterns and adjust my positioning', score: 5 },
+        { label: 'I actively disrupt my opponent\'s rhythm and patterns', score: 7 },
+        { label: 'I control the entire tactical flow of the game', score: 9 },
+      ],
+    },
+    {
       id: 'competition',
       question: 'What is your competitive experience?',
       subtitle: 'Organised matches, leagues or tournaments.',
@@ -175,6 +225,30 @@ const SPORT_QUESTIONS: Record<Sport, Question[]> = {
       ],
     },
     {
+      id: 'defending',
+      question: 'How would you rate your defensive ability?',
+      subtitle: 'Winning the ball back is as important as scoring.',
+      options: [
+        { label: "I struggle to get near the ball defensively", score: 1 },
+        { label: 'I can make basic tackles in open space', score: 3 },
+        { label: 'I position well and win the ball regularly', score: 5 },
+        { label: 'I read the play and intercept effectively', score: 7 },
+        { label: 'Elite defensive instincts and clean tackling', score: 9 },
+      ],
+    },
+    {
+      id: 'team',
+      question: 'How well do you understand team shape and movement?',
+      subtitle: 'Football is a team sport — structure wins games.',
+      options: [
+        { label: 'I mostly chase the ball wherever it goes', score: 1 },
+        { label: 'I hold my position most of the time', score: 3 },
+        { label: 'I make intelligent runs and support teammates', score: 5 },
+        { label: 'I understand pressing triggers, shape and transitions', score: 7 },
+        { label: 'I orchestrate team movements and defensive lines', score: 9 },
+      ],
+    },
+    {
       id: 'competition',
       question: 'What is your competitive experience?',
       subtitle: 'Organised matches, leagues or tournaments.',
@@ -188,7 +262,7 @@ const SPORT_QUESTIONS: Record<Sport, Question[]> = {
     },
     {
       id: 'fitness',
-      question: 'How would you rate your physical conditioning for football?',
+      question: 'How would you rate your physical conditioning?',
       subtitle: 'Endurance and explosive movement matter throughout a match.',
       options: [
         { label: 'I tire quickly and struggle to keep up', score: 1 },
@@ -238,15 +312,15 @@ const SPORT_QUESTIONS: Record<Sport, Question[]> = {
       ],
     },
     {
-      id: 'competition',
-      question: 'What is your competitive experience?',
-      subtitle: 'Organised matches, leagues or tournaments.',
+      id: 'third-shot',
+      question: 'How do you handle the third shot?',
+      subtitle: 'The third-shot decision often defines who wins the point.',
       options: [
-        { label: "I've never competed", score: 1 },
-        { label: 'Casual open play or recreational games', score: 3 },
-        { label: 'Local tournaments', score: 5 },
-        { label: 'Regional competitions', score: 7 },
-        { label: 'National or pro-level play', score: 9 },
+        { label: "I don't think about it — I just hit it back", score: 1 },
+        { label: 'I usually drive regardless of the situation', score: 3 },
+        { label: 'I choose between drive and drop depending on position', score: 5 },
+        { label: 'I consistently execute drops to reach the kitchen line', score: 7 },
+        { label: 'I use disguise and placement to win the transition battle', score: 9 },
       ],
     },
     {
@@ -261,45 +335,60 @@ const SPORT_QUESTIONS: Record<Sport, Question[]> = {
         { label: 'Elite court IQ — I control the pace and geometry of every rally', score: 9 },
       ],
     },
+    {
+      id: 'competition',
+      question: 'What is your competitive experience?',
+      subtitle: 'Organised matches, leagues or tournaments.',
+      options: [
+        { label: "I've never competed", score: 1 },
+        { label: 'Casual open play or recreational games', score: 3 },
+        { label: 'Local tournaments', score: 5 },
+        { label: 'Regional competitions', score: 7 },
+        { label: 'National or pro-level play', score: 9 },
+      ],
+    },
+    {
+      id: 'coordination',
+      question: 'How well do you coordinate with your partner?',
+      subtitle: 'Doubles pickleball rewards teamwork as much as individual skill.',
+      options: [
+        { label: 'I play mostly independently', score: 1 },
+        { label: 'We communicate occasionally during points', score: 3 },
+        { label: 'We cover each other and switch positions when needed', score: 5 },
+        { label: 'We signal, stack, and move as a unit', score: 7 },
+        { label: 'Seamless — our movement and decisions are fully in sync', score: 9 },
+      ],
+    },
   ],
 };
 
-function computeScore(answers: number[]): number {
-  const avg = answers.reduce((a, b) => a + b, 0) / answers.length;
-  return Math.max(1, Math.min(10, Math.round((avg * 10) / 9)));
-}
+// ── Scoring ────────────────────────────────────────────────────────────────────
 
-function scoreToSkillLevel(score: number): SkillLevel {
-  if (score <= 3) return 'beginner';
-  if (score <= 6) return 'intermediate';
-  if (score <= 8) return 'advanced';
+function computeSkillLevel(answers: number[]): SkillLevel {
+  const avg = answers.reduce((a, b) => a + b, 0) / answers.length;
+  if (avg <= 3.0) return 'beginner';
+  if (avg <= 5.0) return 'lower-intermediate';
+  if (avg <= 6.5) return 'upper-intermediate';
+  if (avg <= 7.8) return 'advanced';
   return 'pro';
 }
 
-function scoreLabel(score: number): string {
-  if (score <= 2) return 'Absolute Beginner';
-  if (score <= 4) return 'Developing Player';
-  if (score <= 6) return 'Intermediate Player';
-  if (score <= 8) return 'Advanced Player';
-  return 'Pro-Level Player';
-}
+// ── Legend ─────────────────────────────────────────────────────────────────────
 
-function scoreDescription(score: number): string {
-  if (score <= 2)
-    return "You're just starting your journey. Focus on fundamentals and enjoy every game.";
-  if (score <= 4)
-    return "You're building your game steadily. Consistency is improving and the basics are clicking.";
-  if (score <= 6)
-    return 'You can hold your own and play with real intent. A solid recreational competitor.';
-  if (score <= 8)
-    return 'You play with tactics, power and precision. A formidable opponent on any court.';
-  return 'Elite level. You dominate with full technical and tactical mastery.';
-}
+const TIER_LEGEND: { level: SkillLevel; description: string }[] = [
+  { level: 'beginner',          description: 'Learning the basics and fundamental technique. Perfect for fun, social sessions.' },
+  { level: 'lower-intermediate', description: 'Fundamentals in place but still building consistency. Regular recreational play.' },
+  { level: 'upper-intermediate', description: 'Consistent player with real intent. Comfortable in semi-competitive settings.' },
+  { level: 'advanced',          description: 'Technically strong with good tactical understanding. Competes in club or local events.' },
+  { level: 'pro',               description: 'Elite mastery. Regional, national, or international competitive experience.' },
+];
 
 const SPORTS: Sport[] = ['Badminton', 'Table Tennis', 'Football', 'Pickleball'];
 
+// ── Component ──────────────────────────────────────────────────────────────────
+
 interface SkillAssessmentScreenProps {
-  onComplete: (sport: Sport, score: number, skillLevel: SkillLevel) => void;
+  onComplete: (sport: Sport, skillLevel: SkillLevel) => void;
   onClose: () => void;
 }
 
@@ -312,7 +401,7 @@ export default function SkillAssessmentScreen({ onComplete, onClose }: SkillAsse
   const [direction, setDirection] = useState(1);
   const [answers, setAnswers] = useState<number[]>([]);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  const [finalScore, setFinalScore] = useState(0);
+  const [finalLevel, setFinalLevel] = useState<SkillLevel>('beginner');
 
   const questions = selectedSport ? SPORT_QUESTIONS[selectedSport] : [];
   const totalSteps = questions.length;
@@ -336,37 +425,25 @@ export default function SkillAssessmentScreen({ onComplete, onClose }: SkillAsse
       setSelectedOption(null);
       setStep((s) => s + 1);
     } else {
-      const score = computeScore(newAnswers);
-      setFinalScore(score);
+      setFinalLevel(computeSkillLevel(newAnswers));
       setAnswers(newAnswers);
       setPhase('result');
     }
   };
 
   const handleBack = () => {
-    if (phase === 'sport-select') {
-      onClose();
-      return;
-    }
+    if (phase === 'sport-select') { onClose(); return; }
     if (phase === 'result') {
-      const lastAnswer = answers[answers.length - 1];
-      setSelectedOption(lastAnswer);
+      setSelectedOption(answers[answers.length - 1]);
       setStep(totalSteps - 1);
       setDirection(-1);
       setPhase('quiz');
       return;
     }
-    // quiz phase
-    if (step === 0) {
-      setPhase('sport-select');
-      setAnswers([]);
-      setSelectedOption(null);
-      return;
-    }
+    if (step === 0) { setPhase('sport-select'); setAnswers([]); setSelectedOption(null); return; }
     setDirection(-1);
-    const restored = answers[answers.length - 1];
+    setSelectedOption(answers[answers.length - 1]);
     setAnswers((a) => a.slice(0, -1));
-    setSelectedOption(restored);
     setStep((s) => s - 1);
   };
 
@@ -377,11 +454,6 @@ export default function SkillAssessmentScreen({ onComplete, onClose }: SkillAsse
     setAnswers([]);
     setSelectedOption(null);
     setDirection(1);
-    setFinalScore(0);
-  };
-
-  const handleAccept = () => {
-    onComplete(selectedSport!, finalScore, scoreToSkillLevel(finalScore));
   };
 
   return (
@@ -390,56 +462,28 @@ export default function SkillAssessmentScreen({ onComplete, onClose }: SkillAsse
 
         {/* ── Sport Selection ── */}
         {phase === 'sport-select' && (
-          <motion.section
-            key="sport-select"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            transition={{ duration: 0.22 }}
-            className="w-full"
-          >
-            {/* Top nav */}
+          <motion.section key="sport-select" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.22 }} className="w-full">
             <div className="flex items-center mb-6">
-              <button
-                onClick={onClose}
-                className="flex items-center gap-1.5 text-on-surface-variant hover:text-on-surface text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back
+              <button onClick={onClose} className="flex items-center gap-1.5 text-on-surface-variant hover:text-on-surface text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer">
+                <ArrowLeft className="w-4 h-4" />Back
               </button>
             </div>
-
             <div className="mb-6 space-y-1">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-primary-fixed text-on-primary-fixed flex items-center justify-center">
                   <Target className="w-4 h-4 stroke-[2.5px]" />
                 </div>
-                <p className="font-mono text-xs text-primary-fixed uppercase tracking-[0.25em]">
-                  Skill Assessment
-                </p>
+                <p className="font-mono text-xs text-primary-fixed uppercase tracking-[0.25em]">Skill Assessment</p>
               </div>
-              <h1 className="font-sans font-black text-2xl text-white tracking-tight leading-tight">
-                Which sport are you assessing?
-              </h1>
-              <p className="text-sm text-on-surface-variant/70">
-                We'll ask you five questions tailored to that sport.
-              </p>
+              <h1 className="font-sans font-black text-2xl text-white tracking-tight leading-tight">Which sport are you assessing?</h1>
+              <p className="text-sm text-on-surface-variant/70">We'll ask you 7 questions tailored to that sport.</p>
             </div>
-
             <div className="grid grid-cols-2 gap-3">
               {SPORTS.map((sport) => (
-                <button
-                  key={sport}
-                  type="button"
-                  onClick={() => handleStartQuiz(sport)}
-                  className="bg-surface-container-high border border-outline-variant/20 hover:border-primary-fixed/60 hover:bg-primary-fixed/5 rounded-2xl p-5 text-left transition-all active:scale-[0.97] cursor-pointer group"
-                >
-                  <p className="font-sans font-black text-base text-white group-hover:text-primary-fixed transition-colors leading-snug">
-                    {sport}
-                  </p>
-                  <p className="text-[11px] text-on-surface-variant/60 mt-1 font-mono uppercase tracking-wider">
-                    5 questions
-                  </p>
+                <button key={sport} type="button" onClick={() => handleStartQuiz(sport)}
+                  className="bg-surface-container-high border border-outline-variant/20 hover:border-primary-fixed/60 hover:bg-primary-fixed/5 rounded-2xl p-5 text-left transition-all active:scale-[0.97] cursor-pointer group">
+                  <p className="font-sans font-black text-base text-white group-hover:text-primary-fixed transition-colors leading-snug">{sport}</p>
+                  <p className="text-[11px] text-on-surface-variant/60 mt-1 font-mono uppercase tracking-wider">7 questions</p>
                 </button>
               ))}
             </div>
@@ -448,105 +492,47 @@ export default function SkillAssessmentScreen({ onComplete, onClose }: SkillAsse
 
         {/* ── Quiz ── */}
         {phase === 'quiz' && current && (
-          <motion.section
-            key="quiz"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            transition={{ duration: 0.22 }}
-            className="w-full"
-          >
-            {/* Top nav */}
+          <motion.section key="quiz" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.22 }} className="w-full">
             <div className="flex items-center mb-5">
-              <button
-                onClick={handleBack}
-                className="flex items-center gap-1.5 text-on-surface-variant hover:text-on-surface text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back
+              <button onClick={handleBack} className="flex items-center gap-1.5 text-on-surface-variant hover:text-on-surface text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer">
+                <ArrowLeft className="w-4 h-4" />Back
               </button>
             </div>
-
-            {/* Sport label + title */}
             <div className="mb-5 space-y-1">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-primary-fixed text-on-primary-fixed flex items-center justify-center">
                   <Target className="w-4 h-4 stroke-[2.5px]" />
                 </div>
-                <p className="font-mono text-xs text-primary-fixed uppercase tracking-[0.25em]">
-                  {selectedSport} · Skill Assessment
-                </p>
+                <p className="font-mono text-xs text-primary-fixed uppercase tracking-[0.25em]">{selectedSport} · Skill Assessment</p>
               </div>
-              <h1 className="font-sans font-black text-2xl text-white tracking-tight leading-tight">
-                Let's calibrate your level.
-              </h1>
+              <h1 className="font-sans font-black text-2xl text-white tracking-tight leading-tight">Let's calibrate your level.</h1>
             </div>
-
-            {/* Progress bar */}
             <div className="mb-6 space-y-2">
               <div className="flex justify-between items-center">
-                <span className="font-mono text-[10px] text-on-surface-variant uppercase tracking-widest">
-                  Question {step + 1} of {totalSteps}
-                </span>
-                <span className="font-mono text-[10px] text-primary-fixed uppercase tracking-widest">
-                  {Math.round(((step + 1) / totalSteps) * 100)}%
-                </span>
+                <span className="font-mono text-[10px] text-on-surface-variant uppercase tracking-widest">Question {step + 1} of {totalSteps}</span>
+                <span className="font-mono text-[10px] text-primary-fixed uppercase tracking-widest">{Math.round(((step + 1) / totalSteps) * 100)}%</span>
               </div>
               <div className="w-full h-1 rounded-full bg-surface-container-highest overflow-hidden">
-                <motion.div
-                  className="h-full rounded-full bg-primary-fixed"
-                  animate={{ width: `${((step + 1) / totalSteps) * 100}%` }}
-                  transition={{ duration: 0.3, ease: 'easeOut' }}
-                />
+                <motion.div className="h-full rounded-full bg-primary-fixed" animate={{ width: `${((step + 1) / totalSteps) * 100}%` }} transition={{ duration: 0.3, ease: 'easeOut' }} />
               </div>
             </div>
-
-            {/* Question card */}
             <div className="bg-surface-container-high border border-outline-variant/20 rounded-3xl p-6 shadow-2xl overflow-hidden relative">
               <div className="absolute -top-16 -right-16 w-36 h-36 rounded-full bg-primary-fixed/8 blur-3xl pointer-events-none" />
-
               <AnimatePresence mode="wait" custom={direction}>
-                <motion.div
-                  key={step}
-                  custom={direction}
-                  initial={{ opacity: 0, x: direction * 32 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: direction * -32 }}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
-                  className="space-y-5"
-                >
+                <motion.div key={step} custom={direction} initial={{ opacity: 0, x: direction * 32 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: direction * -32 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="space-y-5">
                   <div className="space-y-1">
-                    <h2 className="font-sans font-black text-lg text-white leading-snug">
-                      {current.question}
-                    </h2>
+                    <h2 className="font-sans font-black text-lg text-white leading-snug">{current.question}</h2>
                     <p className="text-xs text-on-surface-variant/75">{current.subtitle}</p>
                   </div>
-
                   <div className="space-y-2">
                     {current.options.map((opt) => {
                       const isSelected = selectedOption === opt.score;
                       return (
-                        <button
-                          key={opt.score}
-                          type="button"
-                          onClick={() => setSelectedOption(opt.score)}
-                          className={`w-full text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all cursor-pointer active:scale-[0.98] ${
-                            isSelected
-                              ? 'bg-primary-fixed/12 border-primary-fixed text-primary-fixed font-bold'
-                              : 'border-outline-variant/40 bg-surface-variant/40 text-on-surface hover:bg-surface-bright hover:border-outline-variant/80'
-                          }`}
-                        >
+                        <button key={opt.score} type="button" onClick={() => setSelectedOption(opt.score)}
+                          className={`w-full text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all cursor-pointer active:scale-[0.98] ${isSelected ? 'bg-primary-fixed/12 border-primary-fixed text-primary-fixed font-bold' : 'border-outline-variant/40 bg-surface-variant/40 text-on-surface hover:bg-surface-bright hover:border-outline-variant/80'}`}>
                           <span className="flex items-center gap-3">
-                            <span
-                              className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-all ${
-                                isSelected
-                                  ? 'border-primary-fixed bg-primary-fixed'
-                                  : 'border-outline-variant/60'
-                              }`}
-                            >
-                              {isSelected && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-on-primary-fixed" />
-                              )}
+                            <span className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-all ${isSelected ? 'border-primary-fixed bg-primary-fixed' : 'border-outline-variant/60'}`}>
+                              {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-on-primary-fixed" />}
                             </span>
                             {opt.label}
                           </span>
@@ -554,28 +540,9 @@ export default function SkillAssessmentScreen({ onComplete, onClose }: SkillAsse
                       );
                     })}
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={handleNext}
-                    disabled={selectedOption === null}
-                    className={`w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-full font-sans font-extrabold text-xs uppercase tracking-widest transition-all active:scale-95 ${
-                      selectedOption !== null
-                        ? 'bg-primary-fixed hover:bg-primary-fixed-dim text-on-primary-fixed shadow-[0_4px_16px_rgba(202,243,0,0.2)] cursor-pointer'
-                        : 'bg-surface-container-highest text-on-surface-variant/40 cursor-not-allowed'
-                    }`}
-                  >
-                    {step < totalSteps - 1 ? (
-                      <>
-                        Next
-                        <ChevronRight className="w-4 h-4 stroke-[3px]" />
-                      </>
-                    ) : (
-                      <>
-                        <Zap className="w-4 h-4 stroke-[2.5px]" />
-                        Get My Rating
-                      </>
-                    )}
+                  <button type="button" onClick={handleNext} disabled={selectedOption === null}
+                    className={`w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-full font-sans font-extrabold text-xs uppercase tracking-widest transition-all active:scale-95 ${selectedOption !== null ? 'bg-primary-fixed hover:bg-primary-fixed-dim text-on-primary-fixed shadow-[0_4px_16px_rgba(202,243,0,0.2)] cursor-pointer' : 'bg-surface-container-highest text-on-surface-variant/40 cursor-not-allowed'}`}>
+                    {step < totalSteps - 1 ? <><span>Next</span><ChevronRight className="w-4 h-4 stroke-[3px]" /></> : <><Zap className="w-4 h-4 stroke-[2.5px]" /><span>Get My Rating</span></>}
                   </button>
                 </motion.div>
               </AnimatePresence>
@@ -585,116 +552,67 @@ export default function SkillAssessmentScreen({ onComplete, onClose }: SkillAsse
 
         {/* ── Result ── */}
         {phase === 'result' && (
-          <motion.section
-            key="result"
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.96 }}
-            transition={{ duration: 0.28 }}
-            className="w-full"
-          >
-            {/* Top nav */}
+          <motion.section key="result" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.28 }} className="w-full">
             <div className="flex items-center mb-6">
-              <button
-                onClick={handleBack}
-                className="flex items-center gap-1.5 text-on-surface-variant hover:text-on-surface text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back
+              <button onClick={handleBack} className="flex items-center gap-1.5 text-on-surface-variant hover:text-on-surface text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer">
+                <ArrowLeft className="w-4 h-4" />Back
               </button>
             </div>
 
-            <div className="bg-surface-container-high border border-outline-variant/20 rounded-3xl p-6 md:p-8 shadow-2xl overflow-hidden relative space-y-6">
-              <div className="absolute -top-20 -right-20 w-44 h-44 rounded-full bg-primary-fixed/10 blur-3xl pointer-events-none" />
-              <div className="absolute -bottom-24 -left-16 w-48 h-48 rounded-full bg-primary-fixed/5 blur-3xl pointer-events-none" />
+            <div className="space-y-5">
+              {/* Result card */}
+              <div className="bg-surface-container-high border border-outline-variant/20 rounded-3xl p-6 md:p-8 shadow-2xl overflow-hidden relative space-y-6">
+                <div className="absolute -top-20 -right-20 w-44 h-44 rounded-full bg-primary-fixed/10 blur-3xl pointer-events-none" />
+                <div className="absolute -bottom-24 -left-16 w-48 h-48 rounded-full bg-primary-fixed/5 blur-3xl pointer-events-none" />
 
-              {/* Result header */}
-              <div className="relative space-y-1">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 rounded-xl bg-primary-fixed text-on-primary-fixed flex items-center justify-center">
-                    <Trophy className="w-4 h-4 stroke-[2.5px]" />
-                  </div>
-                  <p className="font-mono text-xs text-primary-fixed uppercase tracking-[0.25em]">
-                    {selectedSport} · Assessment Complete
-                  </p>
-                </div>
-                <h2 className="font-sans font-black text-2xl md:text-3xl text-white tracking-tight leading-tight">
-                  Your skill rating is in.
-                </h2>
-              </div>
-
-              {/* Score display */}
-              <div className="relative flex items-center gap-6 bg-surface-container-low border border-outline-variant/15 rounded-2xl p-5">
-                <div className="relative shrink-0">
-                  <div className="w-24 h-24 rounded-full border-4 border-primary-fixed/20 flex items-center justify-center relative">
-                    <div className="absolute inset-1 rounded-full bg-primary-fixed/8" />
-                    <div className="relative text-center">
-                      <span className="font-sans font-black text-4xl text-primary-fixed leading-none">
-                        {finalScore}
-                      </span>
-                      <span className="block font-mono text-[9px] text-primary-fixed/70 uppercase tracking-widest mt-0.5">
-                        / 10
-                      </span>
+                <div className="relative space-y-1">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 rounded-xl bg-primary-fixed text-on-primary-fixed flex items-center justify-center">
+                      <Trophy className="w-4 h-4 stroke-[2.5px]" />
                     </div>
+                    <p className="font-mono text-xs text-primary-fixed uppercase tracking-[0.25em]">{selectedSport} · Assessment Complete</p>
                   </div>
+                  <h2 className="font-sans font-black text-2xl md:text-3xl text-white tracking-tight leading-tight">Your skill rating is in.</h2>
                 </div>
-                <div className="space-y-1 min-w-0">
-                  <div className="inline-flex items-center px-2 py-0.5 rounded bg-primary-fixed/10 border border-primary-fixed/20">
-                    <span className="font-mono text-[10px] font-bold text-primary-fixed uppercase tracking-widest">
-                      {scoreToSkillLevel(finalScore)}
+
+                <div className="relative flex items-center gap-5 bg-surface-container-low border border-outline-variant/15 rounded-2xl p-5">
+                  <div className="absolute inset-0 rounded-2xl bg-primary-fixed/3 pointer-events-none" />
+                  <div className="relative shrink-0 w-20 h-20 rounded-2xl bg-primary-fixed/10 border-2 border-primary-fixed/30 flex items-center justify-center">
+                    <Trophy className="w-8 h-8 text-primary-fixed" />
+                  </div>
+                  <div className="space-y-1 min-w-0">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded bg-primary-fixed/10 border border-primary-fixed/20">
+                      <span className="font-mono text-[11px] font-bold text-primary-fixed uppercase tracking-widest">{SKILL_LEVEL_LABELS[finalLevel]}</span>
                     </span>
+                    <p className="font-sans font-extrabold text-lg text-white leading-tight">{TIER_LEGEND.find(t => t.level === finalLevel)?.description}</p>
                   </div>
-                  <p className="font-sans font-extrabold text-base text-white leading-tight">
-                    {scoreLabel(finalScore)}
-                  </p>
-                  <p className="text-xs text-on-surface-variant/80 leading-relaxed">
-                    {scoreDescription(finalScore)}
-                  </p>
+                </div>
+
+                <div className="space-y-3 relative">
+                  <button type="button" onClick={() => onComplete(selectedSport!, finalLevel)}
+                    className="w-full bg-primary-fixed hover:bg-primary-fixed-dim text-on-primary-fixed font-sans font-extrabold text-sm uppercase tracking-widest py-4 px-6 rounded-full shadow-[0_4px_16px_rgba(202,243,0,0.25)] transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+                    <Zap className="w-4 h-4 stroke-[2.5px]" />Accept & Explore Sessions
+                  </button>
+                  <button type="button" onClick={handleRetake}
+                    className="w-full border border-outline-variant/50 bg-surface-variant/30 hover:bg-surface-bright text-on-surface-variant font-sans font-extrabold text-xs uppercase tracking-widest py-3 px-6 rounded-full transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+                    <RotateCcw className="w-3.5 h-3.5" />Retake Assessment
+                  </button>
                 </div>
               </div>
 
-              {/* Score bar */}
-              <div className="space-y-2">
-                <p className="font-mono text-[10px] text-on-surface-variant uppercase tracking-widest">
-                  Rating Spectrum
-                </p>
-                <div className="relative w-full h-3 rounded-full bg-surface-container-highest overflow-visible">
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-full"
-                    style={{
-                      width: `${(finalScore / 10) * 100}%`,
-                      background: 'linear-gradient(90deg, #6ec6ff 0%, #caf300 100%)',
-                    }}
-                  />
-                  <div
-                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-primary-fixed border-2 border-background shadow-[0_0_8px_rgba(202,243,0,0.6)]"
-                    style={{ left: `calc(${(finalScore / 10) * 100}% - 8px)` }}
-                  />
+              {/* Tier legend */}
+              <div className="bg-surface-container-high border border-outline-variant/15 rounded-2xl p-5 space-y-3">
+                <p className="font-mono text-[10px] text-on-surface-variant uppercase tracking-widest">Skill Tier Reference</p>
+                <div className="space-y-2">
+                  {TIER_LEGEND.map(({ level, description }) => (
+                    <div key={level} className={`flex gap-3 items-start p-3 rounded-xl transition-all ${level === finalLevel ? 'bg-primary-fixed/8 border border-primary-fixed/25' : 'border border-transparent'}`}>
+                      <span className={`inline-flex items-center shrink-0 px-2 py-0.5 rounded text-[9px] font-bold tracking-widest uppercase font-mono border mt-0.5 ${level === finalLevel ? 'bg-primary-fixed/15 border-primary-fixed/30 text-primary-fixed' : 'bg-surface-container-highest border-outline-variant/20 text-on-surface-variant'}`}>
+                        {SKILL_LEVEL_LABELS[level]}
+                      </span>
+                      <p className={`text-xs leading-relaxed ${level === finalLevel ? 'text-on-surface' : 'text-on-surface-variant/70'}`}>{description}</p>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex justify-between">
-                  <span className="font-mono text-[9px] text-on-surface-variant/60 uppercase">Beginner</span>
-                  <span className="font-mono text-[9px] text-on-surface-variant/60 uppercase">Pro</span>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="space-y-3 relative">
-                <button
-                  type="button"
-                  onClick={handleAccept}
-                  className="w-full bg-primary-fixed hover:bg-primary-fixed-dim text-on-primary-fixed font-sans font-extrabold text-sm uppercase tracking-widest py-4 px-6 rounded-full shadow-[0_4px_16px_rgba(202,243,0,0.25)] transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Zap className="w-4 h-4 stroke-[2.5px]" />
-                  Accept & Explore Sessions
-                </button>
-                <button
-                  type="button"
-                  onClick={handleRetake}
-                  className="w-full border border-outline-variant/50 bg-surface-variant/30 hover:bg-surface-bright text-on-surface-variant font-sans font-extrabold text-xs uppercase tracking-widest py-3 px-6 rounded-full transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  Retake Assessment
-                </button>
               </div>
             </div>
           </motion.section>
