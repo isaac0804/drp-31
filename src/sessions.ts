@@ -58,7 +58,10 @@ export function subscribeToSessions(
   const q = query(collection(db, SESSIONS_COL), orderBy('date', 'asc'));
   return onSnapshot(
     q,
-    (snapshot) => onChange(snapshot.docs.map((d) => d.data() as MatchSession)),
+    (snapshot) => onChange(snapshot.docs.map((d) => {
+      const data = d.data() as MatchSession;
+      return { sport: 'Badminton', matchType: 'doubles', ...data } as MatchSession;
+    })),
     onError
   );
 }
