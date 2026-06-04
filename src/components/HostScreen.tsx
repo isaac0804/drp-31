@@ -235,9 +235,9 @@ export default function HostScreen({
   const duration = getDuration(timeStart, timeEnd);
 
   return (
-    <article className="space-y-6">
+    <article className="space-y-6 pt-0">
       {/* Page Title Header */}
-      <section className="space-y-1">
+      <section className="space-y-1 mt-0">
         <div className="flex items-center gap-2">
           {(isEditing || step === 'details') && (
             <button
