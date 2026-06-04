@@ -133,28 +133,22 @@ export default function SessionDetails({
         </div>
       </header>
 
-      {/* Hero Image Section with cover, action blur, and dark custom overlays */}
-      <section className="relative h-64 md:h-80 w-full overflow-hidden mt-16 rounded-b-2xl">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXu5nimZliHOtcr9LNZzpZFUEu2EbVvyOH6V6RZ7FgnmXg6lH_XDhrZ9FwFa8ilM7HMfm3ZbDOBPMUvlfaoAh3FFqtmzx8y74dU7NUVYtkqNRIr7qe65iauCAE6tW5ripVsaRQloKkkXg3F5EnR1Uc-IXTt58TIXtpVM97M1ptvnkcUusfYQjygOJoWD6fl-rVX6ITqZrLnXVb6XIRRDnKP2mbL6TNetQdzn3_SSEDoadOj_t79KHfwkIUquL5voyIePZrp7u05IhEl0')`
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-
-        {/* Overlaid badminton visual badges */}
-        <div className="absolute bottom-4 left-4 right-4 flex flex-col gap-2">
+      {/* Session Title Section */}
+      <section className="pt-20 pb-6 px-4">
+        <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <span className="bg-primary-container/20 text-primary-fixed text-[10px] font-sans font-extrabold px-3 py-1 rounded-full uppercase border border-primary-fixed/30 backdrop-blur-md tracking-wider">
               {skillRangeLabel}
             </span>
             <span className="bg-surface-variant text-on-surface text-[10px] font-sans font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
-              {session.matchType}
+              {session.sport === 'Football' && session.footballFormat ? session.footballFormat : session.matchType}
             </span>
           </div>
           <h1 className="font-sans font-black text-2xl md:text-3xl text-primary leading-tight uppercase tracking-tight">
-            {session.sport} {session.matchType === 'singles' ? 'Singles' : 'Doubles'}
+            {session.sport === 'Football' && session.footballFormat
+              ? `${session.sport} ${session.footballFormat}`
+              : `${session.sport} ${session.matchType === 'singles' ? 'Singles' : 'Doubles'}`
+            }
           </h1>
         </div>
       </section>

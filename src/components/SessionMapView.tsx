@@ -25,6 +25,7 @@ function buildPopupHtml(session: MatchSession) {
   const spotsLabel = isFull ? 'Full' : `${spots} spot${spots === 1 ? '' : 's'} left`;
   const spotsColor = isFull ? '#ef4444' : '#caf300';
   const gender = session.gender === 'male' ? '♂ Male' : session.gender === 'female' ? '♀ Female' : '⚥ Open';
+  const formatDisplay = session.sport === 'Football' && session.footballFormat ? session.footballFormat : session.matchType;
 
   return `
     <div style="font-family:Inter,sans-serif;color:#e2e2e2;background:#282a2b;padding:12px 14px;border-radius:12px;min-width:190px;max-width:220px;border:1px solid rgba(255,255,255,0.08)">
@@ -32,7 +33,7 @@ function buildPopupHtml(session: MatchSession) {
       <div style="font-size:11px;color:#8a9090;margin-bottom:8px">${esc(session.date)} · ${esc(session.timeStart)}–${esc(session.timeEnd)}</div>
       <div style="display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap">
         <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;background:rgba(202,243,0,0.1);color:#caf300;border:1px solid rgba(202,243,0,0.3);text-transform:uppercase;letter-spacing:0.05em">${esc(session.skillLevel)}</span>
-        <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;background:#333535;color:#8a9090;text-transform:uppercase;letter-spacing:0.05em">${esc(session.matchType)}</span>
+        <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;background:#333535;color:#8a9090;text-transform:uppercase;letter-spacing:0.05em">${esc(formatDisplay)}</span>
         <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;background:#333535;color:#8a9090;text-transform:uppercase;letter-spacing:0.05em">${esc(gender)}</span>
       </div>
       <div style="font-size:11px;color:${spotsColor};font-weight:600;margin-bottom:10px">${esc(spotsLabel)}</div>

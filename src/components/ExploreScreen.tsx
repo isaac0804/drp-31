@@ -402,7 +402,7 @@ export default function ExploreScreen({
                       })()}
                     </span>
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide bg-surface-variant text-on-surface-variant uppercase font-sans">
-                      {session.matchType}
+                      {session.sport === 'Football' && session.footballFormat ? session.footballFormat : session.matchType}
                     </span>
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide bg-surface-variant text-on-surface-variant uppercase font-sans">
                       {session.gender === 'male' ? '♂ Male' : session.gender === 'female' ? '♀ Female' : '⚥ Open'}
