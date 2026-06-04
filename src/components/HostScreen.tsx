@@ -1,5 +1,5 @@
 import React, { useState, useEffect, FormEvent, useRef } from 'react';
-import { MatchSession, SkillLevel, MatchType, GenderPreference, Sport, SessionLocation, SKILL_LEVELS, SKILL_LEVEL_LABELS } from '../types';
+import { MatchSession, SkillLevel, MatchType, GenderPreference, Sport, SessionLocation, FootballFormat, SKILL_LEVELS, SKILL_LEVEL_LABELS } from '../types';
 import { SPORTS } from '../data';
 import { Calendar, Clock, MapPin, Plus, Minus, Check, ArrowLeft, AlignLeft, User, Users, Globe, Lock, Copy } from 'lucide-react';
 import LocationPicker from './LocationPicker';

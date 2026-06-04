@@ -74,7 +74,7 @@ export default function App() {
       setUser(currentUser);
       setIsAuthLoading(false);
       setAuthError(null);
-      if (currentUser && currentUser.skillScore == null) setActiveScreen('assessment');
+      if (currentUser && !currentUser.skillsBySport || (currentUser && Object.keys(currentUser.skillsBySport ?? {}).length === 0)) setActiveScreen('assessment');
       if (currentUser) {
         getReviewsForPlayer(currentUser.id).then(setMyReviews).catch(console.error);
       } else {
