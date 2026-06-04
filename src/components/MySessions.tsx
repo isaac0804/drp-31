@@ -25,9 +25,10 @@ function isUpcoming(dateStr: string): boolean {
 
 function buildGCalUrl(s: MatchSession): string {
   const fmt = (d: string, t: string) => d.replace(/-/g, '') + 'T' + t.replace(':', '') + '00';
+  const formatDisplay = s.sport === 'Football' && s.footballFormat ? s.footballFormat : s.matchType;
   const params = new URLSearchParams({
     action: 'TEMPLATE',
-    text: `${s.sport} ${s.matchType} · ${s.skillLevel}`,
+    text: `${s.sport} ${formatDisplay} · ${s.skillLevel}`,
     dates: `${fmt(s.date, s.timeStart)}/${fmt(s.date, s.timeEnd)}`,
     details: `Hosted by ${s.host.name}\n\n${s.hostNote}`,
     location: s.address,
@@ -306,7 +307,10 @@ function SessionCard({
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-base text-white leading-snug">
-              {session.sport} {session.matchType === 'singles' ? 'Singles' : 'Doubles'}
+              {session.sport === 'Football' && session.footballFormat
+                ? `${session.sport} ${session.footballFormat}`
+                : `${session.sport} ${session.matchType === 'singles' ? 'Singles' : 'Doubles'}`
+              }
             </h3>
             <p className="flex items-center gap-1 mt-1 text-[11px] text-on-surface-variant/55">
               <MapPin className="w-3 h-3 shrink-0" />
