@@ -170,7 +170,11 @@ export default function HostScreen({
     setPlayersNeeded(totals[format]);
   };
 
-  const minPlayers = sport === 'Football' ? 2 : (matchType === 'singles' ? 2 : 4);
+  const footballFormatMin = sport === 'Football'
+    ? (FOOTBALL_FORMATS.find(f => f.label === footballFormat)?.total ?? 10)
+    : null;
+  const minPlayers = footballFormatMin ?? (matchType === 'singles' ? 2 : 4);
+  const maxPlayers = 30;
 
   const handleMatchTypeChange = (type: MatchType) => {
     setMatchType(type);
@@ -182,7 +186,7 @@ export default function HostScreen({
   };
 
   const handleIncrement = () => {
-    setPlayersNeeded((prev) => Math.min(20, prev + 1));
+    setPlayersNeeded((prev) => Math.min(maxPlayers, prev + 1));
   };
 
   const handleSubmit = (e: FormEvent) => {
@@ -486,7 +490,7 @@ export default function HostScreen({
           <div className="space-y-1.5">
             <div className="flex justify-between items-center">
               <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Total Players</label>
-              <span className="text-xs text-on-surface-variant font-mono">Min {minPlayers} · max 20 · includes rotation</span>
+              <span className="text-xs text-on-surface-variant font-mono">Min {minPlayers} · max {maxPlayers}</span>
             </div>
             <div className="flex items-center justify-between bg-surface-variant/50 rounded-lg border border-outline-variant/40 p-2">
               <button
@@ -501,7 +505,7 @@ export default function HostScreen({
               <button
                 onClick={handleIncrement}
                 type="button"
-                disabled={playersNeeded >= 20}
+                disabled={playersNeeded >= maxPlayers}
                 className="w-10 h-10 flex items-center justify-center rounded-md bg-surface-bright text-on-surface hover:bg-surface-container transition-colors active:scale-95 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <Plus className="w-4 h-4" />
