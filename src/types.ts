@@ -24,6 +24,7 @@ export interface Review {
 export type MatchType = 'singles' | 'doubles';
 export type FootballFormat = '5v5' | '7v7' | '11v11';
 export type GenderPreference = 'male' | 'female' | 'open';
+export type UserGender = 'male' | 'female';
 
 export interface SportSkill {
   skillLevel: SkillLevel;
@@ -33,6 +34,7 @@ export interface UserProfile {
   id: string;
   name: string;
   avatar: string;
+  gender?: UserGender;
   skillLevel: SkillLevel;
   skillsBySport?: Partial<Record<Sport, SportSkill>>;
   about?: string;

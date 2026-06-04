@@ -330,6 +330,7 @@ export default function App() {
                 onPostSession={handlePostSession}
                 onUpdateSession={handleUpdateSession}
                 editingSession={editingSession}
+                hostGender={user.gender}
                 onCancelEdit={() => {
                   setEditingSession(null);
                   setActiveScreen('sessions');
