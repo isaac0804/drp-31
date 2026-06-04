@@ -141,11 +141,14 @@ export default function SessionDetails({
               {session.skillLevel}
             </span>
             <span className="bg-surface-variant text-on-surface text-[10px] font-sans font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
-              {session.matchType}
+              {session.sport === 'Football' && session.footballFormat ? session.footballFormat : session.matchType}
             </span>
           </div>
           <h1 className="font-sans font-black text-2xl md:text-3xl text-primary leading-tight uppercase tracking-tight">
-            {session.sport} {session.matchType === 'singles' ? 'Singles' : 'Doubles'}
+            {session.sport === 'Football' && session.footballFormat
+              ? `${session.sport} ${session.footballFormat}`
+              : `${session.sport} ${session.matchType === 'singles' ? 'Singles' : 'Doubles'}`
+            }
           </h1>
         </div>
       </section>
