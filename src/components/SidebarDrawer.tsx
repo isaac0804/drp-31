@@ -60,10 +60,7 @@ export default function SidebarDrawer({
               {/* Navigation links inside drawer */}
               <div className="space-y-2">
                 <button
-                  onClick={() => {
-                    onNavigate('explore');
-                    onClose();
-                  }}
+                  onClick={() => { onNavigate('explore'); onClose(); }}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-sans font-semibold text-sm uppercase tracking-wide ${
                     activeScreen === 'explore'
                       ? 'bg-primary-fixed text-on-primary-fixed shadow-[0_4px_12px_rgba(202,243,0,0.15)]'
@@ -75,10 +72,7 @@ export default function SidebarDrawer({
                 </button>
 
                 <button
-                  onClick={() => {
-                    onNavigate('host');
-                    onClose();
-                  }}
+                  onClick={() => { onNavigate('host'); onClose(); }}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-sans font-semibold text-sm uppercase tracking-wide ${
                     activeScreen === 'host'
                       ? 'bg-primary-fixed text-on-primary-fixed shadow-[0_4px_12px_rgba(202,243,0,0.15)]'
@@ -90,10 +84,7 @@ export default function SidebarDrawer({
                 </button>
 
                 <button
-                  onClick={() => {
-                    onNavigate('sessions');
-                    onClose();
-                  }}
+                  onClick={() => { onNavigate('sessions'); onClose(); }}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-sans font-semibold text-sm uppercase tracking-wide ${
                     activeScreen === 'sessions'
                       ? 'bg-primary-fixed text-on-primary-fixed shadow-[0_4px_12px_rgba(202,243,0,0.15)]'
@@ -105,10 +96,7 @@ export default function SidebarDrawer({
                 </button>
 
                 <button
-                  onClick={() => {
-                    onNavigate('profile');
-                    onClose();
-                  }}
+                  onClick={() => { onNavigate('profile'); onClose(); }}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-sans font-semibold text-sm uppercase tracking-wide ${
                     activeScreen === 'profile'
                       ? 'bg-primary-fixed text-on-primary-fixed shadow-[0_4px_12px_rgba(202,243,0,0.15)]'
@@ -118,15 +106,9 @@ export default function SidebarDrawer({
                   <Users className="w-4 h-4" />
                   Athletic Profile
                 </button>
-              </div>
 
-              {/* Skill Assessment */}
-              <div>
                 <button
-                  onClick={() => {
-                    onRetakeAssessment();
-                    onClose();
-                  }}
+                  onClick={() => { onRetakeAssessment(); onClose(); }}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-sans font-semibold text-sm uppercase tracking-wide hover:bg-surface-variant text-on-surface-variant hover:text-on-surface"
                 >
                   <Target className="w-4 h-4" />
@@ -135,7 +117,7 @@ export default function SidebarDrawer({
               </div>
 
               {/* Live Statistics Panel */}
-              <div className="mt-8 bg-surface-container-low rounded-xl p-4 border border-outline-variant/10">
+              <div className="mt-6 bg-surface-container-low rounded-xl p-4 border border-outline-variant/10">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-primary-fixed mb-3 flex items-center gap-1.5">
                   <Award className="w-3.5 h-3.5" />
                   Arena Stats

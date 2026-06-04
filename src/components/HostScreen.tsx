@@ -1,8 +1,9 @@
-import React, { useState, useEffect, FormEvent, useRef } from 'react';
+import React, { useState, useEffect, FormEvent } from 'react';
 import { MatchSession, SkillLevel, MatchType, GenderPreference, Sport, SessionLocation, FootballFormat, SKILL_LEVELS, SKILL_LEVEL_LABELS } from '../types';
 import { SPORTS } from '../data';
 import { Calendar, Clock, MapPin, Plus, Minus, Check, ArrowLeft, AlignLeft, User, Users, Globe, Lock, Copy } from 'lucide-react';
 import LocationPicker from './LocationPicker';
+import SkillRangePicker from './SkillRangePicker';
 
 const getLocalDateString = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -22,11 +23,11 @@ const getDefaultTimes = () => {
 
 type FootballFormatOption = '5-a-side' | '7-a-side' | '11-a-side';
 
-const SPORT_META: Record<Sport, { tagline: string }> = {
-  'Badminton':    { tagline: 'Set up the court, find your partner, and smash.' },
-  'Table Tennis': { tagline: 'Pick a table, grab a paddle, and rally.' },
-  'Football':     { tagline: 'Organise the squad, book the pitch, and play.' },
-  'Pickleball':   { tagline: 'Find the court, rally up, and dink.' },
+const SPORT_META: Record<Sport, { tagline: string; emoji: string; gradient: string }> = {
+  'Badminton':    { tagline: 'Set up the court, find your partner, and smash.',   emoji: '🏸', gradient: 'bg-gradient-to-br from-surface-container-highest to-primary-fixed/25' },
+  'Table Tennis': { tagline: 'Pick a table, grab a paddle, and rally.',            emoji: '🏓', gradient: 'bg-gradient-to-bl from-surface-container-highest to-primary-fixed/25' },
+  'Football':     { tagline: 'Organise the squad, book the pitch, and play.',      emoji: '⚽', gradient: 'bg-gradient-to-tr from-surface-container-highest to-primary-fixed/25' },
+  'Pickleball':   { tagline: 'Find the court, rally up, and dink.',                emoji: '🎾', gradient: 'bg-gradient-to-tl from-surface-container-highest to-primary-fixed/25' },
 };
 
 const FOOTBALL_FORMATS: { label: FootballFormatOption; total: number; note: string; display: FootballFormat }[] = [
@@ -40,104 +41,6 @@ const inferFootballFormat = (players: number): FootballFormatOption => {
   if (players >= 12) return '7-a-side';
   return '5-a-side';
 };
-
-function SkillRangePicker({ min, max, onChange }: {
-  min: SkillLevel;
-  max: SkillLevel;
-  onChange: (min: SkillLevel, max: SkillLevel) => void;
-}) {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const dragging = useRef<'min' | 'max' | null>(null);
-  const N = SKILL_LEVELS.length - 1;
-  const minIdx = SKILL_LEVELS.indexOf(min);
-  const maxIdx = SKILL_LEVELS.indexOf(max);
-
-  const idxFromX = (clientX: number) => {
-    if (!trackRef.current) return 0;
-    const { left, width } = trackRef.current.getBoundingClientRect();
-    return Math.max(0, Math.min(N, Math.round(((clientX - left) / width) * N)));
-  };
-
-  const onTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (dragging.current) return;
-    const i = idxFromX(e.clientX);
-    if (i <= minIdx) onChange(SKILL_LEVELS[i], max);
-    else if (i >= maxIdx) onChange(min, SKILL_LEVELS[i]);
-    else if (i - minIdx <= maxIdx - i) onChange(SKILL_LEVELS[i], max);
-    else onChange(min, SKILL_LEVELS[i]);
-  };
-
-  const mkPointerDown = (which: 'min' | 'max') => (e: React.PointerEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-    dragging.current = which;
-    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
-  };
-
-  const mkPointerMove = (which: 'min' | 'max') => (e: React.PointerEvent<HTMLDivElement>) => {
-    if (dragging.current !== which) return;
-    const i = idxFromX(e.clientX);
-    if (which === 'min') onChange(SKILL_LEVELS[Math.min(i, maxIdx)], max);
-    else onChange(min, SKILL_LEVELS[Math.max(i, minIdx)]);
-  };
-
-  const onPointerUp = () => { dragging.current = null; };
-
-  return (
-    <div className="space-y-3">
-      {/* Track */}
-      <div ref={trackRef} className="relative h-5 cursor-pointer" onClick={onTrackClick}>
-        <div className="absolute top-1/2 -translate-y-1/2 inset-x-0 h-px bg-outline-variant/40" />
-        <div
-          className="absolute top-1/2 -translate-y-1/2 h-1 rounded-full bg-primary-fixed"
-          style={{ left: `${(minIdx / N) * 100}%`, right: `${((N - maxIdx) / N) * 100}%` }}
-        />
-        {SKILL_LEVELS.map((tier, i) => {
-          if (i === minIdx || i === maxIdx) return null;
-          return (
-            <div
-              key={tier}
-              className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full pointer-events-none ${
-                i > minIdx && i < maxIdx ? 'bg-primary-fixed/60' : 'bg-outline-variant/50'
-              }`}
-              style={{ left: `${(i / N) * 100}%` }}
-            />
-          );
-        })}
-        {/* Min handle */}
-        <div
-          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-primary-fixed border-2 border-background shadow-[0_0_0_3px_rgba(202,243,0,0.2),0_2px_6px_rgba(0,0,0,0.4)] z-20 cursor-grab active:cursor-grabbing touch-none select-none"
-          style={{ left: `${(minIdx / N) * 100}%` }}
-          onPointerDown={mkPointerDown('min')}
-          onPointerMove={mkPointerMove('min')}
-          onPointerUp={onPointerUp}
-        />
-        {/* Max handle */}
-        <div
-          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-primary-fixed border-2 border-background shadow-[0_0_0_3px_rgba(202,243,0,0.2),0_2px_6px_rgba(0,0,0,0.4)] z-20 cursor-grab active:cursor-grabbing touch-none select-none"
-          style={{ left: `${(maxIdx / N) * 100}%` }}
-          onPointerDown={mkPointerDown('max')}
-          onPointerMove={mkPointerMove('max')}
-          onPointerUp={onPointerUp}
-        />
-      </div>
-      {/* Labels — absolutely positioned to align with dots; overflow-visible for edge labels */}
-      <div className="relative h-4" style={{ overflow: 'visible' }}>
-        {SKILL_LEVELS.map((tier, i) => (
-          <span
-            key={tier}
-            className={`absolute -translate-x-1/2 font-mono text-[9px] uppercase tracking-wide leading-none whitespace-nowrap ${
-              i >= minIdx && i <= maxIdx ? 'text-primary-fixed font-bold' : 'text-on-surface-variant/40'
-            }`}
-            style={{ left: `${(i / N) * 100}%`, top: 0 }}
-          >
-            {SKILL_LEVEL_LABELS[tier]}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 interface HostScreenProps {
   onPostSession: (session: Omit<MatchSession, 'host' | 'playersJoined'>) => void;
   onUpdateSession: (id: string, updatedFields: Partial<MatchSession>) => void;
@@ -364,18 +267,23 @@ export default function HostScreen({
       {step === 'sport-select' ? (
         /* ── Step 1: Sport Selection ── */
         <div className="grid grid-cols-2 gap-3">
-          {SPORTS.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => handleSportSelect(s)}
-              className="flex items-center justify-center py-8 px-4 rounded-xl border border-outline-variant/30 bg-surface-container-high hover:bg-surface-bright hover:border-primary-fixed/60 transition-all active:scale-95 cursor-pointer group"
-            >
-              <span className="font-sans font-black text-sm uppercase tracking-wider text-on-surface group-hover:text-primary-fixed transition-colors">
-                {s}
-              </span>
-            </button>
-          ))}
+          {SPORTS.map((s) => {
+            const meta = SPORT_META[s];
+            return (
+              <button
+                key={s}
+                type="button"
+                onClick={() => handleSportSelect(s)}
+                className={`relative overflow-hidden flex flex-col items-start gap-2 p-5 rounded-xl border border-outline-variant/20 hover:border-primary-fixed/55 transition-all active:scale-95 cursor-pointer group ${meta.gradient}`}
+              >
+                <div className="absolute -bottom-3 -right-3 w-16 h-16 rounded-full bg-primary-fixed/10 blur-xl group-hover:bg-primary-fixed/20 transition-all pointer-events-none" />
+                <span className="text-3xl">{meta.emoji}</span>
+                <span className="font-sans font-black text-sm uppercase tracking-wider text-on-surface group-hover:text-primary-fixed transition-colors">
+                  {s}
+                </span>
+              </button>
+            );
+          })}
         </div>
       ) : (
         /* ── Step 2: Session Details Form ── */
