@@ -39,6 +39,7 @@ export interface Player {
   id: string;
   name: string;
   avatar: string;
+  skillLevel?: SkillLevel;
 }
 
 export interface SessionLocation {

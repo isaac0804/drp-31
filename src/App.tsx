@@ -183,7 +183,14 @@ export default function App() {
 
   const handleJoinSession = (sessionId: string) => {
     if (!user) return;
-    const player: Player = { id: user.id, name: user.name, avatar: user.avatar };
+    const session = sessions.find((s) => s.id === sessionId);
+    const sportSkill = session ? user.skillsBySport?.[session.sport] : undefined;
+    const player: Player = {
+      id: user.id,
+      name: user.name,
+      avatar: user.avatar,
+      skillLevel: sportSkill?.skillLevel ?? user.skillLevel,
+    };
     joinSession(sessionId, player).catch((err) => console.error('Join session error:', err));
   };
 
