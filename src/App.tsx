@@ -278,6 +278,7 @@ export default function App() {
         }}
         onLogoClick={() => {
           setEditingSession(null);
+          setExploreViewMode('list');
           setActiveScreen('explore');
         }}
       />
@@ -289,6 +290,7 @@ export default function App() {
         activeScreen={activeScreen}
         onNavigate={(screen) => {
           setEditingSession(null);
+          if (screen === 'explore') setExploreViewMode('list');
           setActiveScreen(screen);
         }}
         onSignOut={handleSignOut}
@@ -397,6 +399,7 @@ export default function App() {
         activeScreen={activeScreen}
         onNavigate={(screen) => {
           setEditingSession(null);
+          if (screen === 'explore') setExploreViewMode('list');
           setActiveScreen(screen);
         }}
       />
