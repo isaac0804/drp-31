@@ -1,4 +1,12 @@
-export type SkillLevel = 'beginner' | 'intermediate' | 'advanced' | 'pro';
+export type SkillLevel = 'beginner' | 'lower-intermediate' | 'upper-intermediate' | 'advanced' | 'pro';
+export const SKILL_LEVELS: SkillLevel[] = ['beginner', 'lower-intermediate', 'upper-intermediate', 'advanced', 'pro'];
+export const SKILL_LEVEL_LABELS: Record<SkillLevel, string> = {
+  'beginner': 'Beginner',
+  'lower-intermediate': 'Lower Int.',
+  'upper-intermediate': 'Upper Int.',
+  'advanced': 'Advanced',
+  'pro': 'Pro',
+};
 export type Sport = 'Badminton' | 'Table Tennis' | 'Football' | 'Pickleball';
 export type PlayAgain = 'yes' | 'no';
 export type SkillAccuracy = 'too-high' | 'accurate' | 'too-low';
@@ -18,7 +26,6 @@ export type GenderPreference = 'male' | 'female' | 'open';
 
 export interface SportSkill {
   skillLevel: SkillLevel;
-  skillScore: number;
 }
 
 export interface UserProfile {
@@ -26,7 +33,6 @@ export interface UserProfile {
   name: string;
   avatar: string;
   skillLevel: SkillLevel;
-  skillScore?: number; // 1–10 from latest assessment
   skillsBySport?: Partial<Record<Sport, SportSkill>>;
   about?: string;
   sportsPlayed?: string[];
@@ -58,7 +64,8 @@ export interface MatchSession {
   address: string;
   sport: Sport;
   location?: SessionLocation;
-  skillLevel: SkillLevel;
+  skillLevel: SkillLevel;       // minimum required level (range start)
+  skillLevelMax?: SkillLevel;   // maximum accepted level (range end); defaults to skillLevel
   matchType: MatchType;
   gender?: GenderPreference;
   maxPlayers: number; // 2 for singles, 4 for doubles (or user specified)

@@ -130,11 +130,10 @@ export default function App() {
       .catch((err) => console.error('Session cascade error:', err));
   };
 
-  const handleAssessmentComplete = async (sport: Sport, score: number, skillLevel: UserProfile['skillLevel']) => {
+  const handleAssessmentComplete = async (sport: Sport, skillLevel: UserProfile['skillLevel']) => {
     await handleUpdateProfile({
-      skillsBySport: { ...(user?.skillsBySport ?? {}), [sport]: { skillLevel, skillScore: score } },
+      skillsBySport: { ...(user?.skillsBySport ?? {}), [sport]: { skillLevel } },
       skillLevel,
-      skillScore: score,
     });
     setActiveScreen('explore');
   };

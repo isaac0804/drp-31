@@ -1,4 +1,4 @@
-import { MatchSession, Player, UserProfile } from '../types';
+import { MatchSession, Player, UserProfile, SkillLevel, SKILL_LEVELS, SKILL_LEVEL_LABELS } from '../types';
 import { ArrowLeft, Calendar, MapPin, Plus, Trophy, Pencil, CalendarPlus, Navigation } from 'lucide-react';
 
 interface SessionDetailsProps {
@@ -27,7 +27,16 @@ export default function SessionDetails({
   const isFull = spotsFilled >= maxPlayers;
 
   const userSportLevel = currentUser.skillsBySport?.[session.sport]?.skillLevel ?? currentUser.skillLevel;
-  const levelMatch = userSportLevel === session.skillLevel;
+  const safeLabel = (level: string | undefined) =>
+    level ? (SKILL_LEVEL_LABELS[level as SkillLevel] ?? level) : '';
+  const minIdx = SKILL_LEVELS.indexOf(session.skillLevel);
+  const maxIdx = SKILL_LEVELS.indexOf(session.skillLevelMax ?? session.skillLevel);
+  const userIdx = SKILL_LEVELS.indexOf(userSportLevel);
+  // Old sessions may have a skill level not in the new list; always allow joining those
+  const levelMatch = minIdx === -1 || (userIdx >= minIdx && userIdx <= maxIdx);
+  const skillRangeLabel = session.skillLevelMax && session.skillLevelMax !== session.skillLevel
+    ? `${safeLabel(session.skillLevel)} – ${safeLabel(session.skillLevelMax)}`
+    : safeLabel(session.skillLevel);
 
   // Calculate percentage for progress meter
   const fillPercentage = Math.min((spotsFilled / maxPlayers) * 100, 100);
@@ -138,7 +147,7 @@ export default function SessionDetails({
         <div className="absolute bottom-4 left-4 right-4 flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <span className="bg-primary-container/20 text-primary-fixed text-[10px] font-sans font-extrabold px-3 py-1 rounded-full uppercase border border-primary-fixed/30 backdrop-blur-md tracking-wider">
-              {session.skillLevel}
+              {skillRangeLabel}
             </span>
             <span className="bg-surface-variant text-on-surface text-[10px] font-sans font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
               {session.matchType}
@@ -276,7 +285,7 @@ export default function SessionDetails({
                         {slot.name}
                       </div>
                       <div className="text-[10px] font-mono text-primary-fixed/80 uppercase tracking-wider mt-0.5">
-                        {slot.skillLevel ?? session.skillLevel}
+                        {safeLabel(slot.skillLevel ?? session.skillLevel)}
                       </div>
                     </div>
                   </button>
@@ -338,7 +347,7 @@ export default function SessionDetails({
                     : 'bg-primary-fixed text-on-primary-fixed hover:bg-primary-fixed-dim shadow-[0_4px_20px_rgba(202,243,0,0.3)] hover:scale-101 active:scale-98 cursor-pointer'
                 }`}
               >
-                {isFull ? 'Match is full' : !levelMatch ? `${session.skillLevel} only` : 'Join session'}
+                {isFull ? 'Match is full' : !levelMatch ? `${skillRangeLabel} only` : 'Join session'}
                 {!isFull && levelMatch && <Trophy className="w-4 h-4" />}
               </button>
               {!isFull && !levelMatch && (

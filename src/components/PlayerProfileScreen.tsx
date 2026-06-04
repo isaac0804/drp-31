@@ -99,12 +99,6 @@ export default function PlayerProfileScreen({
                         className="bg-surface-container-low border border-outline-variant/15 rounded-xl p-3 space-y-1.5"
                       >
                         <p className="font-sans font-extrabold text-xs text-on-surface">{sport}</p>
-                        <div className="flex items-end gap-1.5">
-                          <span className="font-mono font-black text-2xl text-primary-fixed leading-none">
-                            {entry.skillScore}
-                          </span>
-                          <span className="font-mono text-[10px] text-primary-fixed/60 mb-0.5">/ 10</span>
-                        </div>
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold tracking-widest bg-primary-fixed/10 text-primary-fixed uppercase font-mono border border-primary-fixed/20">
                           {entry.skillLevel}
                         </span>

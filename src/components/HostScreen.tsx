@@ -1,7 +1,7 @@
-import React, { useState, useEffect, FormEvent } from 'react';
-import { MatchSession, SkillLevel, MatchType, GenderPreference, Sport, SessionLocation } from '../types';
+import React, { useState, useEffect, FormEvent, useRef } from 'react';
+import { MatchSession, SkillLevel, MatchType, GenderPreference, Sport, SessionLocation, SKILL_LEVELS, SKILL_LEVEL_LABELS } from '../types';
 import { SPORTS } from '../data';
-import { Calendar, Clock, MapPin, Smile, Dumbbell, Flame, Zap, Plus, Minus, Check, ArrowLeft, AlignLeft, User, Users, Globe, Lock, Copy } from 'lucide-react';
+import { Calendar, Clock, MapPin, Plus, Minus, Check, ArrowLeft, AlignLeft, User, Users, Globe, Lock, Copy } from 'lucide-react';
 import LocationPicker from './LocationPicker';
 
 const getLocalDateString = (d = new Date()) =>
@@ -41,6 +41,103 @@ const inferFootballFormat = (players: number): FootballFormat => {
   return '5-a-side';
 };
 
+function SkillRangePicker({ min, max, onChange }: {
+  min: SkillLevel;
+  max: SkillLevel;
+  onChange: (min: SkillLevel, max: SkillLevel) => void;
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef<'min' | 'max' | null>(null);
+  const N = SKILL_LEVELS.length - 1;
+  const minIdx = SKILL_LEVELS.indexOf(min);
+  const maxIdx = SKILL_LEVELS.indexOf(max);
+
+  const idxFromX = (clientX: number) => {
+    if (!trackRef.current) return 0;
+    const { left, width } = trackRef.current.getBoundingClientRect();
+    return Math.max(0, Math.min(N, Math.round(((clientX - left) / width) * N)));
+  };
+
+  const onTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (dragging.current) return;
+    const i = idxFromX(e.clientX);
+    if (i <= minIdx) onChange(SKILL_LEVELS[i], max);
+    else if (i >= maxIdx) onChange(min, SKILL_LEVELS[i]);
+    else if (i - minIdx <= maxIdx - i) onChange(SKILL_LEVELS[i], max);
+    else onChange(min, SKILL_LEVELS[i]);
+  };
+
+  const mkPointerDown = (which: 'min' | 'max') => (e: React.PointerEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    dragging.current = which;
+    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+  };
+
+  const mkPointerMove = (which: 'min' | 'max') => (e: React.PointerEvent<HTMLDivElement>) => {
+    if (dragging.current !== which) return;
+    const i = idxFromX(e.clientX);
+    if (which === 'min') onChange(SKILL_LEVELS[Math.min(i, maxIdx)], max);
+    else onChange(min, SKILL_LEVELS[Math.max(i, minIdx)]);
+  };
+
+  const onPointerUp = () => { dragging.current = null; };
+
+  return (
+    <div className="space-y-3">
+      {/* Track */}
+      <div ref={trackRef} className="relative h-5 cursor-pointer" onClick={onTrackClick}>
+        <div className="absolute top-1/2 -translate-y-1/2 inset-x-0 h-px bg-outline-variant/40" />
+        <div
+          className="absolute top-1/2 -translate-y-1/2 h-1 rounded-full bg-primary-fixed"
+          style={{ left: `${(minIdx / N) * 100}%`, right: `${((N - maxIdx) / N) * 100}%` }}
+        />
+        {SKILL_LEVELS.map((tier, i) => {
+          if (i === minIdx || i === maxIdx) return null;
+          return (
+            <div
+              key={tier}
+              className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full pointer-events-none ${
+                i > minIdx && i < maxIdx ? 'bg-primary-fixed/60' : 'bg-outline-variant/50'
+              }`}
+              style={{ left: `${(i / N) * 100}%` }}
+            />
+          );
+        })}
+        {/* Min handle */}
+        <div
+          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-primary-fixed border-2 border-background shadow-[0_0_0_3px_rgba(202,243,0,0.2),0_2px_6px_rgba(0,0,0,0.4)] z-20 cursor-grab active:cursor-grabbing touch-none select-none"
+          style={{ left: `${(minIdx / N) * 100}%` }}
+          onPointerDown={mkPointerDown('min')}
+          onPointerMove={mkPointerMove('min')}
+          onPointerUp={onPointerUp}
+        />
+        {/* Max handle */}
+        <div
+          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-primary-fixed border-2 border-background shadow-[0_0_0_3px_rgba(202,243,0,0.2),0_2px_6px_rgba(0,0,0,0.4)] z-20 cursor-grab active:cursor-grabbing touch-none select-none"
+          style={{ left: `${(maxIdx / N) * 100}%` }}
+          onPointerDown={mkPointerDown('max')}
+          onPointerMove={mkPointerMove('max')}
+          onPointerUp={onPointerUp}
+        />
+      </div>
+      {/* Labels — absolutely positioned to align with dots; overflow-visible for edge labels */}
+      <div className="relative h-4" style={{ overflow: 'visible' }}>
+        {SKILL_LEVELS.map((tier, i) => (
+          <span
+            key={tier}
+            className={`absolute -translate-x-1/2 font-mono text-[9px] uppercase tracking-wide leading-none whitespace-nowrap ${
+              i >= minIdx && i <= maxIdx ? 'text-primary-fixed font-bold' : 'text-on-surface-variant/40'
+            }`}
+            style={{ left: `${(i / N) * 100}%`, top: 0 }}
+          >
+            {SKILL_LEVEL_LABELS[tier]}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 interface HostScreenProps {
   onPostSession: (session: Omit<MatchSession, 'host' | 'playersJoined'>) => void;
   onUpdateSession: (id: string, updatedFields: Partial<MatchSession>) => void;
@@ -62,7 +159,8 @@ export default function HostScreen({
   const [timeEnd, setTimeEnd] = useState(() => getDefaultTimes().end);
   const [location, setLocation] = useState<SessionLocation | null>(null);
   const [sport, setSport] = useState<Sport>('Badminton');
-  const [skillLevel, setSkillLevel] = useState<SkillLevel>('intermediate');
+  const [skillLevel, setSkillLevel] = useState<SkillLevel>('lower-intermediate');
+  const [skillLevelMax, setSkillLevelMax] = useState<SkillLevel>('upper-intermediate');
   const [matchType, setMatchType] = useState<MatchType>('doubles');
   const [footballFormat, setFootballFormat] = useState<FootballFormat>('5-a-side');
   const [gender, setGender] = useState<GenderPreference>('open');
@@ -118,6 +216,7 @@ export default function HostScreen({
       setLocation(editingSession.location ?? null);
       setSport(editingSession.sport);
       setSkillLevel(editingSession.skillLevel);
+      setSkillLevelMax(editingSession.skillLevelMax ?? editingSession.skillLevel);
       setMatchType(editingSession.matchType);
       setGender(editingSession.gender ?? 'open');
       setPlayersNeeded(snapPlayersToMatchType(editingSession.matchType, editingSession.maxPlayers));
@@ -135,7 +234,8 @@ export default function HostScreen({
       setTimeEnd(end);
       setLocation(null);
       setSport('Badminton');
-      setSkillLevel('intermediate');
+      setSkillLevel('lower-intermediate');
+      setSkillLevelMax('upper-intermediate');
       setMatchType('doubles');
       setFootballFormat('5-a-side');
       setGender('open');
@@ -217,6 +317,7 @@ export default function HostScreen({
       sport,
       location,
       skillLevel,
+      skillLevelMax,
       matchType,
       gender,
       maxPlayers: playersNeeded,
@@ -406,31 +507,22 @@ export default function HostScreen({
             <LocationPicker value={location} onChange={setLocation} />
           </div>
 
-          {/* Skill Level */}
-          <div className="space-y-1.5">
-            <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Skill Level</label>
-            <div className="grid grid-cols-4 gap-2">
-              {([
-                { value: 'beginner',     label: 'Beginner',     icon: <Smile    className="w-5 h-5 mb-1" /> },
-                { value: 'intermediate', label: 'Intermediate', icon: <Dumbbell className="w-5 h-5 mb-1" /> },
-                { value: 'advanced',     label: 'Advanced',     icon: <Zap      className="w-5 h-5 mb-1" /> },
-                { value: 'pro',          label: 'Pro',          icon: <Flame    className="w-5 h-5 mb-1" /> },
-              ] as { value: SkillLevel; label: string; icon: React.ReactNode }[]).map(({ value, label, icon }) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={skillLevel === value}
-                  onClick={() => setSkillLevel(value)}
-                  className={`flex flex-col items-center justify-center p-2 rounded-lg border transition-all cursor-pointer ${
-                    skillLevel === value
-                      ? 'bg-primary-fixed/10 border-primary-fixed text-primary-fixed'
-                      : 'border-outline-variant/50 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
-                  }`}
-                >
-                  {icon}
-                  <span className="font-sans font-black text-[9px] uppercase tracking-tight leading-tight text-center">{label}</span>
-                </button>
-              ))}
+          {/* Skill Level Range */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Skill Level Range</label>
+              <span className="font-mono text-[10px] text-primary-fixed">
+                {skillLevel === skillLevelMax
+                  ? SKILL_LEVEL_LABELS[skillLevel]
+                  : `${SKILL_LEVEL_LABELS[skillLevel]} – ${SKILL_LEVEL_LABELS[skillLevelMax]}`}
+              </span>
+            </div>
+            <div className="rounded-xl border border-outline-variant/40 bg-surface-container-low px-6 pt-6 pb-5">
+              <SkillRangePicker
+                min={skillLevel}
+                max={skillLevelMax}
+                onChange={(min, max) => { setSkillLevel(min); setSkillLevelMax(max); }}
+              />
             </div>
           </div>
 

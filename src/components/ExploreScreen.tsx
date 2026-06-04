@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { MatchSession, SkillLevel, GenderPreference, Sport } from '../types';
+import { MatchSession, SkillLevel, GenderPreference, Sport, SKILL_LEVELS, SKILL_LEVEL_LABELS } from '../types';
 import { SPORTS } from '../data';
 import { MapPin, Plus, CalendarDays, List, Map, SlidersHorizontal, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -47,7 +47,12 @@ export default function ExploreScreen({
         if (s.isPrivate) return false;
         if (!isUpcoming(s)) return false;
         const matchesSport = selectedSport === 'all' || s.sport === selectedSport;
-        const matchesSkill = selectedSkill === 'all' || s.skillLevel === selectedSkill;
+        const matchesSkill = selectedSkill === 'all' || (() => {
+          const minIdx = SKILL_LEVELS.indexOf(s.skillLevel);
+          const maxIdx = SKILL_LEVELS.indexOf(s.skillLevelMax ?? s.skillLevel);
+          const selIdx = SKILL_LEVELS.indexOf(selectedSkill as SkillLevel);
+          return selIdx >= minIdx && selIdx <= maxIdx;
+        })();
         const matchesGender = selectedGender === 'all' || (s.gender ?? 'open') === selectedGender;
         const matchesSearch =
           s.venue.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -190,13 +195,7 @@ export default function ExploreScreen({
             <div className="space-y-2.5 mb-6">
               <p className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Skill Level</p>
               <div className="grid grid-cols-3 gap-2">
-                {([
-                  { value: 'all', label: 'All Levels' },
-                  { value: 'beginner', label: 'Beginner' },
-                  { value: 'intermediate', label: 'Intermediate' },
-                  { value: 'advanced', label: 'Advanced' },
-                  { value: 'pro', label: 'Pro' },
-                ] as const).map((f) => (
+                {([{ value: 'all' as const, label: 'All Levels' }, ...SKILL_LEVELS.map((l) => ({ value: l, label: SKILL_LEVEL_LABELS[l] }))]).map((f) => (
                   <button
                     key={f.value}
                     onClick={() => setSelectedSkill(f.value)}
@@ -392,7 +391,15 @@ export default function ExploreScreen({
                       {session.sport}
                     </span>
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide border border-primary-fixed/30 bg-primary-fixed/5 text-primary-fixed uppercase font-sans">
-                      {session.skillLevel}
+                      {(() => {
+                        const safeLabel = (l: string) => SKILL_LEVEL_LABELS[l as SkillLevel] ?? l;
+                        const isAll = session.skillLevel === SKILL_LEVELS[0] &&
+                          (session.skillLevelMax ?? session.skillLevel) === SKILL_LEVELS[SKILL_LEVELS.length - 1];
+                        if (isAll) return 'All Levels';
+                        return session.skillLevelMax && session.skillLevelMax !== session.skillLevel
+                          ? `${safeLabel(session.skillLevel)} – ${safeLabel(session.skillLevelMax)}`
+                          : safeLabel(session.skillLevel);
+                      })()}
                     </span>
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide bg-surface-variant text-on-surface-variant uppercase font-sans">
                       {session.matchType}
@@ -409,18 +416,34 @@ export default function ExploreScreen({
                         `${spotsFilled}/${maxPlayers} Players`
                       )}
                     </span>
-                    <div className="flex gap-1">
-                      {Array.from({ length: maxPlayers }).map((_, stepIdx) => (
-                        <div
-                          key={stepIdx}
-                          className={`w-6 h-1.5 rounded-full transition-colors ${
-                            stepIdx < spotsFilled
-                              ? isFull ? 'bg-outline/50' : 'bg-primary-fixed'
-                              : 'bg-surface-variant/90'
-                          }`}
-                        />
-                      ))}
-                    </div>
+                    {(() => {
+                      const multi = maxPlayers > 10;
+                      const rowSize = multi ? Math.ceil(maxPlayers / 2) : maxPlayers;
+                      const rows = multi
+                        ? [Array.from({ length: rowSize }), Array.from({ length: maxPlayers - rowSize })]
+                        : [Array.from({ length: maxPlayers })];
+                      return (
+                        <div className={`flex flex-col gap-1 ${multi ? 'items-end' : ''}`}>
+                          {rows.map((row, rowIdx) => (
+                            <div key={rowIdx} className="flex gap-1">
+                              {row.map((_, i) => {
+                                const stepIdx = rowIdx * rowSize + i;
+                                return (
+                                  <div
+                                    key={stepIdx}
+                                    className={`${multi ? 'w-4' : 'w-6'} h-1.5 rounded-full transition-colors ${
+                                      stepIdx < spotsFilled
+                                        ? isFull ? 'bg-outline/50' : 'bg-primary-fixed'
+                                        : 'bg-surface-variant/90'
+                                    }`}
+                                  />
+                                );
+                              })}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               </motion.article>
