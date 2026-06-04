@@ -1,7 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Review, UserProfile, Sport, SportSkill, SkillLevel, UserGender, SKILL_LEVEL_LABELS } from '../types';
-import { MessageSquare, ThumbsUp, Trophy, User, Award, RotateCcw, Target, X } from 'lucide-react';
+import { MessageSquare, ThumbsUp, Trophy, Award, RotateCcw, Target, X, Pencil, Check } from 'lucide-react';
 
 const TIER_LEGEND: { level: SkillLevel; description: string }[] = [
   { level: 'beginner',           description: 'Learning the basics and fundamental technique. Best for fun, social sessions.' },
@@ -41,6 +41,12 @@ export default function ProfileScreen({
   const [isSavedSuccessfully, setIsSavedSuccessfully] = useState(false);
   const [legendLevel, setLegendLevel] = useState<SkillLevel | null>(null);
   const [pendingGender, setPendingGender] = useState<UserGender | null>(null);
+  const [isEditingName, setIsEditingName] = useState(false);
+
+  const confirmNameEdit = () => {
+    setIsEditingName(false);
+    if (name.trim()) onUpdateProfile({ name: name.trim() });
+  };
 
   const playAgainYes = reviews.filter((r) => r.playAgain === 'yes').length;
   const playAgainPct = reviews.length > 0 ? Math.round((playAgainYes / reviews.length) * 100) : null;
@@ -80,10 +86,10 @@ export default function ProfileScreen({
       {/* Profile summary banner */}
       <section className="space-y-1">
         <h2 className="font-sans font-black text-2xl md:text-3xl text-white tracking-tight">
-          Athletic Profile
+          Athlete Profile
         </h2>
         <p className="text-sm text-on-surface-variant/80">
-          Personalize your athlete profile and configure default parameters.
+          Personalize your profile and tell everyone about yourself.
         </p>
       </section>
 
@@ -105,8 +111,30 @@ export default function ProfileScreen({
             </div>
           </div>
 
-          <div>
-            <h3 className="font-sans font-extrabold text-base text-on-surface">{name || 'Guest Athlete'}</h3>
+          <div className="flex items-center gap-2">
+            {isEditingName ? (
+              <>
+                <input
+                  type="text"
+                  value={name}
+                  autoFocus
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && confirmNameEdit()}
+                  onBlur={confirmNameEdit}
+                  className="bg-transparent border-b border-primary-fixed text-on-surface font-extrabold text-base text-center outline-none font-sans w-40"
+                />
+                <button type="button" onClick={confirmNameEdit} className="text-primary-fixed cursor-pointer">
+                  <Check className="w-4 h-4 stroke-[3px]" />
+                </button>
+              </>
+            ) : (
+              <>
+                <h3 className="font-sans font-extrabold text-base text-on-surface">{name || 'Guest Athlete'}</h3>
+                <button type="button" onClick={() => setIsEditingName(true)} className="text-on-surface-variant/50 hover:text-primary-fixed transition-colors cursor-pointer">
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -257,26 +285,6 @@ export default function ProfileScreen({
 
         {/* Personalization parameters - form sections */}
         <div className="grid grid-cols-1 gap-4">
-          {/* Athlete Name section */}
-          <section className="bg-surface-container-high rounded-xl p-4 border border-outline-variant/15">
-            <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
-              Athlete Name
-            </label>
-            <div className="mt-2 relative rounded-lg bg-surface-variant/60 border border-outline-variant/40 flex items-center transition-all overflow-hidden">
-              <span className="pl-3 text-on-surface-variant shrink-0">
-                <User className="w-4 h-4" />
-              </span>
-              <input
-                type="text"
-                required
-                placeholder="Enter custom nickname..."
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full bg-transparent text-on-surface font-sans text-sm p-3 outline-none border-none focus:ring-0 placeholder-on-surface-variant/50"
-              />
-            </div>
-          </section>
-
           {/* About Me section */}
           <section className="bg-surface-container-high rounded-xl p-4 border border-outline-variant/15">
             <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">

@@ -244,9 +244,17 @@ export default function App() {
 
   // Counts for sidebar and profiles
   const matchesCount = sessions.length;
-  const myParticipatedMatchesCount = sessions.filter((s) => 
-    user && s.playersJoined.some((p: Player) => p.id === user.id)
-  ).length;
+  const myParticipatedMatchesCount = sessions.filter((s) => {
+    if (!user || !s.playersJoined.some((p: Player) => p.id === user.id)) return false;
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    if (s.date > todayStr) return false;
+    if (s.date === todayStr) {
+      const [endH, endM] = s.timeEnd.split(':').map(Number);
+      return endH < now.getHours() || (endH === now.getHours() && endM <= now.getMinutes());
+    }
+    return true;
+  }).length;
 
   if (isAuthLoading) {
     return (
