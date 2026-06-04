@@ -14,6 +14,7 @@ export interface Review {
   createdAt: number;
 }
 export type MatchType = 'singles' | 'doubles';
+export type FootballFormat = '5v5' | '7v7' | '11v11';
 export type GenderPreference = 'male' | 'female' | 'open';
 
 export interface SportSkill {
@@ -60,6 +61,7 @@ export interface MatchSession {
   location?: SessionLocation;
   skillLevel: SkillLevel;
   matchType: MatchType;
+  footballFormat?: FootballFormat; // For football sessions: '5v5', '7v7', or '11v11'
   gender?: GenderPreference;
   maxPlayers: number; // 2 for singles, 4 for doubles (or user specified)
   host: Player;

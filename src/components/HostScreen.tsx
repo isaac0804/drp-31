@@ -1,5 +1,5 @@
 import React, { useState, useEffect, FormEvent } from 'react';
-import { MatchSession, SkillLevel, MatchType, GenderPreference, Sport, SessionLocation } from '../types';
+import { MatchSession, SkillLevel, MatchType, GenderPreference, Sport, SessionLocation, FootballFormat } from '../types';
 import { SPORTS } from '../data';
 import { Calendar, Clock, MapPin, Smile, Dumbbell, Flame, Zap, Plus, Minus, Check, ArrowLeft, AlignLeft, User, Users, Globe, Lock, Copy } from 'lucide-react';
 import LocationPicker from './LocationPicker';
@@ -20,7 +20,7 @@ const getDefaultTimes = () => {
   return { start: fmt(startH, startM), end: fmt(startH + 2, startM) };
 };
 
-type FootballFormat = '5-a-side' | '7-a-side' | '11-a-side';
+type FootballFormatOption = '5-a-side' | '7-a-side' | '11-a-side';
 
 const SPORT_META: Record<Sport, { tagline: string }> = {
   'Badminton':    { tagline: 'Set up the court, find your partner, and smash.' },
@@ -29,13 +29,13 @@ const SPORT_META: Record<Sport, { tagline: string }> = {
   'Pickleball':   { tagline: 'Find the court, rally up, and dink.' },
 };
 
-const FOOTBALL_FORMATS: { label: FootballFormat; total: number; note: string }[] = [
-  { label: '5-a-side',  total: 10, note: '5v5 · compact' },
-  { label: '7-a-side',  total: 14, note: '7v7 · mid-size' },
-  { label: '11-a-side', total: 22, note: '11v11 · full' },
+const FOOTBALL_FORMATS: { label: FootballFormatOption; total: number; note: string; display: FootballFormat }[] = [
+  { label: '5-a-side',  total: 10, note: '5v5 · compact', display: '5v5' },
+  { label: '7-a-side',  total: 14, note: '7v7 · mid-size', display: '7v7' },
+  { label: '11-a-side', total: 22, note: '11v11 · full', display: '11v11' },
 ];
 
-const inferFootballFormat = (players: number): FootballFormat => {
+const inferFootballFormat = (players: number): FootballFormatOption => {
   if (players >= 20) return '11-a-side';
   if (players >= 12) return '7-a-side';
   return '5-a-side';
@@ -64,7 +64,7 @@ export default function HostScreen({
   const [sport, setSport] = useState<Sport>('Badminton');
   const [skillLevel, setSkillLevel] = useState<SkillLevel>('intermediate');
   const [matchType, setMatchType] = useState<MatchType>('doubles');
-  const [footballFormat, setFootballFormat] = useState<FootballFormat>('5-a-side');
+  const [footballFormat, setFootballFormat] = useState<FootballFormatOption>('5-a-side');
   const [gender, setGender] = useState<GenderPreference>('open');
   const [playersNeeded, setPlayersNeeded] = useState(4);
   const [hostNote, setHostNote] = useState('');
@@ -159,9 +159,9 @@ export default function HostScreen({
     setStep('details');
   };
 
-  const handleFootballFormatChange = (format: FootballFormat) => {
+  const handleFootballFormatChange = (format: FootballFormatOption) => {
     setFootballFormat(format);
-    const totals: Record<FootballFormat, number> = { '5-a-side': 10, '7-a-side': 14, '11-a-side': 22 };
+    const totals: Record<FootballFormatOption, number> = { '5-a-side': 10, '7-a-side': 14, '11-a-side': 22 };
     setPlayersNeeded(totals[format]);
   };
 
@@ -218,6 +218,7 @@ export default function HostScreen({
       location,
       skillLevel,
       matchType,
+      footballFormat: sport === 'Football' ? FOOTBALL_FORMATS.find(f => f.label === footballFormat)?.display : undefined,
       gender,
       maxPlayers: playersNeeded,
       hostNote: hostNote || `Friendly ${skillLevel} ${sport} game! Come join us.`,
@@ -234,9 +235,9 @@ export default function HostScreen({
   const duration = getDuration(timeStart, timeEnd);
 
   return (
-    <article className="space-y-6">
+    <article className="space-y-6 pt-0">
       {/* Page Title Header */}
-      <section className="space-y-1">
+      <section className="space-y-1 mt-0">
         <div className="flex items-center gap-2">
           {(isEditing || step === 'details') && (
             <button
