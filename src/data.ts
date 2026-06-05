@@ -1,4 +1,6 @@
-import { MatchSession, UserProfile } from './types';
+import { MatchSession, UserProfile, Sport } from './types';
+
+export const SPORTS: Sport[] = ['Badminton', 'Table Tennis', 'Football', 'Pickleball'];
 
 export const AVATARS = [
   {
@@ -43,7 +45,12 @@ export const DEFAULT_USER: UserProfile = {
   id: 'user_chloe',
   name: 'Chloe J.',
   avatar: AVATARS[0].url,
-  skillLevel: 'intermediate'
+  skillLevel: 'lower-intermediate',
+  about: '',
+  sportsPlayed: [],
+  matchPreferences: '',
+  sportingHistory: '',
+  industry: ''
 };
 
 export const INITIAL_SESSIONS: MatchSession[] = [
@@ -52,10 +59,14 @@ export const INITIAL_SESSIONS: MatchSession[] = [
     date: '2024-10-24',
     timeStart: '18:00',
     timeEnd: '20:00',
-    venue: 'Uni Sports Hall, Court 3',
-    address: 'University Campus Dr, Sector 4',
-    skillLevel: 'intermediate',
+    venue: 'Ethos Sport – Imperial College',
+    address: 'Princes Gardens, London SW7 2AZ',
+    sport: 'Badminton',
+    location: { lat: 51.4988, lng: -0.1765, name: 'Ethos Sport – Imperial College', address: 'Princes Gardens, London SW7 2AZ' },
+    skillLevel: 'lower-intermediate',
+    skillLevelMax: 'upper-intermediate',
     matchType: 'doubles',
+    gender: 'open',
     maxPlayers: 4,
     host: {
       id: 'marcus',
@@ -66,17 +77,20 @@ export const INITIAL_SESSIONS: MatchSession[] = [
       { id: 'marcus', name: 'Marcus L.', avatar: AVATARS[3].url },
       { id: 'sarah', name: 'Sarah K.', avatar: AVATARS[2].url }
     ],
-    hostNote: 'Just booked Court 3. Friendly intermediate game. Bring a racket, and let\'s smash some high-speed shots!'
+    hostNote: 'Just booked Court 3 at Ethos. Friendly intermediate game. Bring a racket, and let\'s smash some high-speed shots!'
   },
   {
     id: 'session_2',
     date: '2024-10-25',
     timeStart: '20:30',
     timeEnd: '22:30',
-    venue: 'City West Rec Center',
-    address: '56 West Boulevard, Metro',
+    venue: 'Queen Mother Sports Centre',
+    address: '223 Vauxhall Bridge Rd, London SW1V 1EL',
+    sport: 'Badminton',
+    location: { lat: 51.4931, lng: -0.1412, name: 'Queen Mother Sports Centre', address: '223 Vauxhall Bridge Rd, London SW1V 1EL' },
     skillLevel: 'beginner',
     matchType: 'singles',
+    gender: 'open',
     maxPlayers: 2,
     host: {
       id: 'jamie',
@@ -86,17 +100,20 @@ export const INITIAL_SESSIONS: MatchSession[] = [
     playersJoined: [
       { id: 'jamie', name: 'Jamie T.', avatar: AVATARS[4].url }
     ],
-    hostNote: 'Looking for a casual singles duel. I\'m relatively new but I know the basic rules. Let\'s have some fun exercise.'
+    hostNote: 'Looking for a casual singles duel at Queen Mother. I\'m relatively new but know the basic rules. Let\'s have some fun!'
   },
   {
     id: 'session_3',
     date: '2024-10-26',
     timeStart: '19:00',
     timeEnd: '21:00',
-    venue: 'Eastside Club',
-    address: '44 Enterprise Way, Industrial East',
+    venue: 'Westway Sports & Fitness Centre',
+    address: '1 Crowthorne Rd, London W10 6RP',
+    sport: 'Badminton',
+    location: { lat: 51.5180, lng: -0.2183, name: 'Westway Sports & Fitness Centre', address: '1 Crowthorne Rd, London W10 6RP' },
     skillLevel: 'pro',
     matchType: 'doubles',
+    gender: 'male',
     maxPlayers: 4,
     host: {
       id: 'alex',
@@ -109,17 +126,21 @@ export const INITIAL_SESSIONS: MatchSession[] = [
       { id: 'sarah', name: 'Sarah K.', avatar: AVATARS[2].url },
       { id: 'chloe', name: 'Chloe J.', avatar: AVATARS[0].url }
     ],
-    hostNote: 'Fast-paced, hard-hitting, competitive pro level doubles match. Strict score counting!'
+    hostNote: 'Fast-paced, hard-hitting, competitive pro level doubles at Westway. Strict score counting!'
   },
   {
     id: 'session_4',
     date: '2024-10-27',
     timeStart: '18:00',
     timeEnd: '19:30',
-    venue: 'Downtown City Club',
-    address: 'Court 4 • 123 Smash Ave, Metro',
-    skillLevel: 'intermediate',
+    venue: 'Chelsea Sports Centre',
+    address: 'Chelsea Manor St, London SW3 5PL',
+    sport: 'Badminton',
+    location: { lat: 51.4837, lng: -0.1742, name: 'Chelsea Sports Centre', address: 'Chelsea Manor St, London SW3 5PL' },
+    skillLevel: 'upper-intermediate',
+    skillLevelMax: 'advanced',
     matchType: 'doubles',
+    gender: 'open',
     maxPlayers: 4,
     host: {
       id: 'alex',
@@ -131,6 +152,6 @@ export const INITIAL_SESSIONS: MatchSession[] = [
       { id: 'sarah', name: 'Sarah K.', avatar: AVATARS[2].url },
       { id: 'jamie', name: 'Jamie T.', avatar: AVATARS[4].url }
     ],
-    hostNote: 'Looking for a 4th for a solid, competitive doubles session. We usually play intermediate-to-advanced level. Bring your own racket, shuttlecocks provided. Let\'s get a good sweat in!'
+    hostNote: 'Looking for a 4th at Chelsea Sports Centre. Intermediate-to-advanced level. Bring your own racket, shuttlecocks provided!'
   }
 ];

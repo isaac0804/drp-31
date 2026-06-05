@@ -16,6 +16,7 @@ function createDefaultProfile(uid: string, googleUser?: User): UserProfile {
     id: uid,
     name: googleUser?.displayName ?? DEFAULT_USER.name,
     avatar: googleUser?.photoURL ?? DEFAULT_USER.avatar,
+    sportsPlayed: [...(DEFAULT_USER.sportsPlayed ?? [])],
   };
 }
 
@@ -58,6 +59,12 @@ export function subscribeToCurrentUser(
 export async function signInWithGoogle(): Promise<UserProfile> {
   const credential = await signInWithPopup(auth, googleProvider);
   return getOrCreateUserProfile(credential.user.uid, credential.user);
+}
+
+export async function getUserProfileById(uid: string): Promise<UserProfile | null> {
+  const snapshot = await getDoc(getUserRef(uid));
+  if (!snapshot.exists()) return null;
+  return snapshot.data() as UserProfile;
 }
 
 export async function updateCurrentUser(updatedUser: UserProfile): Promise<void> {

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MatchSession, UserProfile, Player } from './types';
-import { signInWithGoogle, signOut, subscribeToCurrentUser, updateCurrentUser } from './auth';
+import { MatchSession, Review, UserProfile, Player, Sport } from './types';
+import { signInWithGoogle, signOut, subscribeToCurrentUser, updateCurrentUser, getUserProfileById } from './auth';
+import { DEFAULT_USER } from './data';
 import {
   subscribeToSessions,
   postSession,
@@ -11,45 +12,97 @@ import {
   leaveSession,
   updateSessionsForPlayer,
 } from './sessions';
+import { getReviewsForPlayer } from './reviews';
+import { seedDummySessions, unseedDummySessions } from './devSeed';
 
 // Component imports
 import Header from './components/Header';
 import SidebarDrawer from './components/SidebarDrawer';
 import BottomNav from './components/BottomNav';
-import ExploreScreen from './components/ExploreScreen';
+import ExploreScreen, { ExploreFilters, DEFAULT_EXPLORE_FILTERS } from './components/ExploreScreen';
 import HostScreen from './components/HostScreen';
 import MySessions from './components/MySessions';
 import SessionDetails from './components/SessionDetails';
 import ProfileScreen from './components/ProfileScreen';
+import PlayerProfileScreen from './components/PlayerProfileScreen';
 import AuthScreen from './components/AuthScreen';
+import SkillAssessmentScreen from './components/SkillAssessmentScreen';
+
+type ActiveScreen = 'explore' | 'host' | 'sessions' | 'details' | 'profile' | 'player-profile' | 'assessment';
 
 export default function App() {
   const [sessions, setSessions] = useState<MatchSession[]>([]);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [activeScreen, setActiveScreen] = useState<string>('explore'); // explore, host, sessions, details, profile
+  const [activeScreen, setActiveScreen] = useState<ActiveScreen>('explore');
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [selectedPlayerProfile, setSelectedPlayerProfile] = useState<UserProfile | null>(null);
+  const [selectedPlayerMatchesCount, setSelectedPlayerMatchesCount] = useState(0);
+  const [selectedPlayerReviews, setSelectedPlayerReviews] = useState<Review[]>([]);
+  const [myReviews, setMyReviews] = useState<Review[]>([]);
   const [editingSession, setEditingSession] = useState<MatchSession | null>(null);
+  const [exploreViewMode, setExploreViewMode] = useState<'list' | 'map'>('list');
+  const [exploreFilters, setExploreFilters] = useState<ExploreFilters>(DEFAULT_EXPLORE_FILTERS);
   
   // Sidebar state
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+
+  // Invite link: ?invite=<sessionId> in the URL
+  const [pendingInviteId, setPendingInviteId] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('invite');
+  });
 
   useEffect(() => {
     return subscribeToSessions(setSessions, (err) => console.error('Sessions error:', err));
   }, []);
 
   useEffect(() => {
+    if (!pendingInviteId || sessions.length === 0) return;
+    const session = sessions.find((s) => s.id === pendingInviteId);
+    if (session) {
+      setSelectedSessionId(pendingInviteId);
+      setActiveScreen('details');
+      setPendingInviteId(null);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [pendingInviteId, sessions]);
+
+  useEffect(() => {
     return subscribeToCurrentUser((currentUser) => {
       setUser(currentUser);
       setIsAuthLoading(false);
       setAuthError(null);
+      if (currentUser && !currentUser.skillsBySport || (currentUser && Object.keys(currentUser.skillsBySport ?? {}).length === 0)) setActiveScreen('assessment');
+      if (currentUser) {
+        getReviewsForPlayer(currentUser.id).then(setMyReviews).catch(console.error);
+      } else {
+        setMyReviews([]);
+      }
     }, (error) => {
       setUser(null);
       setIsAuthLoading(false);
       setAuthError(error.message);
     });
   }, []);
+
+  // Dev-only: expose dummy-session seeders on the console, bound to the live
+  // signed-in account so the sessions are hosted by the real user.
+  // Run `seedDummySessions()` / `unseedDummySessions()` from the browser console.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const w = window as unknown as Record<string, unknown>;
+    if (user) {
+      const host: Player = { id: user.id, name: user.name, avatar: user.avatar };
+      w.seedDummySessions = () => seedDummySessions(host);
+      w.unseedDummySessions = () => unseedDummySessions();
+    } else {
+      delete w.seedDummySessions;
+      delete w.unseedDummySessions;
+    }
+  }, [user]);
 
   const handleSignIn = async () => {
     setIsAuthLoading(true);
@@ -78,18 +131,25 @@ export default function App() {
       .catch((err) => console.error('Session cascade error:', err));
   };
 
+  const handleAssessmentComplete = async (sport: Sport, skillLevel: UserProfile['skillLevel']) => {
+    await handleUpdateProfile({
+      skillsBySport: { ...(user?.skillsBySport ?? {}), [sport]: { skillLevel } },
+      skillLevel,
+    });
+    setActiveScreen('explore');
+  };
+
   const handleSignOut = async () => {
     await signOut();
     // onAuthStateChanged will fire with null and set user to null automatically
   };
 
-  const handlePostSession = (newSessionData: Omit<MatchSession, 'id' | 'host' | 'playersJoined'>) => {
+  const handlePostSession = (newSessionData: Omit<MatchSession, 'host' | 'playersJoined'>) => {
     if (!user) return;
 
     const hostPlayer: Player = { id: user.id, name: user.name, avatar: user.avatar };
     const finishedSession: MatchSession = {
       ...newSessionData,
-      id: `session_${Date.now()}`,
       host: hostPlayer,
       playersJoined: [hostPlayer],
     };
@@ -100,17 +160,18 @@ export default function App() {
 
   const handleUpdateSession = (id: string, updatedFields: Partial<MatchSession>) => {
     if (!user) return;
-    const session = sessions.find((s) => s.id === id);
+    const session = sessions.find((s: MatchSession) => s.id === id);
     if (!session || session.host.id !== user.id) return;
 
     updateSession(id, updatedFields).catch((err) => console.error('Update session error:', err));
     setEditingSession(null);
-    setActiveScreen('sessions');
+    setSelectedSessionId(id);
+    setActiveScreen('details');
   };
 
   const handleCancelSession = (id: string) => {
     if (!user) return;
-    const session = sessions.find((s) => s.id === id);
+    const session = sessions.find((s: MatchSession) => s.id === id);
     if (!session || session.host.id !== user.id) return;
 
     if (window.confirm && !window.confirm('Are you sure you want to cancel and delete this court match session?')) {
@@ -122,13 +183,51 @@ export default function App() {
 
   const handleJoinSession = (sessionId: string) => {
     if (!user) return;
-    const player: Player = { id: user.id, name: user.name, avatar: user.avatar };
+    const session = sessions.find((s) => s.id === sessionId);
+    const sportSkill = session ? user.skillsBySport?.[session.sport] : undefined;
+    const player: Player = {
+      id: user.id,
+      name: user.name,
+      avatar: user.avatar,
+      skillLevel: sportSkill?.skillLevel ?? user.skillLevel,
+    };
     joinSession(sessionId, player).catch((err) => console.error('Join session error:', err));
   };
 
   const handleLeaveSession = (sessionId: string) => {
     if (!user) return;
     leaveSession(sessionId, user.id).catch((err) => console.error('Leave session error:', err));
+  };
+
+  const handleViewPlayerProfile = async (player: Player) => {
+    const fallbackProfile: UserProfile = {
+      ...DEFAULT_USER,
+      id: player.id,
+      name: player.name,
+      avatar: player.avatar,
+    };
+    setSelectedPlayerProfile(fallbackProfile);
+    setSelectedPlayerReviews([]);
+    setSelectedPlayerMatchesCount(
+      sessions.filter((session: MatchSession) =>
+        session.host.id === player.id || session.playersJoined.some((joinedPlayer: Player) => joinedPlayer.id === player.id)
+      ).length
+    );
+    setActiveScreen('player-profile');
+
+    try {
+      const storedProfile = await getUserProfileById(player.id);
+      if (storedProfile) setSelectedPlayerProfile(storedProfile);
+    } catch (error) {
+      console.error('Player profile lookup error:', error);
+    }
+
+    try {
+      const reviews = await getReviewsForPlayer(player.id);
+      setSelectedPlayerReviews(reviews);
+    } catch (error) {
+      console.error('Reviews fetch error:', error);
+    }
   };
 
   // Edit trigger
@@ -146,9 +245,17 @@ export default function App() {
 
   // Counts for sidebar and profiles
   const matchesCount = sessions.length;
-  const myParticipatedMatchesCount = sessions.filter((s) => 
-    user && s.playersJoined.some((p) => p.id === user.id)
-  ).length;
+  const myParticipatedMatchesCount = sessions.filter((s) => {
+    if (!user || !s.playersJoined.some((p: Player) => p.id === user.id)) return false;
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    if (s.date > todayStr) return false;
+    if (s.date === todayStr) {
+      const [endH, endM] = s.timeEnd.split(':').map(Number);
+      return endH < now.getHours() || (endH === now.getHours() && endM <= now.getMinutes());
+    }
+    return true;
+  }).length;
 
   if (isAuthLoading) {
     return (
@@ -179,6 +286,7 @@ export default function App() {
         }}
         onLogoClick={() => {
           setEditingSession(null);
+          setExploreViewMode('list');
           setActiveScreen('explore');
         }}
       />
@@ -190,9 +298,11 @@ export default function App() {
         activeScreen={activeScreen}
         onNavigate={(screen) => {
           setEditingSession(null);
+          if (screen === 'explore') setExploreViewMode('list');
           setActiveScreen(screen);
         }}
         onSignOut={handleSignOut}
+        onRetakeAssessment={() => setActiveScreen('assessment')}
         matchesCount={matchesCount}
       />
 
@@ -219,6 +329,10 @@ export default function App() {
                   setActiveScreen('host');
                 }}
                 currentUserId={user.id}
+                viewMode={exploreViewMode}
+                onViewModeChange={setExploreViewMode}
+                filters={exploreFilters}
+                onFiltersChange={setExploreFilters}
               />
             )}
 
@@ -227,6 +341,7 @@ export default function App() {
                 onPostSession={handlePostSession}
                 onUpdateSession={handleUpdateSession}
                 editingSession={editingSession}
+                hostGender={user.gender}
                 onCancelEdit={() => {
                   setEditingSession(null);
                   setActiveScreen('sessions');
@@ -240,9 +355,14 @@ export default function App() {
                 currentUserId={user.id}
                 onEditSession={handleEditTrigger}
                 onCancelSession={handleCancelSession}
+                onLeaveSession={handleLeaveSession}
                 onNavigateToHost={() => {
                   setEditingSession(null);
                   setActiveScreen('host');
+                }}
+                onSelectSession={(id) => {
+                  setSelectedSessionId(id);
+                  setActiveScreen('details');
                 }}
               />
             )}
@@ -254,6 +374,17 @@ export default function App() {
                 onBack={() => setActiveScreen('explore')}
                 onJoin={handleJoinSession}
                 onLeave={handleLeaveSession}
+                onViewPlayerProfile={handleViewPlayerProfile}
+                onEdit={handleEditTrigger}
+              />
+            )}
+
+            {activeScreen === 'player-profile' && selectedPlayerProfile && (
+              <PlayerProfileScreen
+                profile={selectedPlayerProfile}
+                matchesPlayedCount={selectedPlayerMatchesCount}
+                reviews={selectedPlayerReviews}
+                onBack={() => setActiveScreen('details')}
               />
             )}
 
@@ -262,6 +393,16 @@ export default function App() {
                 user={user}
                 onUpdateProfile={handleUpdateProfile}
                 matchesPlayedCount={myParticipatedMatchesCount}
+                onRetakeAssessment={() => setActiveScreen('assessment')}
+                reviews={myReviews}
+              />
+            )}
+
+            {activeScreen === 'assessment' && (
+              <SkillAssessmentScreen
+                onComplete={handleAssessmentComplete}
+                onClose={() => setActiveScreen('explore')}
+
               />
             )}
           </motion.div>
@@ -273,6 +414,7 @@ export default function App() {
         activeScreen={activeScreen}
         onNavigate={(screen) => {
           setEditingSession(null);
+          if (screen === 'explore') setExploreViewMode('list');
           setActiveScreen(screen);
         }}
       />

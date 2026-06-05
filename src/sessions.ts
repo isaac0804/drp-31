@@ -23,12 +23,31 @@ function sessionRef(id: string) {
 
 async function seedIfEmpty(): Promise<void> {
   const snap = await getDocs(collection(db, SESSIONS_COL));
-  if (!snap.empty) return;
-  const batch = writeBatch(db);
-  for (const session of INITIAL_SESSIONS) {
-    batch.set(doc(db, SESSIONS_COL, session.id), session);
+  if (snap.empty) {
+    const batch = writeBatch(db);
+    for (const session of INITIAL_SESSIONS) {
+      batch.set(doc(db, SESSIONS_COL, session.id), session);
+    }
+    await batch.commit();
+    return;
   }
-  await batch.commit();
+
+  // Patch location onto any existing seed sessions that predate the maps feature
+  const existingById = new Map(snap.docs.map((d) => [d.id, d.data() as MatchSession]));
+  const batch = writeBatch(db);
+  let hasPatches = false;
+  for (const seed of INITIAL_SESSIONS) {
+    const existing = existingById.get(seed.id);
+    if (existing && !existing.location && seed.location) {
+      batch.update(doc(db, SESSIONS_COL, seed.id), {
+        location: seed.location,
+        venue: seed.venue,
+        address: seed.address,
+      });
+      hasPatches = true;
+    }
+  }
+  if (hasPatches) await batch.commit();
 }
 
 export function subscribeToSessions(
@@ -39,7 +58,10 @@ export function subscribeToSessions(
   const q = query(collection(db, SESSIONS_COL), orderBy('date', 'asc'));
   return onSnapshot(
     q,
-    (snapshot) => onChange(snapshot.docs.map((d) => d.data() as MatchSession)),
+    (snapshot) => onChange(snapshot.docs.map((d) => {
+      const data = d.data() as MatchSession;
+      return { sport: 'Badminton', matchType: 'doubles', ...data } as MatchSession;
+    })),
     onError
   );
 }
