@@ -34,6 +34,8 @@ export default function SessionDetails({
   const userIdx = SKILL_LEVELS.indexOf(userSportLevel);
   // Old sessions may have a skill level not in the new list; always allow joining those
   const levelMatch = minIdx === -1 || (userIdx >= minIdx && userIdx <= maxIdx);
+  const genderMatch = !session.gender || session.gender === 'open' || currentUser.gender === session.gender;
+  const canJoin = !isFull && levelMatch && genderMatch;
   const skillRangeLabel = session.skillLevelMax && session.skillLevelMax !== session.skillLevel
     ? `${safeLabel(session.skillLevel)} – ${safeLabel(session.skillLevelMax)}`
     : safeLabel(session.skillLevel);
@@ -334,19 +336,22 @@ export default function SessionDetails({
             <div className="w-full flex flex-col items-center gap-2">
               <button
                 onClick={() => onJoin(session.id)}
-                disabled={isFull || !levelMatch}
+                disabled={!canJoin}
                 className={`w-full font-sans font-black text-xs uppercase tracking-widest py-4 rounded-full transition-all flex items-center justify-center gap-2 ${
-                  isFull || !levelMatch
-                    ? 'bg-surface-variant text-on-surface-variant cursor-not-allowed opacity-60'
-                    : 'bg-primary-fixed text-on-primary-fixed hover:bg-primary-fixed-dim shadow-[0_4px_20px_rgba(202,243,0,0.3)] hover:scale-101 active:scale-98 cursor-pointer'
+                  canJoin
+                    ? 'bg-primary-fixed text-on-primary-fixed hover:bg-primary-fixed-dim shadow-[0_4px_20px_rgba(202,243,0,0.3)] hover:scale-101 active:scale-98 cursor-pointer'
+                    : 'bg-surface-variant text-on-surface-variant cursor-not-allowed opacity-60'
                 }`}
               >
-                {isFull ? 'Match is full' : !levelMatch ? `${skillRangeLabel} only` : 'Join session'}
-                {!isFull && levelMatch && <Trophy className="w-4 h-4" />}
+                {isFull ? 'Match is full' : !genderMatch ? `${session.gender === 'male' ? '♂ Male' : '♀ Female'} only` : !levelMatch ? `${skillRangeLabel} only` : 'Join session'}
+                {canJoin && <Trophy className="w-4 h-4" />}
               </button>
-              {!isFull && !levelMatch && (
+              {!isFull && !canJoin && (
                 <p className="text-[11px] text-on-surface-variant/70 text-center">
-                  Your {session.sport} level is <span className="text-primary-fixed font-bold">{userSportLevel}</span> — this session requires <span className="font-bold text-on-surface">{session.skillLevel}</span>
+                  {!genderMatch
+                    ? `This session is ${session.gender} only. Update your gender in your profile to join.`
+                    : <>Your {session.sport} level is <span className="text-primary-fixed font-bold">{userSportLevel}</span> — this session requires <span className="font-bold text-on-surface">{skillRangeLabel}</span></>
+                  }
                 </p>
               )}
             </div>

@@ -1,7 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Review, UserProfile, Sport, SportSkill, SkillLevel, SKILL_LEVEL_LABELS } from '../types';
-import { MessageSquare, ThumbsUp, Trophy, User, Award, RotateCcw, Target, X } from 'lucide-react';
+import { Review, UserProfile, Sport, SportSkill, SkillLevel, UserGender, SKILL_LEVEL_LABELS } from '../types';
+import { MessageSquare, ThumbsUp, Trophy, Award, RotateCcw, Target, X, Pencil, Check } from 'lucide-react';
 
 const TIER_LEGEND: { level: SkillLevel; description: string }[] = [
   { level: 'beginner',           description: 'Learning the basics and fundamental technique. Best for fun, social sessions.' },
@@ -40,6 +40,13 @@ export default function ProfileScreen({
   const [industry, setIndustry] = useState(user.industry ?? '');
   const [isSavedSuccessfully, setIsSavedSuccessfully] = useState(false);
   const [legendLevel, setLegendLevel] = useState<SkillLevel | null>(null);
+  const [pendingGender, setPendingGender] = useState<UserGender | null>(null);
+  const [isEditingName, setIsEditingName] = useState(false);
+
+  const confirmNameEdit = () => {
+    setIsEditingName(false);
+    if (name.trim()) onUpdateProfile({ name: name.trim() });
+  };
 
   const playAgainYes = reviews.filter((r) => r.playAgain === 'yes').length;
   const playAgainPct = reviews.length > 0 ? Math.round((playAgainYes / reviews.length) * 100) : null;
@@ -79,10 +86,10 @@ export default function ProfileScreen({
       {/* Profile summary banner */}
       <section className="space-y-1">
         <h2 className="font-sans font-black text-2xl md:text-3xl text-white tracking-tight">
-          Athletic Profile
+          Athlete Profile
         </h2>
         <p className="text-sm text-on-surface-variant/80">
-          Personalize your athlete profile and configure default parameters.
+          Personalize your profile and tell everyone about yourself.
         </p>
       </section>
 
@@ -104,10 +111,66 @@ export default function ProfileScreen({
             </div>
           </div>
 
-          <div>
-            <h3 className="font-sans font-extrabold text-base text-on-surface">{name || 'Guest Athlete'}</h3>
+          <div className="flex items-center gap-2">
+            {isEditingName ? (
+              <>
+                <input
+                  type="text"
+                  value={name}
+                  autoFocus
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && confirmNameEdit()}
+                  onBlur={confirmNameEdit}
+                  className="bg-transparent border-b border-primary-fixed text-on-surface font-extrabold text-base text-center outline-none font-sans w-40"
+                />
+                <button type="button" onClick={confirmNameEdit} className="text-primary-fixed cursor-pointer">
+                  <Check className="w-4 h-4 stroke-[3px]" />
+                </button>
+              </>
+            ) : (
+              <>
+                <h3 className="font-sans font-extrabold text-base text-on-surface">{name || 'Guest Athlete'}</h3>
+                <button type="button" onClick={() => setIsEditingName(true)} className="text-on-surface-variant/50 hover:text-primary-fixed transition-colors cursor-pointer">
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
           </div>
         </div>
+
+        {/* Gender */}
+        <section className="bg-surface-container-high rounded-xl p-4 border border-outline-variant/15 space-y-3">
+          <div>
+            <h4 className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Gender</h4>
+            <p className="text-[10px] text-on-surface-variant/60 mt-0.5">Used to match you with gender-restricted sessions.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {(['male', 'female'] as UserGender[]).map((g) => {
+              const isSelected = user.gender === g;
+              return (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => {
+                    if (isSelected) return;
+                    if (user.gender) {
+                      setPendingGender(g);
+                    } else {
+                      onUpdateProfile({ gender: g });
+                    }
+                  }}
+                  className={`py-3 rounded-xl border text-xs font-bold uppercase tracking-widest transition-all cursor-pointer ${
+                    isSelected
+                      ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+                      : 'border-outline-variant/40 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
+                  }`}
+                >
+                  {g === 'male' ? '♂ Male' : '♀ Female'}
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
         {/* Per-sport skill ratings */}
         {(() => {
@@ -222,26 +285,6 @@ export default function ProfileScreen({
 
         {/* Personalization parameters - form sections */}
         <div className="grid grid-cols-1 gap-4">
-          {/* Athlete Name section */}
-          <section className="bg-surface-container-high rounded-xl p-4 border border-outline-variant/15">
-            <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
-              Athlete Name
-            </label>
-            <div className="mt-2 relative rounded-lg bg-surface-variant/60 border border-outline-variant/40 flex items-center transition-all overflow-hidden">
-              <span className="pl-3 text-on-surface-variant shrink-0">
-                <User className="w-4 h-4" />
-              </span>
-              <input
-                type="text"
-                required
-                placeholder="Enter custom nickname..."
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full bg-transparent text-on-surface font-sans text-sm p-3 outline-none border-none focus:ring-0 placeholder-on-surface-variant/50"
-              />
-            </div>
-          </section>
-
           {/* About Me section */}
           <section className="bg-surface-container-high rounded-xl p-4 border border-outline-variant/15">
             <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">
@@ -368,6 +411,49 @@ export default function ProfileScreen({
           </div>
         </div>
       </div>
+      {/* Gender change confirmation */}
+      <AnimatePresence>
+        {pendingGender && (
+          <>
+            <motion.div
+              key="gender-backdrop"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setPendingGender(null)}
+              className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm"
+            />
+            <motion.div
+              key="gender-sheet"
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+              className="fixed bottom-0 left-0 right-0 z-50 bg-surface-container-high rounded-t-2xl px-5 pt-5 pb-10 max-w-3xl mx-auto"
+            >
+              <div className="w-10 h-1 rounded-full bg-outline-variant/50 mx-auto mb-5" />
+              <h3 className="font-sans font-black text-lg text-on-surface mb-2">Change gender?</h3>
+              <p className="text-sm text-on-surface-variant/80 mb-6 leading-relaxed">
+                You're changing your gender to <span className="font-bold text-on-surface capitalize">{pendingGender}</span>. This will affect which gender-restricted sessions you're eligible to join.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPendingGender(null)}
+                  className="flex-1 py-3 rounded-full border border-outline-variant/50 text-on-surface-variant text-sm font-bold uppercase tracking-wider transition-all hover:bg-surface-variant cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { onUpdateProfile({ gender: pendingGender }); setPendingGender(null); }}
+                  className="flex-1 py-3 rounded-full bg-primary-fixed text-on-primary-fixed text-sm font-extrabold uppercase tracking-wider transition-all hover:bg-primary-fixed-dim active:scale-95 cursor-pointer"
+                >
+                  Confirm
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Skill level legend popup */}
       <AnimatePresence>
         {legendLevel && (

@@ -206,11 +206,13 @@ export default function ExploreScreen({
                   {skillRangeIsAll ? 'All Levels' : selectedSkillMin === selectedSkillMax ? SKILL_LEVEL_LABELS[selectedSkillMin] : `${SKILL_LEVEL_LABELS[selectedSkillMin]} – ${SKILL_LEVEL_LABELS[selectedSkillMax]}`}
                 </span>
               </div>
-              <SkillRangePicker
-                min={selectedSkillMin}
-                max={selectedSkillMax}
-                onChange={(min, max) => { setSelectedSkillMin(min); setSelectedSkillMax(max); }}
-              />
+              <div className="px-3">
+                <SkillRangePicker
+                  min={selectedSkillMin}
+                  max={selectedSkillMax}
+                  onChange={(min, max) => { setSelectedSkillMin(min); setSelectedSkillMax(max); }}
+                />
+              </div>
             </div>
 
             <div className="h-px bg-outline-variant/20 mb-5" />

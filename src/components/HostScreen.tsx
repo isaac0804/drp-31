@@ -1,5 +1,5 @@
 import React, { useState, useEffect, FormEvent } from 'react';
-import { MatchSession, SkillLevel, MatchType, GenderPreference, Sport, SessionLocation, FootballFormat, SKILL_LEVELS, SKILL_LEVEL_LABELS } from '../types';
+import { MatchSession, SkillLevel, MatchType, GenderPreference, Sport, SessionLocation, FootballFormat, UserGender, SKILL_LEVELS, SKILL_LEVEL_LABELS } from '../types';
 import { SPORTS } from '../data';
 import { Calendar, Clock, MapPin, Plus, Minus, Check, ArrowLeft, AlignLeft, User, Users, Globe, Lock, Copy } from 'lucide-react';
 import LocationPicker from './LocationPicker';
@@ -46,13 +46,15 @@ interface HostScreenProps {
   onUpdateSession: (id: string, updatedFields: Partial<MatchSession>) => void;
   editingSession?: MatchSession | null;
   onCancelEdit?: () => void;
+  hostGender?: UserGender;
 }
 
 export default function HostScreen({
   onPostSession,
   onUpdateSession,
   editingSession,
-  onCancelEdit
+  onCancelEdit,
+  hostGender,
 }: HostScreenProps) {
   const isEditing = !!editingSession;
 
@@ -168,7 +170,11 @@ export default function HostScreen({
     setPlayersNeeded(totals[format]);
   };
 
-  const minPlayers = sport === 'Football' ? 2 : (matchType === 'singles' ? 2 : 4);
+  const footballFormatMin = sport === 'Football'
+    ? (FOOTBALL_FORMATS.find(f => f.label === footballFormat)?.total ?? 10)
+    : null;
+  const minPlayers = footballFormatMin ?? (matchType === 'singles' ? 2 : 4);
+  const maxPlayers = 30;
 
   const handleMatchTypeChange = (type: MatchType) => {
     setMatchType(type);
@@ -180,7 +186,7 @@ export default function HostScreen({
   };
 
   const handleIncrement = () => {
-    setPlayersNeeded((prev) => Math.min(20, prev + 1));
+    setPlayersNeeded((prev) => Math.min(maxPlayers, prev + 1));
   };
 
   const handleSubmit = (e: FormEvent) => {
@@ -438,35 +444,53 @@ export default function HostScreen({
           {/* Gender Preference */}
           <div className="space-y-1.5">
             <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Gender Preference</label>
-            <div className="grid grid-cols-3 gap-2">
-              {([
+            {(() => {
+              const allOpts = ([
                 { value: 'male',   label: 'Male Only',   icon: <User  className="w-5 h-5 mb-1" /> },
                 { value: 'female', label: 'Female Only', icon: <User  className="w-5 h-5 mb-1" /> },
                 { value: 'open',   label: 'Open to All', icon: <Users className="w-5 h-5 mb-1" /> },
-              ] as { value: GenderPreference; label: string; icon: React.ReactNode }[]).map(({ value, label, icon }) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={gender === value}
-                  onClick={() => setGender(value)}
-                  className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all cursor-pointer ${
-                    gender === value
-                      ? 'bg-primary-fixed/10 border-primary-fixed text-primary-fixed'
-                      : 'border-outline-variant/50 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
-                  }`}
-                >
-                  {icon}
-                  <span className="font-sans font-black text-[10px] uppercase tracking-wider">{label}</span>
-                </button>
-              ))}
-            </div>
+              ] as { value: GenderPreference; label: string; icon: React.ReactNode }[]);
+              const oppositeGender = hostGender === 'male' ? 'female' : hostGender === 'female' ? 'male' : null;
+              return (
+                <div className="grid grid-cols-3 gap-2">
+                  {allOpts.map(({ value, label, icon }) => {
+                    const isDisabled = value === oppositeGender;
+                    return (
+                      <div key={value} className="relative group">
+                        <button
+                          type="button"
+                          aria-pressed={gender === value}
+                          disabled={isDisabled}
+                          onClick={() => !isDisabled && setGender(value)}
+                          className={`w-full flex flex-col items-center justify-center p-3 rounded-lg border transition-all ${
+                            isDisabled
+                              ? 'border-outline-variant/20 bg-surface-variant/30 text-on-surface-variant/30 cursor-not-allowed opacity-50'
+                              : gender === value
+                              ? 'bg-primary-fixed/10 border-primary-fixed text-primary-fixed cursor-pointer'
+                              : 'border-outline-variant/50 bg-surface-variant text-on-surface-variant hover:bg-surface-bright cursor-pointer'
+                          }`}
+                        >
+                          {icon}
+                          <span className="font-sans font-black text-[10px] uppercase tracking-wider">{label}</span>
+                        </button>
+                        {isDisabled && (
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 bg-surface-container-highest border border-outline-variant/30 rounded-lg px-3 py-2 text-[10px] text-on-surface-variant leading-snug shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            You can only host sessions open to your own gender or all players.
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Total Players */}
           <div className="space-y-1.5">
             <div className="flex justify-between items-center">
               <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Total Players</label>
-              <span className="text-xs text-on-surface-variant font-mono">Min {minPlayers} · max 20 · includes rotation</span>
+              <span className="text-xs text-on-surface-variant font-mono">Min {minPlayers} · max {maxPlayers}</span>
             </div>
             <div className="flex items-center justify-between bg-surface-variant/50 rounded-lg border border-outline-variant/40 p-2">
               <button
@@ -481,7 +505,7 @@ export default function HostScreen({
               <button
                 onClick={handleIncrement}
                 type="button"
-                disabled={playersNeeded >= 20}
+                disabled={playersNeeded >= maxPlayers}
                 className="w-10 h-10 flex items-center justify-center rounded-md bg-surface-bright text-on-surface hover:bg-surface-container transition-colors active:scale-95 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <Plus className="w-4 h-4" />
