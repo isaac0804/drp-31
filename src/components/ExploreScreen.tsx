@@ -6,6 +6,24 @@ import { MapPin, Plus, CalendarDays, List, Map, SlidersHorizontal, X } from 'luc
 import { motion, AnimatePresence } from 'motion/react';
 import SessionMapView from './SessionMapView';
 
+export interface ExploreFilters {
+  sport: 'all' | Sport;
+  skillMin: SkillLevel;
+  skillMax: SkillLevel;
+  gender: 'all' | GenderPreference;
+  hideFull: boolean;
+  search: string;
+}
+
+export const DEFAULT_EXPLORE_FILTERS: ExploreFilters = {
+  sport: 'all',
+  skillMin: SKILL_LEVELS[0],
+  skillMax: SKILL_LEVELS[SKILL_LEVELS.length - 1],
+  gender: 'all',
+  hideFull: false,
+  search: '',
+};
+
 interface ExploreScreenProps {
   sessions: MatchSession[];
   onSelectSession: (id: string) => void;
@@ -13,6 +31,8 @@ interface ExploreScreenProps {
   currentUserId: string;
   viewMode: 'list' | 'map';
   onViewModeChange: (mode: 'list' | 'map') => void;
+  filters: ExploreFilters;
+  onFiltersChange: (f: ExploreFilters) => void;
 }
 
 export default function ExploreScreen({
@@ -22,14 +42,12 @@ export default function ExploreScreen({
   currentUserId,
   viewMode,
   onViewModeChange,
+  filters,
+  onFiltersChange,
 }: ExploreScreenProps) {
-  const [selectedSport, setSelectedSport] = useState<'all' | Sport>('all');
-  const [selectedSkillMin, setSelectedSkillMin] = useState<SkillLevel>(SKILL_LEVELS[0]);
-  const [selectedSkillMax, setSelectedSkillMax] = useState<SkillLevel>(SKILL_LEVELS[SKILL_LEVELS.length - 1]);
-  const [selectedGender, setSelectedGender] = useState<'all' | GenderPreference>('all');
-  const [hideFull, setHideFull] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const { sport: selectedSport, skillMin: selectedSkillMin, skillMax: selectedSkillMax, gender: selectedGender, hideFull, search: searchQuery } = filters;
 
   const skillRangeIsAll = selectedSkillMin === SKILL_LEVELS[0] && selectedSkillMax === SKILL_LEVELS[SKILL_LEVELS.length - 1];
   const activeFilterCount = (selectedSport !== 'all' ? 1 : 0) + (!skillRangeIsAll ? 1 : 0) + (selectedGender !== 'all' ? 1 : 0) + (hideFull ? 1 : 0);
@@ -98,7 +116,7 @@ export default function ExploreScreen({
         type="text"
         placeholder="Search venue, club, or host..."
         value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
+        onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
         className="flex-1 min-w-0 bg-surface-container-high/90 backdrop-blur-sm border border-outline-variant/30 text-on-surface text-sm rounded-xl py-3 px-4 outline-none focus:ring-1 focus:ring-primary-fixed/80 placeholder-on-surface-variant/50 transition-all font-sans"
       />
 
@@ -185,7 +203,7 @@ export default function ExploreScreen({
                 {([{ value: 'all', label: 'All Sports' }, ...SPORTS.map((s) => ({ value: s, label: s }))] as { value: 'all' | Sport; label: string }[]).map((f) => (
                   <button
                     key={f.value}
-                    onClick={() => setSelectedSport(f.value)}
+                    onClick={() => onFiltersChange({ ...filters, sport: f.value })}
                     className={`py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wide transition-all cursor-pointer ${
                       selectedSport === f.value
                         ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
@@ -210,7 +228,7 @@ export default function ExploreScreen({
                 <SkillRangePicker
                   min={selectedSkillMin}
                   max={selectedSkillMax}
-                  onChange={(min, max) => { setSelectedSkillMin(min); setSelectedSkillMax(max); }}
+                  onChange={(min, max) => onFiltersChange({ ...filters, skillMin: min, skillMax: max })}
                 />
               </div>
             </div>
@@ -226,7 +244,7 @@ export default function ExploreScreen({
                 ] as const).map((f) => (
                   <button
                     key={f.value}
-                    onClick={() => setSelectedGender(f.value)}
+                    onClick={() => onFiltersChange({ ...filters, gender: f.value })}
                     className={`py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wide transition-all cursor-pointer ${
                       selectedGender === f.value
                         ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
@@ -242,7 +260,7 @@ export default function ExploreScreen({
             <div className="h-px bg-outline-variant/20 mb-5" />
             <button
               type="button"
-              onClick={() => setHideFull((v) => !v)}
+              onClick={() => onFiltersChange({ ...filters, hideFull: !filters.hideFull })}
               className="w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all cursor-pointer mb-6 bg-surface-variant/30 hover:bg-surface-bright border-outline-variant/40"
             >
               <span className="font-sans font-semibold text-sm text-on-surface uppercase tracking-wide">Hide full sessions</span>
@@ -253,7 +271,7 @@ export default function ExploreScreen({
 
             <div className="flex gap-3">
               <button
-                onClick={() => { setSelectedSport('all'); setSelectedSkillMin(SKILL_LEVELS[0]); setSelectedSkillMax(SKILL_LEVELS[SKILL_LEVELS.length - 1]); setSelectedGender('all'); setHideFull(false); }}
+                onClick={() => onFiltersChange(DEFAULT_EXPLORE_FILTERS)}
                 className="flex-1 py-3 rounded-full border border-outline-variant/50 text-on-surface-variant text-sm font-bold uppercase tracking-wider transition-all hover:bg-surface-variant cursor-pointer"
               >
                 Reset

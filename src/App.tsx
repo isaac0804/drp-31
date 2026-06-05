@@ -19,7 +19,7 @@ import { seedDummySessions, unseedDummySessions } from './devSeed';
 import Header from './components/Header';
 import SidebarDrawer from './components/SidebarDrawer';
 import BottomNav from './components/BottomNav';
-import ExploreScreen from './components/ExploreScreen';
+import ExploreScreen, { ExploreFilters, DEFAULT_EXPLORE_FILTERS } from './components/ExploreScreen';
 import HostScreen from './components/HostScreen';
 import MySessions from './components/MySessions';
 import SessionDetails from './components/SessionDetails';
@@ -43,6 +43,7 @@ export default function App() {
   const [myReviews, setMyReviews] = useState<Review[]>([]);
   const [editingSession, setEditingSession] = useState<MatchSession | null>(null);
   const [exploreViewMode, setExploreViewMode] = useState<'list' | 'map'>('list');
+  const [exploreFilters, setExploreFilters] = useState<ExploreFilters>(DEFAULT_EXPLORE_FILTERS);
   
   // Sidebar state
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -330,6 +331,8 @@ export default function App() {
                 currentUserId={user.id}
                 viewMode={exploreViewMode}
                 onViewModeChange={setExploreViewMode}
+                filters={exploreFilters}
+                onFiltersChange={setExploreFilters}
               />
             )}
 
