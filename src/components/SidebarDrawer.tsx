@@ -1,7 +1,7 @@
 import { X, Play, Trophy, Users, Award, Zap, LogOut, Target } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-type ActiveScreen = 'explore' | 'host' | 'sessions' | 'details' | 'profile' | 'player-profile' | 'assessment';
+type ActiveScreen = 'explore' | 'host' | 'sessions' | 'details' | 'profile' | 'player-profile' | 'player-reviews' | 'assessment';
 
 interface SidebarDrawerProps {
   isOpen: boolean;

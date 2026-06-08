@@ -1,6 +1,6 @@
 import { Compass, Trophy, User } from 'lucide-react';
 
-type ActiveScreen = 'explore' | 'host' | 'sessions' | 'details' | 'profile' | 'player-profile' | 'assessment';
+type ActiveScreen = 'explore' | 'host' | 'sessions' | 'details' | 'profile' | 'player-profile' | 'player-reviews' | 'assessment';
 
 interface BottomNavProps {
   activeScreen: ActiveScreen;
