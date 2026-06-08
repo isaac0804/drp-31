@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { MatchSession, SkillLevel, GenderPreference, Sport, SKILL_LEVELS, SKILL_LEVEL_LABELS } from '../types';
+import { MatchSession, SkillLevel, GenderPreference, Sport, UserGender, SKILL_LEVELS, SKILL_LEVEL_LABELS } from '../types';
 import { SPORTS } from '../data';
 import SkillRangePicker from './SkillRangePicker';
 import { MapPin, Plus, CalendarDays, List, Map, SlidersHorizontal, X } from 'lucide-react';
@@ -33,6 +33,7 @@ interface ExploreScreenProps {
   onViewModeChange: (mode: 'list' | 'map') => void;
   filters: ExploreFilters;
   onFiltersChange: (f: ExploreFilters) => void;
+  userGender?: UserGender;
 }
 
 export default function ExploreScreen({
@@ -44,6 +45,7 @@ export default function ExploreScreen({
   onViewModeChange,
   filters,
   onFiltersChange,
+  userGender,
 }: ExploreScreenProps) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -236,15 +238,15 @@ export default function ExploreScreen({
             <div className="h-px bg-outline-variant/20 mb-5" />
             <div className="space-y-2.5 mb-5">
               <p className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Gender</p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {([
-                  { value: 'all', label: 'Any Gender' },
-                  { value: 'male', label: 'Male Only' },
+                  { value: 'open',   label: 'Open to All' },
+                  { value: 'male',   label: 'Male Only' },
                   { value: 'female', label: 'Female Only' },
-                ] as const).map((f) => (
+                ] as { value: GenderPreference; label: string }[]).map((f) => (
                   <button
                     key={f.value}
-                    onClick={() => onFiltersChange({ ...filters, gender: f.value })}
+                    onClick={() => onFiltersChange({ ...filters, gender: selectedGender === f.value ? 'all' : f.value })}
                     className={`py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wide transition-all cursor-pointer ${
                       selectedGender === f.value
                         ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
@@ -442,9 +444,18 @@ export default function ExploreScreen({
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide bg-surface-variant text-on-surface-variant uppercase font-sans">
                       {session.sport === 'Football' && session.footballFormat ? session.footballFormat : session.matchType}
                     </span>
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide bg-surface-variant text-on-surface-variant uppercase font-sans">
-                      {session.gender === 'male' ? '♂ Male' : session.gender === 'female' ? '♀ Female' : '⚥ Open'}
-                    </span>
+                    {(() => {
+                      const genderIneligible = session.gender && session.gender !== 'open' && userGender !== session.gender;
+                      return (
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase font-sans ${
+                          genderIneligible
+                            ? 'bg-error/10 text-error border border-error/25'
+                            : 'bg-surface-variant text-on-surface-variant'
+                        }`}>
+                          {session.gender === 'male' ? '♂ Male' : session.gender === 'female' ? '♀ Female' : '⚥ Open'}
+                        </span>
+                      );
+                    })()}
                   </div>
                   <div className="text-right flex flex-col items-end gap-1.5 min-w-[90px]">
                     <span className="font-sans font-extrabold text-[11px] text-on-surface tracking-wide">

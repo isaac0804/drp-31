@@ -1,4 +1,4 @@
-import { Review, UserProfile, Sport, SportSkill } from '../types';
+import { Review, UserProfile, Sport, SportSkill, GENDER_LABELS } from '../types';
 import { ArrowLeft, MessageSquare, ThumbsUp, Trophy, Target } from 'lucide-react';
 
 interface PlayerProfileScreenProps {
@@ -69,8 +69,13 @@ export default function PlayerProfileScreen({
             </div>
           </div>
 
-          <div>
+          <div className="space-y-1">
             <h3 className="font-sans font-extrabold text-base text-on-surface">{profile.name}</h3>
+            {profile.gender && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-surface-container-highest border border-outline-variant/20 text-on-surface-variant">
+                {GENDER_LABELS[profile.gender]}
+              </span>
+            )}
           </div>
         </div>
 

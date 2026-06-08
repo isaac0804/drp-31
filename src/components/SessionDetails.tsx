@@ -242,6 +242,21 @@ export default function SessionDetails({
             </span>
           </div>
 
+          {session.hostJoinsAsPlayer === false && (
+            <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface-container-low border border-outline-variant/15">
+              <img
+                src={session.host.avatar}
+                alt={session.host.name}
+                referrerPolicy="no-referrer"
+                className="w-8 h-8 rounded-full object-cover border border-outline-variant/30 shrink-0"
+              />
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-on-surface truncate">{session.host.name}</div>
+                <div className="text-[10px] text-on-surface-variant">Organiser · Not playing</div>
+              </div>
+            </div>
+          )}
+
           {/* Graphical custom percentage bar */}
           <div className="w-full bg-surface-container h-2 rounded-full overflow-hidden border border-outline-variant/10">
             <div
@@ -323,7 +338,9 @@ export default function SessionDetails({
         <div className="w-full max-w-3xl mx-auto flex gap-3">
           {isHost ? (
             <div className="w-full text-center text-xs font-sans text-on-surface-variant py-4 bg-surface-container-highest rounded-full border border-outline-variant/20">
-              You are the host of this match session
+              {session.hostJoinsAsPlayer === false
+                ? 'You are organising this session · Not playing'
+                : 'You are the host of this match session'}
             </div>
           ) : isJoined ? (
             <button
