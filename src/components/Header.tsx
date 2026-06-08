@@ -65,17 +65,24 @@ export default function Header({ user, onMenuClick, onLogoClick, onNavigate, onS
           <button
             onClick={() => setOpen((v) => !v)}
             aria-label="Open profile menu"
-            className={`w-9 h-9 rounded-full border overflow-hidden cursor-pointer active:scale-95 transition-all relative group ${
-              open ? 'border-primary-fixed' : 'border-primary-fixed/30 hover:border-primary-fixed'
-            }`}
+            className="relative cursor-pointer active:scale-95 transition-all group"
           >
-            <img
-              alt={user.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-              referrerPolicy="no-referrer"
-              src={user.avatar}
-            />
-            <div className="absolute inset-0 bg-primary-fixed/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className={`w-9 h-9 rounded-full border overflow-hidden ${
+              open ? 'border-primary-fixed' : 'border-primary-fixed/30 group-hover:border-primary-fixed'
+            } transition-all`}>
+              <img
+                alt={user.name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                referrerPolicy="no-referrer"
+                src={user.avatar}
+              />
+              <div className="absolute inset-0 rounded-full bg-primary-fixed/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+            {pendingReviewCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center leading-none shadow-sm">
+                {pendingReviewCount}
+              </span>
+            )}
           </button>
 
           <AnimatePresence>
