@@ -6,6 +6,8 @@ import { submitReview } from '../reviews';
 
 interface ReviewPlayerScreenProps {
   reviewerId: string;
+  reviewerName: string;
+  reviewerAvatar: string;
   player: Player;
   session: MatchSession;
   onBack: () => void;
@@ -104,6 +106,8 @@ const VIBE_OPTIONS: CategoryOption<Vibe>[] = [
 
 export default function ReviewPlayerScreen({
   reviewerId,
+  reviewerName,
+  reviewerAvatar,
   player,
   session,
   onBack,
@@ -115,6 +119,7 @@ export default function ReviewPlayerScreen({
   const [sportsmanship, setSportsmanship] = useState<Sportsmanship | null>(null);
   const [vibe, setVibe]                   = useState<Vibe | null>(null);
   const [feedback, setFeedback]           = useState('');
+  const [isAnonymous, setIsAnonymous]     = useState(true);
   const [submitting, setSubmitting]       = useState(false);
   const [submitted, setSubmitted]         = useState(false);
   const [error, setError]                 = useState<string | null>(null);
@@ -142,6 +147,9 @@ export default function ReviewPlayerScreen({
         playAgain, skillAccuracy,
         reliability, sportsmanship, vibe,
         feedback,
+        isAnonymous,
+        isAnonymous ? undefined : reviewerName,
+        isAnonymous ? undefined : reviewerAvatar,
       );
       setSubmitted(true);
       timeoutRef.current = setTimeout(onSubmit, 1200);
@@ -308,6 +316,47 @@ export default function ReviewPlayerScreen({
           rows={3}
           className="w-full bg-surface-container/60 border border-outline-variant/15 rounded-xl px-4 py-3 text-sm text-on-surface placeholder-on-surface-variant/25 resize-none outline-none focus:border-primary-fixed/40 transition-colors"
         />
+      </section>
+
+      {/* Identity toggle */}
+      <section className="rounded-2xl border border-outline-variant/10 bg-surface-container/40 p-4 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="font-bold text-sm text-white">Show my name on this review</h3>
+            <p className="text-xs text-on-surface-variant/45 mt-0.5">Off by default — your identity stays private</p>
+          </div>
+          <button
+            role="switch"
+            aria-checked={!isAnonymous}
+            onClick={() => setIsAnonymous((v) => !v)}
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors cursor-pointer ${
+              !isAnonymous ? 'bg-primary-fixed' : 'bg-outline-variant/30'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                !isAnonymous ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Attribution preview */}
+        <div className="flex items-center gap-2.5 rounded-xl bg-surface-container/60 border border-outline-variant/10 px-3 py-2.5">
+          {isAnonymous ? (
+            <div className="w-7 h-7 rounded-full bg-outline-variant/20 flex items-center justify-center shrink-0">
+              <span className="text-[11px] text-on-surface-variant/40 font-bold">?</span>
+            </div>
+          ) : (
+            <img src={reviewerAvatar} alt={reviewerName} className="w-7 h-7 rounded-full object-cover shrink-0" />
+          )}
+          <span className="text-xs text-on-surface-variant/60 leading-snug">
+            {isAnonymous
+              ? 'Your review will appear anonymously'
+              : <><span className="text-white font-semibold">{reviewerName}</span> · your review will show your name</>
+            }
+          </span>
+        </div>
       </section>
 
       <AnimatePresence>

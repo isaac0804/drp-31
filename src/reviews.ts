@@ -19,7 +19,10 @@ export async function submitReview(
   reliability: Reliability,
   sportsmanship: Sportsmanship,
   vibe: Vibe,
-  feedback: string
+  feedback: string,
+  isAnonymous: boolean,
+  reviewerName?: string,
+  reviewerAvatar?: string,
 ): Promise<void> {
   const review: Omit<Review, 'id'> = {
     reviewerId,
@@ -32,6 +35,9 @@ export async function submitReview(
     vibe,
     feedback,
     createdAt: Date.now(),
+    isAnonymous,
+    ...(!isAnonymous && reviewerName  ? { reviewerName }  : {}),
+    ...(!isAnonymous && reviewerAvatar ? { reviewerAvatar } : {}),
   };
   await addDoc(collection(db, REVIEWS_COL), review);
 }

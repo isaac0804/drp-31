@@ -399,6 +399,8 @@ export default function App() {
               <MySessions
                 sessions={sessions}
                 currentUserId={user.id}
+                reviewerName={user.name}
+                reviewerAvatar={user.avatar}
                 onEditSession={handleEditTrigger}
                 onCancelSession={handleCancelSession}
                 onLeaveSession={handleLeaveSession}
@@ -455,6 +457,8 @@ export default function App() {
               <ReviewsScreen
                 sessions={sessions}
                 currentUserId={user.id}
+                reviewerName={user.name}
+                reviewerAvatar={user.avatar}
               />
             )}
           </motion.div>

@@ -26,6 +26,9 @@ export interface Review {
   vibe?: Vibe;
   feedback: string;
   createdAt: number;
+  isAnonymous?: boolean;
+  reviewerName?: string;
+  reviewerAvatar?: string;
 }
 export type ActiveScreen = 'explore' | 'host' | 'sessions' | 'details' | 'profile' | 'player-profile' | 'assessment' | 'reviews';
 export type MatchType = 'singles' | 'doubles';

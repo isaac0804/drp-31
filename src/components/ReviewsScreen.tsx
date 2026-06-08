@@ -9,6 +9,8 @@ import ReviewPlayerScreen from './ReviewPlayerScreen';
 interface ReviewsScreenProps {
   sessions: MatchSession[];
   currentUserId: string;
+  reviewerName: string;
+  reviewerAvatar: string;
 }
 
 function isFinished(s: MatchSession): boolean {
@@ -27,7 +29,7 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-export default function ReviewsScreen({ sessions, currentUserId }: ReviewsScreenProps) {
+export default function ReviewsScreen({ sessions, currentUserId, reviewerName, reviewerAvatar }: ReviewsScreenProps) {
   const [reviewingSession, setReviewingSession] = useState<MatchSession | null>(null);
   const [reviewingPlayer, setReviewingPlayer]   = useState<Player | null>(null);
   const [reviewedPlayerIds, setReviewedPlayerIds] = useState<string[]>([]);
@@ -51,6 +53,8 @@ export default function ReviewsScreen({ sessions, currentUserId }: ReviewsScreen
     return (
       <ReviewPlayerScreen
         reviewerId={currentUserId}
+        reviewerName={reviewerName}
+        reviewerAvatar={reviewerAvatar}
         player={reviewingPlayer}
         session={reviewingSession}
         onBack={() => setReviewingPlayer(null)}
