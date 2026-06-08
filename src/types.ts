@@ -24,7 +24,12 @@ export interface Review {
 export type MatchType = 'singles' | 'doubles';
 export type FootballFormat = '5v5' | '7v7' | '11v11';
 export type GenderPreference = 'male' | 'female' | 'open';
-export type UserGender = 'male' | 'female';
+export type UserGender = 'male' | 'female' | 'non-binary';
+export const GENDER_LABELS: Record<UserGender, string> = {
+  'male': '♂ Male',
+  'female': '♀ Female',
+  'non-binary': '⚧ Non-binary',
+};
 
 export interface SportSkill {
   skillLevel: SkillLevel;
@@ -77,4 +82,5 @@ export interface MatchSession {
   playersJoined: Player[];
   hostNote: string;
   isPrivate?: boolean;
+  hostJoinsAsPlayer?: boolean;
 }

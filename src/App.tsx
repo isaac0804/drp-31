@@ -36,6 +36,23 @@ export default function App() {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const [activeScreen, setActiveScreen] = useState<ActiveScreen>('explore');
+  const [screenHistory, setScreenHistory] = useState<ActiveScreen[]>([]);
+
+  const pushNav = (screen: ActiveScreen) => {
+    setScreenHistory((h) => [...h, activeScreen]);
+    setActiveScreen(screen);
+  };
+
+  const goBack = () => {
+    const prev = screenHistory[screenHistory.length - 1] ?? 'explore';
+    setScreenHistory((h) => h.slice(0, -1));
+    setActiveScreen(prev);
+  };
+
+  const rootNav = (screen: ActiveScreen) => {
+    setScreenHistory([]);
+    setActiveScreen(screen);
+  };
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [selectedPlayerProfile, setSelectedPlayerProfile] = useState<UserProfile | null>(null);
   const [selectedPlayerMatchesCount, setSelectedPlayerMatchesCount] = useState(0);
@@ -136,7 +153,7 @@ export default function App() {
       skillsBySport: { ...(user?.skillsBySport ?? {}), [sport]: { skillLevel } },
       skillLevel,
     });
-    setActiveScreen('explore');
+    rootNav('explore');
   };
 
   const handleSignOut = async () => {
@@ -151,11 +168,11 @@ export default function App() {
     const finishedSession: MatchSession = {
       ...newSessionData,
       host: hostPlayer,
-      playersJoined: [hostPlayer],
+      playersJoined: newSessionData.hostJoinsAsPlayer !== false ? [hostPlayer] : [],
     };
 
     postSession(finishedSession).catch((err) => console.error('Post session error:', err));
-    setActiveScreen('sessions');
+    rootNav('sessions');
   };
 
   const handleUpdateSession = (id: string, updatedFields: Partial<MatchSession>) => {
@@ -163,7 +180,19 @@ export default function App() {
     const session = sessions.find((s: MatchSession) => s.id === id);
     if (!session || session.host.id !== user.id) return;
 
-    updateSession(id, updatedFields).catch((err) => console.error('Update session error:', err));
+    let fields = updatedFields;
+    if ('hostJoinsAsPlayer' in updatedFields) {
+      const hostPlayer: Player = { id: user.id, name: user.name, avatar: user.avatar };
+      const wasJoined = session.playersJoined.some((p: Player) => p.id === user.id);
+      const willJoin = updatedFields.hostJoinsAsPlayer !== false;
+      if (wasJoined && !willJoin) {
+        fields = { ...fields, playersJoined: session.playersJoined.filter((p: Player) => p.id !== user.id) };
+      } else if (!wasJoined && willJoin) {
+        fields = { ...fields, playersJoined: [hostPlayer, ...session.playersJoined] };
+      }
+    }
+
+    updateSession(id, fields).catch((err) => console.error('Update session error:', err));
     setEditingSession(null);
     setSelectedSessionId(id);
     setActiveScreen('details');
@@ -213,7 +242,7 @@ export default function App() {
         session.host.id === player.id || session.playersJoined.some((joinedPlayer: Player) => joinedPlayer.id === player.id)
       ).length
     );
-    setActiveScreen('player-profile');
+    pushNav('player-profile');
 
     try {
       const storedProfile = await getUserProfileById(player.id);
@@ -237,7 +266,7 @@ export default function App() {
     }
 
     setEditingSession(session);
-    setActiveScreen('host');
+    pushNav('host');
   };
 
   // Find currently active session details safely
@@ -282,12 +311,12 @@ export default function App() {
         onMenuClick={() => setIsSidebarOpen(true)}
         onProfileClick={() => {
           setEditingSession(null);
-          setActiveScreen('profile');
+          rootNav('profile');
         }}
         onLogoClick={() => {
           setEditingSession(null);
           setExploreViewMode('list');
-          setActiveScreen('explore');
+          rootNav('explore');
         }}
       />
 
@@ -299,10 +328,10 @@ export default function App() {
         onNavigate={(screen) => {
           setEditingSession(null);
           if (screen === 'explore') setExploreViewMode('list');
-          setActiveScreen(screen);
+          rootNav(screen);
         }}
         onSignOut={handleSignOut}
-        onRetakeAssessment={() => setActiveScreen('assessment')}
+        onRetakeAssessment={() => pushNav('assessment')}
         matchesCount={matchesCount}
       />
 
@@ -311,9 +340,9 @@ export default function App() {
         <AnimatePresence mode="wait">
           <motion.div
             key={activeScreen + (selectedSessionId || '')}
-            initial={{ opacity: 0, scale: 0.99 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.99 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
             className="w-full"
           >
@@ -322,17 +351,18 @@ export default function App() {
                 sessions={sessions}
                 onSelectSession={(id) => {
                   setSelectedSessionId(id);
-                  setActiveScreen('details');
+                  pushNav('details');
                 }}
                 onNavigateToHost={() => {
                   setEditingSession(null);
-                  setActiveScreen('host');
+                  pushNav('host');
                 }}
                 currentUserId={user.id}
                 viewMode={exploreViewMode}
                 onViewModeChange={setExploreViewMode}
                 filters={exploreFilters}
                 onFiltersChange={setExploreFilters}
+                userGender={user.gender}
               />
             )}
 
@@ -344,7 +374,7 @@ export default function App() {
                 hostGender={user.gender}
                 onCancelEdit={() => {
                   setEditingSession(null);
-                  setActiveScreen('sessions');
+                  goBack();
                 }}
               />
             )}
@@ -358,11 +388,11 @@ export default function App() {
                 onLeaveSession={handleLeaveSession}
                 onNavigateToHost={() => {
                   setEditingSession(null);
-                  setActiveScreen('host');
+                  pushNav('host');
                 }}
                 onSelectSession={(id) => {
                   setSelectedSessionId(id);
-                  setActiveScreen('details');
+                  pushNav('details');
                 }}
               />
             )}
@@ -371,7 +401,7 @@ export default function App() {
               <SessionDetails
                 session={currentDetailsSession}
                 currentUser={user}
-                onBack={() => setActiveScreen('explore')}
+                onBack={goBack}
                 onJoin={handleJoinSession}
                 onLeave={handleLeaveSession}
                 onViewPlayerProfile={handleViewPlayerProfile}
@@ -384,7 +414,7 @@ export default function App() {
                 profile={selectedPlayerProfile}
                 matchesPlayedCount={selectedPlayerMatchesCount}
                 reviews={selectedPlayerReviews}
-                onBack={() => setActiveScreen('details')}
+                onBack={goBack}
               />
             )}
 
@@ -393,7 +423,7 @@ export default function App() {
                 user={user}
                 onUpdateProfile={handleUpdateProfile}
                 matchesPlayedCount={myParticipatedMatchesCount}
-                onRetakeAssessment={() => setActiveScreen('assessment')}
+                onRetakeAssessment={() => pushNav('assessment')}
                 reviews={myReviews}
               />
             )}
@@ -401,7 +431,7 @@ export default function App() {
             {activeScreen === 'assessment' && (
               <SkillAssessmentScreen
                 onComplete={handleAssessmentComplete}
-                onClose={() => setActiveScreen('explore')}
+                onClose={goBack}
 
               />
             )}
@@ -415,7 +445,7 @@ export default function App() {
         onNavigate={(screen) => {
           setEditingSession(null);
           if (screen === 'explore') setExploreViewMode('list');
-          setActiveScreen(screen);
+          rootNav(screen);
         }}
       />
     </div>
