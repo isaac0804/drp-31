@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Player, MatchSession, PlayAgain, SkillAccuracy } from '../types';
-import { ArrowLeft, ThumbsUp, ThumbsDown, TrendingDown, CheckCircle, TrendingUp, Send } from 'lucide-react';
-import { motion } from 'motion/react';
+import { useEffect, useRef, useState } from 'react';
+import { Player, MatchSession, PlayAgain, SkillAccuracy, Reliability, Sportsmanship, Vibe } from '../types';
+import { ArrowLeft, ThumbsUp, ThumbsDown, TrendingDown, CheckCircle, TrendingUp, Send, Check, Minus, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { submitReview } from '../reviews';
 
 interface ReviewPlayerScreenProps {
@@ -12,13 +12,94 @@ interface ReviewPlayerScreenProps {
   onSubmit: () => void;
 }
 
-type PlayAgainState = PlayAgain | null;
-type SkillAccuracyState = SkillAccuracy | null;
+type Sentiment = 'positive' | 'neutral' | 'negative';
 
-const SKILL_OPTIONS: { value: SkillAccuracy; label: string; icon: ReactNode }[] = [
+interface CategoryOption<T extends string> {
+  value: T;
+  label: string;
+  sentiment: Sentiment;
+}
+
+const SENTIMENT_ICONS: Record<Sentiment, React.ReactNode> = {
+  positive: <Check className="w-3 h-3" />,
+  neutral:  <Minus className="w-3 h-3" />,
+  negative: <X     className="w-3 h-3" />,
+};
+
+function sentimentClass(sentiment: Sentiment, selected: boolean): string {
+  if (!selected)
+    return 'border-outline-variant/15 bg-surface-container/80 text-on-surface-variant/50 hover:bg-surface-container-high hover:text-on-surface-variant/80';
+  if (sentiment === 'positive') return 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed';
+  if (sentiment === 'neutral')  return 'border-amber-400 bg-amber-400/10 text-amber-400';
+  return 'border-error bg-error/10 text-error';
+}
+
+function CategoryPicker<T extends string>({
+  step,
+  label,
+  description,
+  options,
+  value,
+  onChange,
+}: {
+  step: string;
+  label: string;
+  description: string;
+  options: CategoryOption<T>[];
+  value: T | null;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <section className="rounded-2xl border border-outline-variant/10 bg-surface-container/40 p-4 space-y-3">
+      <div className="flex items-start gap-2">
+        <span className="text-[10px] font-black text-primary-fixed/50 tracking-widest pt-0.5">{step}</span>
+        <div>
+          <h3 className="font-bold text-sm text-white">{label}</h3>
+          <p className="text-xs text-on-surface-variant/45 mt-0.5 leading-snug">{description}</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {options.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border text-center text-xs font-semibold transition-all cursor-pointer leading-tight ${sentimentClass(opt.sentiment, value === opt.value)}`}
+          >
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
+              value === opt.value ? 'bg-current/15' : 'bg-outline-variant/10'
+            }`}>
+              {SENTIMENT_ICONS[opt.sentiment]}
+            </span>
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+const SKILL_OPTIONS: { value: SkillAccuracy; label: string; icon: React.ReactNode }[] = [
   { value: 'too-high', label: 'Rated Too High', icon: <TrendingDown className="w-4 h-4" /> },
   { value: 'accurate', label: 'Accurate',        icon: <CheckCircle  className="w-4 h-4" /> },
   { value: 'too-low',  label: 'Rated Too Low',   icon: <TrendingUp   className="w-4 h-4" /> },
+];
+
+const RELIABILITY_OPTIONS: CategoryOption<Reliability>[] = [
+  { value: 'punctual',       label: 'Always on time!',      sentiment: 'positive' },
+  { value: 'mostly-on-time', label: 'Mostly showed up',     sentiment: 'neutral'  },
+  { value: 'often-late',     label: 'Often late or no-show',sentiment: 'negative' },
+];
+
+const SPORTSMANSHIP_OPTIONS: CategoryOption<Sportsmanship>[] = [
+  { value: 'fair-play',     label: 'Fair & respectful',   sentiment: 'positive' },
+  { value: 'average',       label: 'Nothing to note',     sentiment: 'neutral'  },
+  { value: 'poor-attitude', label: 'Hot-headed or dirty', sentiment: 'negative' },
+];
+
+const VIBE_OPTIONS: CategoryOption<Vibe>[] = [
+  { value: 'great', label: 'Friendly & fun!',        sentiment: 'positive' },
+  { value: 'okay',  label: 'Fine, nothing special',  sentiment: 'neutral'  },
+  { value: 'poor',  label: 'Unpleasant to play with',sentiment: 'negative' },
 ];
 
 export default function ReviewPlayerScreen({
@@ -28,29 +109,40 @@ export default function ReviewPlayerScreen({
   onBack,
   onSubmit,
 }: ReviewPlayerScreenProps) {
-  const [playAgain, setPlayAgain] = useState<PlayAgainState>(null);
-  const [skillAccuracy, setSkillAccuracy] = useState<SkillAccuracyState>(null);
-  const [feedback, setFeedback] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [playAgain, setPlayAgain]         = useState<PlayAgain | null>(null);
+  const [skillAccuracy, setSkillAccuracy] = useState<SkillAccuracy | null>(null);
+  const [reliability, setReliability]     = useState<Reliability | null>(null);
+  const [sportsmanship, setSportsmanship] = useState<Sportsmanship | null>(null);
+  const [vibe, setVibe]                   = useState<Vibe | null>(null);
+  const [feedback, setFeedback]           = useState('');
+  const [submitting, setSubmitting]       = useState(false);
+  const [submitted, setSubmitted]         = useState(false);
+  const [error, setError]                 = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Cancel the success-screen timeout if the user navigates away
   useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
   }, []);
 
-  const canSubmit = playAgain !== null && skillAccuracy !== null && !submitting;
+  const canSubmit =
+    playAgain !== null &&
+    skillAccuracy !== null &&
+    reliability !== null &&
+    sportsmanship !== null &&
+    vibe !== null &&
+    !submitting;
 
   async function handleSubmit() {
-    if (!canSubmit || !playAgain || !skillAccuracy) return;
+    if (!canSubmit || !playAgain || !skillAccuracy || !reliability || !sportsmanship || !vibe) return;
     setSubmitting(true);
     setError(null);
     try {
-      await submitReview(reviewerId, player.id, session.id, playAgain, skillAccuracy, feedback);
+      await submitReview(
+        reviewerId, player.id, session.id,
+        playAgain, skillAccuracy,
+        reliability, sportsmanship, vibe,
+        feedback,
+      );
       setSubmitted(true);
       timeoutRef.current = setTimeout(onSubmit, 1200);
     } catch {
@@ -83,7 +175,7 @@ export default function ReviewPlayerScreen({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 24 }}
       transition={{ duration: 0.2 }}
-      className="space-y-6 pb-8"
+      className="space-y-4 pb-8"
     >
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -97,17 +189,18 @@ export default function ReviewPlayerScreen({
       </div>
 
       {/* Player hero */}
-      <div className="flex flex-col items-center gap-2 py-4">
+      <div className="flex flex-col items-center gap-2 py-5">
         <div className="relative">
+          <div className="absolute inset-0 rounded-full bg-primary-fixed/10 blur-xl scale-150" />
           <img
             src={player.avatar}
             alt={player.name}
-            className="w-20 h-20 rounded-full object-cover border-2 border-primary-fixed/40"
+            className="relative w-20 h-20 rounded-full object-cover border-2 border-primary-fixed/30"
           />
           <div className="absolute inset-0 rounded-full ring-2 ring-primary-fixed/20 ring-offset-2 ring-offset-background" />
         </div>
-        <div className="text-center">
-          <p className="text-[10px] font-extrabold uppercase tracking-widest text-primary-fixed/70 mt-1">Reviewing</p>
+        <div className="text-center mt-1">
+          <p className="text-[10px] font-extrabold uppercase tracking-widest text-primary-fixed/60">Reviewing</p>
           <p className="font-black text-2xl text-white">{player.name}</p>
           <p className="text-xs text-on-surface-variant/40 mt-0.5">
             {session.matchType === 'singles' ? 'Badminton Singles' : 'Badminton Doubles'} · {session.venue}
@@ -116,51 +209,56 @@ export default function ReviewPlayerScreen({
       </div>
 
       {/* Q1: Play again */}
-      <section className="space-y-3">
-        <h3 className="font-bold text-sm text-white">Would you play with them again?</h3>
+      <section className="rounded-2xl border border-outline-variant/10 bg-surface-container/40 p-4 space-y-3">
+        <div className="flex items-start gap-2">
+          <span className="text-[10px] font-black text-primary-fixed/50 tracking-widest pt-0.5">01</span>
+          <div>
+            <h3 className="font-bold text-sm text-white">Would you play with them again?</h3>
+          </div>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => setPlayAgain('yes')}
-            className={`flex flex-col items-center gap-2 py-4 rounded-2xl border transition-all cursor-pointer ${
+            className={`flex flex-col items-center gap-2 py-4 rounded-xl border transition-all cursor-pointer ${
               playAgain === 'yes'
                 ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
-                : 'border-outline-variant/20 bg-surface-container text-on-surface-variant/60 hover:bg-surface-container-high'
+                : 'border-outline-variant/15 bg-surface-container/80 text-on-surface-variant/50 hover:bg-surface-container-high hover:text-on-surface-variant/80'
             }`}
           >
             <ThumbsUp className="w-5 h-5" />
-            <span className="font-bold text-sm">Yes</span>
+            <span className="font-bold text-sm">Yes, definitely!</span>
           </button>
           <button
             onClick={() => setPlayAgain('no')}
-            className={`flex flex-col items-center gap-2 py-4 rounded-2xl border transition-all cursor-pointer ${
+            className={`flex flex-col items-center gap-2 py-4 rounded-xl border transition-all cursor-pointer ${
               playAgain === 'no'
                 ? 'border-error bg-error/10 text-error'
-                : 'border-outline-variant/20 bg-surface-container text-on-surface-variant/60 hover:bg-surface-container-high'
+                : 'border-outline-variant/15 bg-surface-container/80 text-on-surface-variant/50 hover:bg-surface-container-high hover:text-on-surface-variant/80'
             }`}
           >
             <ThumbsDown className="w-5 h-5" />
-            <span className="font-bold text-sm">No</span>
+            <span className="font-bold text-sm">Probably not</span>
           </button>
         </div>
       </section>
 
       {/* Q2: Skill accuracy */}
-      <section className="space-y-3">
-        <div>
-          <h3 className="font-bold text-sm text-white">How accurate is their skill level?</h3>
-          <p className="text-xs text-on-surface-variant/40 mt-0.5">
-            Session level: <span className="text-primary-fixed capitalize">{session.skillLevel}</span>
-          </p>
+      <section className="rounded-2xl border border-outline-variant/10 bg-surface-container/40 p-4 space-y-3">
+        <div className="flex items-start gap-2">
+          <span className="text-[10px] font-black text-primary-fixed/50 tracking-widest pt-0.5">02</span>
+          <div>
+            <h3 className="font-bold text-sm text-white">How accurate is their skill rating?</h3>
+          </div>
         </div>
         <div className="flex flex-col gap-2">
           {SKILL_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               onClick={() => setSkillAccuracy(opt.value)}
-              className={`flex items-center justify-between px-4 py-3.5 rounded-xl border transition-all cursor-pointer ${
+              className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all cursor-pointer ${
                 skillAccuracy === opt.value
                   ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
-                  : 'border-outline-variant/15 bg-surface-container text-on-surface-variant/70 hover:bg-surface-container-high'
+                  : 'border-outline-variant/15 bg-surface-container/80 text-on-surface-variant/60 hover:bg-surface-container-high hover:text-on-surface-variant/80'
               }`}
             >
               <span className="font-semibold text-sm">{opt.label}</span>
@@ -172,37 +270,78 @@ export default function ReviewPlayerScreen({
         </div>
       </section>
 
-      {/* Q3: Feedback */}
-      <section className="space-y-3">
-        <h3 className="font-bold text-sm text-white">
-          Share your feedback <span className="text-on-surface-variant/40 font-normal">(optional)</span>
-        </h3>
+      {/* Q3–Q5: Tap-to-select categories */}
+      <CategoryPicker
+        step="03" label="Punctuality"
+        description="Were they punctual? Did they show up when they said they would?"
+        options={RELIABILITY_OPTIONS}
+        value={reliability}
+        onChange={(v) => setReliability(v)}
+      />
+      <CategoryPicker
+        step="04" label="Sportsmanship"
+        description="How did they handle the game — wins, losses, and disputed calls?"
+        options={SPORTSMANSHIP_OPTIONS}
+        value={sportsmanship}
+        onChange={(v) => setSportsmanship(v)}
+      />
+      <CategoryPicker
+        step="05" label="Vibe & Friendliness"
+        description="Were they friendly, fun to be around, and a good team player overall?"
+        options={VIBE_OPTIONS}
+        value={vibe}
+        onChange={(v) => setVibe(v)}
+      />
+
+      {/* Optional free-text */}
+      <section className="rounded-2xl border border-outline-variant/10 bg-surface-container/40 p-4 space-y-3">
+        <div>
+          <h3 className="font-bold text-sm text-white">
+            Additional Comments <span className="text-on-surface-variant/35 font-normal text-xs">(optional)</span>
+          </h3>
+          <p className="text-xs text-on-surface-variant/45 mt-0.5">Leave a note the next player will see before playing with them.</p>
+        </div>
         <textarea
           value={feedback}
           onChange={(e) => setFeedback(e.target.value)}
-          placeholder="Great opponent, solid backhand..."
+          placeholder="e.g. Solid backhand, communicates well, always brings extra shuttlecocks…"
           rows={3}
-          className="w-full bg-surface-container border border-outline-variant/15 rounded-xl px-4 py-3 text-sm text-on-surface placeholder-on-surface-variant/30 resize-none outline-none focus:border-primary-fixed/40 transition-colors"
+          className="w-full bg-surface-container/60 border border-outline-variant/15 rounded-xl px-4 py-3 text-sm text-on-surface placeholder-on-surface-variant/25 resize-none outline-none focus:border-primary-fixed/40 transition-colors"
         />
       </section>
 
-      {error && (
-        <p className="text-xs text-error text-center">{error}</p>
-      )}
+      <AnimatePresence>
+        {error && (
+          <motion.p
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="text-xs text-error text-center"
+          >
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
 
-      {/* Submit */}
-      <button
+      {/* Submit — neon glow when all fields filled */}
+      <motion.button
         onClick={handleSubmit}
         disabled={!canSubmit}
-        className={`w-full py-3.5 rounded-2xl font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
+        animate={
           canSubmit
-            ? 'bg-primary-fixed text-on-primary-fixed hover:bg-primary-fixed-dim cursor-pointer'
+            ? { boxShadow: '0 0 28px 6px rgba(202,243,0,0.35)' }
+            : { boxShadow: '0 0 0px 0px rgba(202,243,0,0)' }
+        }
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        className={`w-full py-3.5 rounded-2xl font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-colors ${
+          canSubmit
+            ? 'bg-primary-fixed text-on-primary-fixed cursor-pointer'
             : 'bg-surface-container text-on-surface-variant/30 cursor-not-allowed'
         }`}
       >
         <Send className="w-4 h-4" />
         {submitting ? 'Submitting…' : 'Submit Review'}
-      </button>
+      </motion.button>
     </motion.div>
   );
 }
