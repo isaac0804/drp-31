@@ -1,7 +1,6 @@
-import { X, Play, Trophy, Users, Award, Zap, LogOut, Target } from 'lucide-react';
+import { X, Play, Trophy, Users, Award, Zap, LogOut, Target, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-
-type ActiveScreen = 'explore' | 'host' | 'sessions' | 'details' | 'profile' | 'player-profile' | 'assessment';
+import { ActiveScreen } from '../types';
 
 interface SidebarDrawerProps {
   isOpen: boolean;
@@ -107,6 +106,18 @@ export default function SidebarDrawer({
                 >
                   <Users className="w-4 h-4" />
                   Athletic Profile
+                </button>
+
+                <button
+                  onClick={() => { onNavigate('reviews'); onClose(); }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-sans font-semibold text-sm uppercase tracking-wide ${
+                    activeScreen === 'reviews'
+                      ? 'bg-primary-fixed text-on-primary-fixed shadow-[0_4px_12px_rgba(202,243,0,0.15)]'
+                      : 'hover:bg-surface-variant text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  <Star className="w-4 h-4" />
+                  Player Reviews
                 </button>
 
                 <button

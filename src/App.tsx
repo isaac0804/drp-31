@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MatchSession, Review, UserProfile, Player, Sport } from './types';
+import { ActiveScreen, MatchSession, Review, UserProfile, Player, Sport } from './types';
 import { signInWithGoogle, signOut, subscribeToCurrentUser, updateCurrentUser, getUserProfileById } from './auth';
 import { DEFAULT_USER } from './data';
 import {
@@ -27,8 +27,8 @@ import ProfileScreen from './components/ProfileScreen';
 import PlayerProfileScreen from './components/PlayerProfileScreen';
 import AuthScreen from './components/AuthScreen';
 import SkillAssessmentScreen from './components/SkillAssessmentScreen';
+import ReviewsScreen from './components/ReviewsScreen';
 
-type ActiveScreen = 'explore' | 'host' | 'sessions' | 'details' | 'profile' | 'player-profile' | 'assessment';
 
 export default function App() {
   const [sessions, setSessions] = useState<MatchSession[]>([]);
@@ -272,19 +272,36 @@ export default function App() {
   // Find currently active session details safely
   const currentDetailsSession = sessions.find((s) => s.id === selectedSessionId) || null;
 
+  // Review banner — dismissed for 24 h after user taps ✕
+  const [bannerDismissed, setBannerDismissed] = useState(() => {
+    const until = localStorage.getItem('review-banner-dismissed-until');
+    return until ? Date.now() < Number(until) : false;
+  });
+  const dismissBanner = () => {
+    localStorage.setItem('review-banner-dismissed-until', String(Date.now() + 86_400_000));
+    setBannerDismissed(true);
+  };
+
   // Counts for sidebar and profiles
   const matchesCount = sessions.length;
-  const myParticipatedMatchesCount = sessions.filter((s) => {
-    if (!user || !s.playersJoined.some((p: Player) => p.id === user.id)) return false;
-    const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const isSessionFinished = (s: { date: string; timeEnd: string }) => {
     if (s.date > todayStr) return false;
     if (s.date === todayStr) {
       const [endH, endM] = s.timeEnd.split(':').map(Number);
       return endH < now.getHours() || (endH === now.getHours() && endM <= now.getMinutes());
     }
     return true;
-  }).length;
+  };
+  const myParticipatedMatchesCount = sessions.filter((s) =>
+    user && s.playersJoined.some((p: Player) => p.id === user.id) && isSessionFinished(s)
+  ).length;
+  const pendingReviewCount = sessions.filter((s) =>
+    user &&
+    (s.host.id === user.id || s.playersJoined.some((p: Player) => p.id === user.id)) &&
+    isSessionFinished(s)
+  ).length;
 
   if (isAuthLoading) {
     return (
@@ -309,10 +326,9 @@ export default function App() {
       <Header
         user={user}
         onMenuClick={() => setIsSidebarOpen(true)}
-        onProfileClick={() => {
-          setEditingSession(null);
-          rootNav('profile');
-        }}
+        onNavigate={(screen) => { setEditingSession(null); rootNav(screen); }}
+        onSignOut={handleSignOut}
+        pendingReviewCount={pendingReviewCount}
         onLogoClick={() => {
           setEditingSession(null);
           setExploreViewMode('list');
@@ -432,16 +448,60 @@ export default function App() {
               <SkillAssessmentScreen
                 onComplete={handleAssessmentComplete}
                 onClose={goBack}
+              />
+            )}
 
+            {activeScreen === 'reviews' && (
+              <ReviewsScreen
+                sessions={sessions}
+                currentUserId={user.id}
               />
             )}
           </motion.div>
         </AnimatePresence>
       </main>
 
+      {/* Review nudge banner — shown above nav when there are pending reviews */}
+      <AnimatePresence>
+        {pendingReviewCount > 0 && !bannerDismissed && activeScreen !== 'reviews' && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            transition={{ duration: 0.25 }}
+            className="fixed bottom-[84px] left-0 right-0 mx-4 z-50 md:hidden"
+          >
+            <div className="bg-primary-fixed text-on-primary-fixed rounded-2xl px-4 py-3 flex items-center gap-3 shadow-[0_4px_24px_rgba(202,243,0,0.25)]">
+              <div className="w-8 h-8 rounded-full bg-on-primary-fixed/15 flex items-center justify-center shrink-0">
+                <span className="font-black text-sm">{pendingReviewCount}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm leading-tight">Rate your teammates!</p>
+                <p className="text-xs opacity-60 mt-0.5">
+                  {pendingReviewCount} session{pendingReviewCount > 1 ? 's' : ''} waiting for your review.
+                </p>
+              </div>
+              <button
+                onClick={() => { dismissBanner(); rootNav('reviews'); }}
+                className="shrink-0 font-bold text-xs uppercase tracking-wider bg-on-primary-fixed/15 hover:bg-on-primary-fixed/25 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+              >
+                Review
+              </button>
+              <button
+                onClick={dismissBanner}
+                className="shrink-0 text-on-primary-fixed/50 hover:text-on-primary-fixed transition-colors cursor-pointer text-lg leading-none"
+              >
+                ×
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Universal Footer Nav bar matching responsive guidelines */}
       <BottomNav
         activeScreen={activeScreen}
+        pendingReviewCount={pendingReviewCount}
         onNavigate={(screen) => {
           setEditingSession(null);
           if (screen === 'explore') setExploreViewMode('list');
