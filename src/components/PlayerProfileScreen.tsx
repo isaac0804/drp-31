@@ -6,6 +6,7 @@ interface PlayerProfileScreenProps {
   matchesPlayedCount: number;
   reviews?: Review[];
   onBack: () => void;
+  onViewReviews?: () => void;
 }
 
 function renderEmpty(value?: string) {
@@ -16,7 +17,8 @@ export default function PlayerProfileScreen({
   profile,
   matchesPlayedCount,
   reviews = [],
-  onBack
+  onBack,
+  onViewReviews,
 }: PlayerProfileScreenProps) {
   const sportsPlayed = profile.sportsPlayed ?? [];
 
@@ -197,13 +199,22 @@ export default function PlayerProfileScreen({
           </section>
 
           <section className="bg-surface-container-high rounded-xl p-4 border border-outline-variant/15">
-            <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider flex items-center gap-1.5">
-              <MessageSquare className="w-3.5 h-3.5" />
-              Peer Reviews
-              {reviews.length > 0 && (
-                <span className="ml-1 font-mono text-primary-fixed">({reviews.length})</span>
-              )}
-            </label>
+            <button
+              onClick={onViewReviews}
+              disabled={!onViewReviews}
+              className="w-full text-left"
+            >
+              <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider flex items-center gap-1.5 cursor-pointer">
+                <MessageSquare className="w-3.5 h-3.5" />
+                Peer Reviews
+                {reviews.length > 0 && (
+                  <span className="ml-1 font-mono text-primary-fixed">({reviews.length})</span>
+                )}
+                {onViewReviews && reviews.length > 0 && (
+                  <span className="ml-auto text-[10px] text-primary-fixed font-bold uppercase tracking-wider">View all →</span>
+                )}
+              </label>
+            </button>
 
             {reviews.length === 0 ? (
               <p className="mt-2 text-sm text-on-surface-variant bg-surface-container-high/60 border border-outline-variant/60 rounded-lg p-3">

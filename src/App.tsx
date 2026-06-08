@@ -25,10 +25,11 @@ import MySessions from './components/MySessions';
 import SessionDetails from './components/SessionDetails';
 import ProfileScreen from './components/ProfileScreen';
 import PlayerProfileScreen from './components/PlayerProfileScreen';
+import PlayerReviewsScreen from './components/PlayerReviewsScreen';
 import AuthScreen from './components/AuthScreen';
 import SkillAssessmentScreen from './components/SkillAssessmentScreen';
 
-type ActiveScreen = 'explore' | 'host' | 'sessions' | 'details' | 'profile' | 'player-profile' | 'assessment';
+type ActiveScreen = 'explore' | 'host' | 'sessions' | 'details' | 'profile' | 'player-profile' | 'player-reviews' | 'assessment';
 
 export default function App() {
   const [sessions, setSessions] = useState<MatchSession[]>([]);
@@ -54,6 +55,7 @@ export default function App() {
     setActiveScreen(screen);
   };
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [sessionPlayerStats, setSessionPlayerStats] = useState<Record<string, { wouldPlayAgain: number | null; skillAccuracy: number | null }>>({});
   const [selectedPlayerProfile, setSelectedPlayerProfile] = useState<UserProfile | null>(null);
   const [selectedPlayerMatchesCount, setSelectedPlayerMatchesCount] = useState(0);
   const [selectedPlayerReviews, setSelectedPlayerReviews] = useState<Review[]>([]);
@@ -269,6 +271,25 @@ export default function App() {
     pushNav('host');
   };
 
+  useEffect(() => {
+    const session = sessions.find((s) => s.id === selectedSessionId);
+    if (!session) return;
+    const players = session.playersJoined;
+    if (players.length === 0) return;
+    Promise.all(players.map((p: Player) => getReviewsForPlayer(p.id).then((reviews) => ({ id: p.id, reviews })))).then((results) => {
+      const stats: Record<string, { wouldPlayAgain: number | null; skillAccuracy: number | null }> = {};
+      for (const { id, reviews } of results) {
+        const playAgainYes = reviews.filter((r: Review) => r.playAgain === 'yes').length;
+        const accurateCount = reviews.filter((r: Review) => r.skillAccuracy === 'accurate').length;
+        stats[id] = {
+          wouldPlayAgain: reviews.length > 0 ? parseFloat(((playAgainYes / reviews.length) * 5).toFixed(1)) : null,
+          skillAccuracy: reviews.length > 0 ? parseFloat(((accurateCount / reviews.length) * 5).toFixed(1)) : null,
+        };
+      }
+      setSessionPlayerStats(stats);
+    }).catch(console.error);
+  }, [selectedSessionId, sessions]);
+
   // Find currently active session details safely
   const currentDetailsSession = sessions.find((s) => s.id === selectedSessionId) || null;
 
@@ -406,6 +427,7 @@ export default function App() {
                 onLeave={handleLeaveSession}
                 onViewPlayerProfile={handleViewPlayerProfile}
                 onEdit={handleEditTrigger}
+                playerStats={sessionPlayerStats}
               />
             )}
 
@@ -413,6 +435,15 @@ export default function App() {
               <PlayerProfileScreen
                 profile={selectedPlayerProfile}
                 matchesPlayedCount={selectedPlayerMatchesCount}
+                reviews={selectedPlayerReviews}
+                onBack={goBack}
+                onViewReviews={() => pushNav('player-reviews')}
+              />
+            )}
+
+            {activeScreen === 'player-reviews' && selectedPlayerProfile && (
+              <PlayerReviewsScreen
+                playerName={selectedPlayerProfile.name}
                 reviews={selectedPlayerReviews}
                 onBack={goBack}
               />

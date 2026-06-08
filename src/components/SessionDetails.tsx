@@ -1,6 +1,11 @@
 import { MatchSession, Player, UserProfile, SkillLevel, SKILL_LEVELS, SKILL_LEVEL_LABELS } from '../types';
 import { ArrowLeft, Calendar, MapPin, Plus, Trophy, Pencil, CalendarPlus, Navigation } from 'lucide-react';
 
+interface PlayerStat {
+  wouldPlayAgain: number | null;
+  skillAccuracy: number | null;
+}
+
 interface SessionDetailsProps {
   session: MatchSession;
   currentUser: UserProfile;
@@ -9,6 +14,7 @@ interface SessionDetailsProps {
   onLeave: (sessionId: string) => void;
   onViewPlayerProfile: (player: Player) => void;
   onEdit?: (session: MatchSession) => void;
+  playerStats?: Record<string, PlayerStat>;
 }
 
 export default function SessionDetails({
@@ -19,6 +25,7 @@ export default function SessionDetails({
   onLeave,
   onViewPlayerProfile,
   onEdit,
+  playerStats = {},
 }: SessionDetailsProps) {
   const isJoined = session.playersJoined.some((p) => p.id === currentUser.id);
   const isHost = session.host.id === currentUser.id;
@@ -298,6 +305,24 @@ export default function SessionDetails({
                       <div className="text-[10px] font-mono text-primary-fixed/80 uppercase tracking-wider mt-0.5">
                         {safeLabel(slot.skillLevel ?? session.skillLevel)}
                       </div>
+                      {playerStats[slot.id] && (
+                        <div className="mt-1.5 space-y-0.5">
+                          {playerStats[slot.id].wouldPlayAgain === null ? (
+                            <div className="text-[9px] text-on-surface-variant/40 leading-tight">No Reviews Yet</div>
+                          ) : (
+                            <>
+                              <div className="text-[9px] text-on-surface-variant/70 leading-tight">
+                                <span className="text-primary-fixed font-mono font-bold">{playerStats[slot.id].wouldPlayAgain!.toFixed(1)}</span>
+                                <span>/5.0 Rating</span>
+                              </div>
+                              <div className="text-[9px] text-on-surface-variant/70 leading-tight">
+                                <span className="text-primary-fixed font-mono font-bold">{playerStats[slot.id].skillAccuracy!.toFixed(1)}</span>
+                                <span>/5.0 Skill Acc.</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </button>
                 );
