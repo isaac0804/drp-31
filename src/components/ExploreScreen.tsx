@@ -83,7 +83,8 @@ export default function ExploreScreen({
         const matchesSearch =
           s.venue.toLowerCase().includes(searchQuery.toLowerCase()) ||
           s.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          s.host.name.toLowerCase().includes(searchQuery.toLowerCase());
+          s.host.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          s.sport.toLowerCase().includes(searchQuery.toLowerCase());
         return matchesSport && matchesSkill && matchesGender && matchesSearch;
       })
       .sort((a, b) => {
@@ -113,55 +114,74 @@ export default function ExploreScreen({
 
   // Shared controls bar (search + filter + toggle) — used in both layouts
   const controlsBar = (
-    <div className="flex gap-2 items-center">
-      <input
-        type="text"
-        placeholder="Search venue, club, or host..."
-        value={searchQuery}
-        onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
-        className="flex-1 min-w-0 bg-surface-container-high/90 backdrop-blur-sm border border-outline-variant/30 text-on-surface text-sm rounded-xl py-3 px-4 outline-none focus:ring-1 focus:ring-primary-fixed/80 placeholder-on-surface-variant/50 transition-all font-sans"
-      />
+    <div className="flex flex-col gap-2">
+      <div className="flex gap-2 items-center">
+        <input
+          type="text"
+          placeholder="Search venue, sport, host..."
+          value={searchQuery}
+          onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
+          className="flex-1 min-w-0 bg-surface-container-high/90 backdrop-blur-sm border border-outline-variant/30 text-on-surface text-sm rounded-xl py-3 px-4 outline-none focus:ring-1 focus:ring-primary-fixed/80 placeholder-on-surface-variant/50 transition-all font-sans"
+        />
 
-      <button
-        onClick={() => setIsFilterOpen(true)}
-        aria-label="Open filters"
-        className={`relative p-2.5 rounded-xl border transition-colors cursor-pointer shrink-0 backdrop-blur-sm ${
-          activeFilterCount > 0
-            ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
-            : 'border-outline-variant/40 bg-surface-container/90 text-on-surface-variant hover:bg-surface-bright'
-        }`}
-      >
-        <SlidersHorizontal className="w-4 h-4" />
-        {activeFilterCount > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-primary-fixed text-on-primary-fixed text-[9px] font-black flex items-center justify-center">
-            {activeFilterCount}
-          </span>
-        )}
-      </button>
-
-      <div className="flex rounded-xl border border-outline-variant/40 overflow-hidden shrink-0">
         <button
-          onClick={() => onViewModeChange('list')}
-          aria-pressed={viewMode === 'list'}
-          className={`p-2.5 transition-colors cursor-pointer ${
-            viewMode === 'list'
-              ? 'bg-primary-fixed text-on-primary-fixed'
-              : 'bg-surface-container/90 text-on-surface-variant hover:bg-surface-bright backdrop-blur-sm'
+          onClick={() => setIsFilterOpen(true)}
+          aria-label="Open filters"
+          className={`relative p-2.5 rounded-xl border transition-colors cursor-pointer shrink-0 backdrop-blur-sm ${
+            activeFilterCount > 0
+              ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+              : 'border-outline-variant/40 bg-surface-container/90 text-on-surface-variant hover:bg-surface-bright'
           }`}
         >
-          <List className="w-4 h-4" />
+          <SlidersHorizontal className="w-4 h-4" />
+          {activeFilterCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-primary-fixed text-on-primary-fixed text-[9px] font-black flex items-center justify-center">
+              {activeFilterCount}
+            </span>
+          )}
         </button>
-        <button
-          onClick={() => onViewModeChange('map')}
-          aria-pressed={viewMode === 'map'}
-          className={`p-2.5 transition-colors cursor-pointer ${
-            viewMode === 'map'
-              ? 'bg-primary-fixed text-on-primary-fixed'
-              : 'bg-surface-container/90 text-on-surface-variant hover:bg-surface-bright backdrop-blur-sm'
-          }`}
-        >
-          <Map className="w-4 h-4" />
-        </button>
+
+        <div className="flex rounded-xl border border-outline-variant/40 overflow-hidden shrink-0">
+          <button
+            onClick={() => onViewModeChange('list')}
+            aria-pressed={viewMode === 'list'}
+            className={`p-2.5 transition-colors cursor-pointer ${
+              viewMode === 'list'
+                ? 'bg-primary-fixed text-on-primary-fixed'
+                : 'bg-surface-container/90 text-on-surface-variant hover:bg-surface-bright backdrop-blur-sm'
+            }`}
+          >
+            <List className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onViewModeChange('map')}
+            aria-pressed={viewMode === 'map'}
+            className={`p-2.5 transition-colors cursor-pointer ${
+              viewMode === 'map'
+                ? 'bg-primary-fixed text-on-primary-fixed'
+                : 'bg-surface-container/90 text-on-surface-variant hover:bg-surface-bright backdrop-blur-sm'
+            }`}
+          >
+            <Map className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Sport quick-filter chips */}
+      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
+        {([{ value: 'all' as const, label: 'All Sports' }, ...SPORTS.map((s) => ({ value: s, label: s }))] as { value: 'all' | Sport; label: string }[]).map((chip) => (
+          <button
+            key={chip.value}
+            onClick={() => onFiltersChange({ ...filters, sport: selectedSport === chip.value && chip.value !== 'all' ? 'all' : chip.value })}
+            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border transition-all cursor-pointer ${
+              selectedSport === chip.value
+                ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+                : 'border-outline-variant/30 bg-surface-container/80 text-on-surface-variant/60 hover:bg-surface-container-high hover:text-on-surface-variant/90'
+            }`}
+          >
+            {chip.label}
+          </button>
+        ))}
       </div>
     </div>
   );
