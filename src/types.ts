@@ -13,6 +13,9 @@ export type SkillAccuracy = 'too-high' | 'accurate' | 'too-low';
 export type Reliability = 'punctual' | 'mostly-on-time' | 'often-late';
 export type Sportsmanship = 'fair-play' | 'average' | 'poor-attitude';
 export type Vibe = 'great' | 'okay' | 'poor';
+export type SessionOrganisation = 'well-organised' | 'average' | 'disorganised';
+export type VenueAccuracy = 'spot-on' | 'minor-differences' | 'very-different';
+export type WelcomingAtmosphere = 'very-welcoming' | 'decent' | 'unwelcoming';
 
 export interface Review {
   id?: string;
@@ -30,7 +33,20 @@ export interface Review {
   reviewerName?: string;
   reviewerAvatar?: string;
 }
-export type ActiveScreen = 'explore' | 'host' | 'sessions' | 'details' | 'profile' | 'player-profile' | 'assessment' | 'reviews' | 'player-reviews' | 'session-chat' | 'chats';
+export interface HostReview {
+  id?: string;
+  reviewerId: string;
+  revieweeId: string;
+  sessionId: string;
+  starRating: number;
+  sessionOrganisation: SessionOrganisation;
+  venueAccuracy: VenueAccuracy;
+  welcomingAtmosphere: WelcomingAtmosphere;
+  feedback?: string;
+  createdAt: number;
+}
+
+export type ActiveScreen = 'explore' | 'host' | 'sessions' | 'details' | 'profile' | 'player-profile' | 'assessment' | 'reviews' | 'player-reviews' | 'host-reviews' | 'session-chat' | 'chats';
 
 export interface ChatMessage {
   id: string;

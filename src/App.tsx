@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ActiveScreen, MatchSession, Review, UserProfile, Player, Sport } from './types';
+import { ActiveScreen, MatchSession, Review, HostReview, UserProfile, Player, Sport } from './types';
 import { signInWithGoogle, signOut, subscribeToCurrentUser, updateCurrentUser, getUserProfileById } from './auth';
 import { DEFAULT_USER } from './data';
 import {
@@ -12,7 +12,7 @@ import {
   leaveSession,
   updateSessionsForPlayer,
 } from './sessions';
-import { getReviewsForPlayer } from './reviews';
+import { getReviewsForPlayer, getHostReviewsForPlayer } from './reviews';
 import { seedDummySessions, unseedDummySessions } from './devSeed';
 
 // Component imports
@@ -26,6 +26,7 @@ import SessionDetails from './components/SessionDetails';
 import ProfileScreen from './components/ProfileScreen';
 import PlayerProfileScreen from './components/PlayerProfileScreen';
 import PlayerReviewsScreen from './components/PlayerReviewsScreen';
+import HostReviewsScreen from './components/HostReviewsScreen';
 import AuthScreen from './components/AuthScreen';
 import SkillAssessmentScreen from './components/SkillAssessmentScreen';
 import ReviewsScreen from './components/ReviewsScreen';
@@ -61,6 +62,7 @@ export default function App() {
   const [selectedPlayerProfile, setSelectedPlayerProfile] = useState<UserProfile | null>(null);
   const [selectedPlayerMatchesCount, setSelectedPlayerMatchesCount] = useState(0);
   const [selectedPlayerReviews, setSelectedPlayerReviews] = useState<Review[]>([]);
+  const [selectedPlayerHostReviews, setSelectedPlayerHostReviews] = useState<HostReview[]>([]);
   const [myReviews, setMyReviews] = useState<Review[]>([]);
   const [editingSession, setEditingSession] = useState<MatchSession | null>(null);
   const [exploreViewMode, setExploreViewMode] = useState<'list' | 'map'>('list');
@@ -241,6 +243,7 @@ export default function App() {
     };
     setSelectedPlayerProfile(fallbackProfile);
     setSelectedPlayerReviews([]);
+    setSelectedPlayerHostReviews([]);
     setSelectedPlayerMatchesCount(
       sessions.filter((session: MatchSession) =>
         session.host.id === player.id || session.playersJoined.some((joinedPlayer: Player) => joinedPlayer.id === player.id)
@@ -260,6 +263,13 @@ export default function App() {
       setSelectedPlayerReviews(reviews);
     } catch (error) {
       console.error('Reviews fetch error:', error);
+    }
+
+    try {
+      const hostReviews = await getHostReviewsForPlayer(player.id);
+      setSelectedPlayerHostReviews(hostReviews);
+    } catch (error) {
+      console.error('Host reviews fetch error:', error);
     }
   };
 
@@ -491,8 +501,10 @@ export default function App() {
                 profile={selectedPlayerProfile}
                 matchesPlayedCount={selectedPlayerMatchesCount}
                 reviews={selectedPlayerReviews}
+                hostReviews={selectedPlayerHostReviews}
                 onBack={goBack}
                 onViewReviews={() => pushNav('player-reviews')}
+                onViewHostReviews={() => pushNav('host-reviews')}
               />
             )}
 
@@ -500,6 +512,14 @@ export default function App() {
               <PlayerReviewsScreen
                 playerName={selectedPlayerProfile.name}
                 reviews={selectedPlayerReviews}
+                onBack={goBack}
+              />
+            )}
+
+            {activeScreen === 'host-reviews' && selectedPlayerProfile && (
+              <HostReviewsScreen
+                playerName={selectedPlayerProfile.name}
+                reviews={selectedPlayerHostReviews}
                 onBack={goBack}
               />
             )}

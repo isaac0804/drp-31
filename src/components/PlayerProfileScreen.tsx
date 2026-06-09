@@ -1,12 +1,14 @@
-import { Review, UserProfile, Sport, SportSkill, GENDER_LABELS } from '../types';
-import { ArrowLeft, MessageSquare, ThumbsUp, Trophy, Target } from 'lucide-react';
+import { Review, HostReview, UserProfile, Sport, SportSkill, GENDER_LABELS } from '../types';
+import { ArrowLeft, MessageSquare, ThumbsUp, Trophy, Target, Star, Home } from 'lucide-react';
 
 interface PlayerProfileScreenProps {
   profile: UserProfile;
   matchesPlayedCount: number;
   reviews?: Review[];
+  hostReviews?: HostReview[];
   onBack: () => void;
   onViewReviews?: () => void;
+  onViewHostReviews?: () => void;
 }
 
 function renderEmpty(value?: string) {
@@ -17,8 +19,10 @@ export default function PlayerProfileScreen({
   profile,
   matchesPlayedCount,
   reviews = [],
+  hostReviews = [],
   onBack,
   onViewReviews,
+  onViewHostReviews,
 }: PlayerProfileScreenProps) {
   const sportsPlayed = profile.sportsPlayed ?? [];
 
@@ -28,6 +32,10 @@ export default function PlayerProfileScreen({
   const tooHighCount = reviews.filter((r) => r.skillAccuracy === 'too-high').length;
   const tooLowCount = reviews.filter((r) => r.skillAccuracy === 'too-low').length;
   const feedbackItems = reviews.filter((r) => r.feedback && r.feedback.trim());
+
+  const avgHostStars = hostReviews.length > 0
+    ? hostReviews.reduce((sum, r) => sum + r.starRating, 0) / hostReviews.length
+    : null;
 
   return (
     <article className="space-y-6 pb-10">
@@ -278,6 +286,58 @@ export default function PlayerProfileScreen({
               </div>
             )}
           </section>
+
+          {/* Host Reviews section */}
+          <section className="bg-surface-container-high rounded-xl p-4 border border-outline-variant/15">
+            <button
+              onClick={onViewHostReviews}
+              disabled={!onViewHostReviews || hostReviews.length === 0}
+              className="w-full text-left"
+            >
+              <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider flex items-center gap-1.5 cursor-pointer">
+                <Home className="w-3.5 h-3.5" />
+                As a Host
+                {hostReviews.length > 0 && (
+                  <span className="ml-1 font-mono text-primary-fixed">({hostReviews.length})</span>
+                )}
+                {onViewHostReviews && hostReviews.length > 0 && (
+                  <span className="ml-auto text-[10px] text-primary-fixed font-bold uppercase tracking-wider">View all →</span>
+                )}
+              </label>
+            </button>
+
+            {hostReviews.length === 0 ? (
+              <p className="mt-2 text-sm text-on-surface-variant bg-surface-container-high/60 border border-outline-variant/60 rounded-lg p-3">
+                No host reviews yet.
+              </p>
+            ) : (
+              <div className="mt-3 space-y-3">
+                <div className="flex items-center gap-3 bg-surface-container rounded-lg p-3 border border-outline-variant/20">
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star
+                        key={s}
+                        className={`w-4 h-4 ${
+                          avgHostStars !== null && s <= Math.round(avgHostStars)
+                            ? 'text-primary-fixed fill-primary-fixed'
+                            : 'text-outline-variant/30'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <div>
+                    <span className="font-mono font-bold text-base text-primary-fixed">
+                      {avgHostStars !== null ? avgHostStars.toFixed(1) : '—'}
+                    </span>
+                    <span className="text-[11px] text-on-surface-variant/60 ml-1">
+                      avg from {hostReviews.length} {hostReviews.length === 1 ? 'review' : 'reviews'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+
         </div>
 
       </div>
