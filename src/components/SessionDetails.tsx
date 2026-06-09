@@ -4,6 +4,9 @@ import { ArrowLeft, Calendar, MapPin, Plus, Trophy, Pencil, CalendarPlus, Naviga
 interface PlayerStat {
   wouldPlayAgain: number | null;
   skillAccuracy: number | null;
+  reviewCount: number;
+  hostRating: number | null;
+  hostReviewCount: number;
 }
 
 interface SessionDetailsProps {
@@ -251,20 +254,44 @@ export default function SessionDetails({
             </span>
           </div>
 
-          {session.hostJoinsAsPlayer === false && (
-            <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface-container-low border border-outline-variant/15">
-              <img
-                src={session.host.avatar}
-                alt={session.host.name}
-                referrerPolicy="no-referrer"
-                className="w-8 h-8 rounded-full object-cover border border-outline-variant/30 shrink-0"
-              />
-              <div className="min-w-0">
-                <div className="text-xs font-bold text-on-surface truncate">{session.host.name}</div>
-                <div className="text-[10px] text-on-surface-variant">Organiser · Not playing</div>
+          {session.hostJoinsAsPlayer === false && (() => {
+            const hostStat = playerStats[session.host.id];
+            const isSuperhost = hostStat?.hostRating != null && hostStat.hostRating >= 4 && hostStat.hostReviewCount > 10;
+            return (
+              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface-container-low border border-outline-variant/15">
+                <img
+                  src={session.host.avatar}
+                  alt={session.host.name}
+                  referrerPolicy="no-referrer"
+                  className="w-8 h-8 rounded-full object-cover border border-outline-variant/30 shrink-0"
+                />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="text-xs font-bold text-on-surface truncate">{session.host.name}</div>
+                    {isSuperhost && (
+                      <span className="text-[9px] font-black text-amber-400 bg-amber-400/10 border border-amber-400/30 px-1.5 py-0.5 rounded-full uppercase tracking-wider leading-none">
+                        Superhost
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-on-surface-variant">Organiser · Not playing</div>
+                  {hostStat && (
+                    <div className="text-[10px] text-on-surface-variant/70 mt-0.5">
+                      {hostStat.hostRating != null ? (
+                        <>
+                          <span className="text-primary-fixed font-mono font-bold">{hostStat.hostRating.toFixed(1)}</span>
+                          <span>/5.0 Host Rating</span>
+                          <span className="text-on-surface-variant/50 ml-1">[{hostStat.hostReviewCount}]</span>
+                        </>
+                      ) : (
+                        <span className="text-on-surface-variant/40">No reviews yet</span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Graphical custom percentage bar */}
           <div className="w-full bg-surface-container h-2 rounded-full overflow-hidden border border-outline-variant/10">
@@ -287,11 +314,22 @@ export default function SessionDetails({
                       slot.isHost ? 'border-primary-fixed/50' : 'border-outline-variant/20'
                     }`}
                   >
-                    {slot.isHost && (
-                      <div className="absolute -top-2.5 bg-primary-fixed text-on-primary-fixed font-sans font-black text-[9px] leading-tight px-2.5 py-0.5 rounded-full uppercase tracking-widest shadow-sm">
-                        Host
-                      </div>
-                    )}
+                    {slot.isHost && (() => {
+                      const hostStat = playerStats[slot.id];
+                      const isSuperhost = hostStat?.hostRating != null && hostStat.hostRating >= 4 && hostStat.hostReviewCount > 10;
+                      return (
+                        <div className="absolute -top-2.5 flex items-center gap-1">
+                          <div className="bg-primary-fixed text-on-primary-fixed font-sans font-black text-[9px] leading-tight px-2.5 py-0.5 rounded-full uppercase tracking-widest shadow-sm">
+                            Host
+                          </div>
+                          {isSuperhost && (
+                            <div className="bg-amber-400 text-amber-900 font-sans font-black text-[9px] leading-tight px-2 py-0.5 rounded-full uppercase tracking-widest shadow-sm">
+                              Superhost
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                     <img
                       alt={slot.name}
                       referrerPolicy="no-referrer"
@@ -321,6 +359,13 @@ export default function SessionDetails({
                                 <span className="text-primary-fixed font-mono font-bold">{playerStats[slot.id].skillAccuracy!.toFixed(1)}</span>
                                 <span>/5.0 Skill Acc.</span>
                               </div>
+                              {slot.isHost && playerStats[slot.id].hostRating != null && (
+                                <div className="text-[9px] text-on-surface-variant/70 leading-tight">
+                                  <span className="text-primary-fixed font-mono font-bold">{playerStats[slot.id].hostRating!.toFixed(1)}</span>
+                                  <span>/5.0 Host Rating</span>
+                                  <span className="text-on-surface-variant/50 ml-1">[{playerStats[slot.id].hostReviewCount}]</span>
+                                </div>
+                              )}
                             </>
                           )}
                         </div>
