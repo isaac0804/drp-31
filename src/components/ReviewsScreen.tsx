@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { MatchSession, Player } from '../types';
-import { getReviewedPlayerIds } from '../reviews';
+import { getReviewedPlayerIds, getReviewedHostSessionIds } from '../reviews';
 import { MapPin, Star, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReviewTeamScreen from './ReviewTeamScreen';
 import ReviewPlayerScreen from './ReviewPlayerScreen';
+import ReviewHostScreen from './ReviewHostScreen';
 
 interface ReviewsScreenProps {
   sessions: MatchSession[];
@@ -32,7 +33,9 @@ function formatDate(dateStr: string): string {
 export default function ReviewsScreen({ sessions, currentUserId, reviewerName, reviewerAvatar }: ReviewsScreenProps) {
   const [reviewingSession, setReviewingSession] = useState<MatchSession | null>(null);
   const [reviewingPlayer, setReviewingPlayer]   = useState<Player | null>(null);
-  const [reviewedPlayerIds, setReviewedPlayerIds] = useState<string[]>([]);
+  const [reviewingHost, setReviewingHost]       = useState(false);
+  const [reviewedPlayerIds, setReviewedPlayerIds]       = useState<string[]>([]);
+  const [reviewedHostSessionIds, setReviewedHostSessionIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!reviewingSession) { setReviewedPlayerIds([]); return; }
@@ -42,6 +45,14 @@ export default function ReviewsScreen({ sessions, currentUserId, reviewerName, r
       .catch(() => { if (!cancelled) setReviewedPlayerIds([]); });
     return () => { cancelled = true; };
   }, [reviewingSession, currentUserId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getReviewedHostSessionIds(currentUserId)
+      .then((ids) => { if (!cancelled) setReviewedHostSessionIds(ids); })
+      .catch(() => { if (!cancelled) setReviewedHostSessionIds([]); });
+    return () => { cancelled = true; };
+  }, [currentUserId]);
 
   const finishedSessions = sessions.filter(
     (s) =>
@@ -66,6 +77,21 @@ export default function ReviewsScreen({ sessions, currentUserId, reviewerName, r
     );
   }
 
+  if (reviewingHost && reviewingSession) {
+    return (
+      <ReviewHostScreen
+        reviewerId={currentUserId}
+        host={reviewingSession.host}
+        session={reviewingSession}
+        onBack={() => setReviewingHost(false)}
+        onSubmit={() => {
+          setReviewedHostSessionIds((prev) => [...prev, reviewingSession.id]);
+          setReviewingHost(false);
+        }}
+      />
+    );
+  }
+
   if (reviewingSession) {
     return (
       <ReviewTeamScreen
@@ -74,6 +100,8 @@ export default function ReviewsScreen({ sessions, currentUserId, reviewerName, r
         reviewedPlayerIds={reviewedPlayerIds}
         onSelectPlayer={setReviewingPlayer}
         onBack={() => { setReviewingSession(null); setReviewedPlayerIds([]); }}
+        onReviewHost={() => setReviewingHost(true)}
+        hasReviewedHost={reviewedHostSessionIds.includes(reviewingSession.id)}
       />
     );
   }
