@@ -6,7 +6,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { PlayAgain, Review, SkillAccuracy } from './types';
+import { PlayAgain, Review, SkillAccuracy, Reliability, Sportsmanship, Vibe } from './types';
 
 const REVIEWS_COL = 'reviews';
 
@@ -16,7 +16,13 @@ export async function submitReview(
   sessionId: string,
   playAgain: PlayAgain,
   skillAccuracy: SkillAccuracy,
-  feedback: string
+  reliability: Reliability,
+  sportsmanship: Sportsmanship,
+  vibe: Vibe,
+  feedback: string,
+  isAnonymous: boolean,
+  reviewerName?: string,
+  reviewerAvatar?: string,
 ): Promise<void> {
   const review: Omit<Review, 'id'> = {
     reviewerId,
@@ -24,8 +30,14 @@ export async function submitReview(
     sessionId,
     playAgain,
     skillAccuracy,
+    reliability,
+    sportsmanship,
+    vibe,
     feedback,
     createdAt: Date.now(),
+    isAnonymous,
+    ...(!isAnonymous && reviewerName  ? { reviewerName }  : {}),
+    ...(!isAnonymous && reviewerAvatar ? { reviewerAvatar } : {}),
   };
   await addDoc(collection(db, REVIEWS_COL), review);
 }

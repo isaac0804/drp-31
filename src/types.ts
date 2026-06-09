@@ -10,6 +10,9 @@ export const SKILL_LEVEL_LABELS: Record<SkillLevel, string> = {
 export type Sport = 'Badminton' | 'Table Tennis' | 'Football' | 'Pickleball';
 export type PlayAgain = 'yes' | 'no';
 export type SkillAccuracy = 'too-high' | 'accurate' | 'too-low';
+export type Reliability = 'punctual' | 'mostly-on-time' | 'often-late';
+export type Sportsmanship = 'fair-play' | 'average' | 'poor-attitude';
+export type Vibe = 'great' | 'okay' | 'poor';
 
 export interface Review {
   id?: string;
@@ -18,9 +21,16 @@ export interface Review {
   sessionId: string;
   playAgain: PlayAgain;
   skillAccuracy: SkillAccuracy;
+  reliability?: Reliability;
+  sportsmanship?: Sportsmanship;
+  vibe?: Vibe;
   feedback: string;
   createdAt: number;
+  isAnonymous?: boolean;
+  reviewerName?: string;
+  reviewerAvatar?: string;
 }
+export type ActiveScreen = 'explore' | 'host' | 'sessions' | 'details' | 'profile' | 'player-profile' | 'assessment' | 'reviews' | 'player-reviews';
 export type MatchType = 'singles' | 'doubles';
 export type FootballFormat = '5v5' | '7v7' | '11v11';
 export type GenderPreference = 'male' | 'female' | 'open';

@@ -244,14 +244,35 @@ export default function PlayerProfileScreen({
                 {feedbackItems.length > 0 && (
                   <div className="space-y-2">
                     <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">Comments</p>
-                    {feedbackItems.map((r) => (
-                      <blockquote
-                        key={r.id}
-                        className="text-sm text-on-surface-variant bg-surface-container/60 border-l-2 border-primary-fixed/40 rounded-r-lg pl-3 pr-3 py-2 leading-relaxed"
-                      >
-                        {r.feedback}
-                      </blockquote>
-                    ))}
+                    {feedbackItems.map((r) => {
+                      const attributed = !r.isAnonymous && r.reviewerName;
+                      return (
+                        <div
+                          key={r.id}
+                          className="bg-surface-container/60 border border-outline-variant/10 rounded-xl px-3 py-2.5 space-y-2"
+                        >
+                          <div className="flex items-center gap-2">
+                            {attributed ? (
+                              <img
+                                src={r.reviewerAvatar}
+                                alt={r.reviewerName}
+                                className="w-6 h-6 rounded-full object-cover shrink-0"
+                              />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-outline-variant/20 flex items-center justify-center shrink-0">
+                                <span className="text-[10px] text-on-surface-variant/40 font-bold">?</span>
+                              </div>
+                            )}
+                            <span className="text-[11px] font-semibold text-on-surface-variant">
+                              {attributed ? r.reviewerName : 'Anonymous Player'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-on-surface-variant leading-relaxed border-l-2 border-primary-fixed/40 pl-3">
+                            {r.feedback}
+                          </p>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

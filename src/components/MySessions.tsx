@@ -9,6 +9,8 @@ import ReviewPlayerScreen from './ReviewPlayerScreen';
 interface MySessionsProps {
   sessions: MatchSession[];
   currentUserId: string;
+  reviewerName: string;
+  reviewerAvatar: string;
   onEditSession: (session: MatchSession) => void;
   onCancelSession: (id: string) => void;
   onLeaveSession: (id: string) => void;
@@ -51,6 +53,8 @@ const TAB_CONFIG = {
 export default function MySessions({
   sessions,
   currentUserId,
+  reviewerName,
+  reviewerAvatar,
   onEditSession,
   onCancelSession,
   onLeaveSession,
@@ -96,6 +100,8 @@ export default function MySessions({
     return (
       <ReviewPlayerScreen
         reviewerId={currentUserId}
+        reviewerName={reviewerName}
+        reviewerAvatar={reviewerAvatar}
         player={reviewingPlayer}
         session={reviewingSession}
         onBack={() => setReviewingPlayer(null)}
