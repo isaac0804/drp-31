@@ -29,6 +29,8 @@ import PlayerReviewsScreen from './components/PlayerReviewsScreen';
 import AuthScreen from './components/AuthScreen';
 import SkillAssessmentScreen from './components/SkillAssessmentScreen';
 import ReviewsScreen from './components/ReviewsScreen';
+import ChatScreen from './components/ChatScreen';
+import ChatsListScreen from './components/ChatsListScreen';
 
 
 export default function App() {
@@ -261,6 +263,11 @@ export default function App() {
     }
   };
 
+  const handleOpenChat = (sessionId: string) => {
+    setSelectedSessionId(sessionId);
+    pushNav('session-chat');
+  };
+
   // Edit trigger
   const handleEditTrigger = (session: MatchSession) => {
     if (!user || session.host.id !== user.id) {
@@ -445,7 +452,16 @@ export default function App() {
                 onLeave={handleLeaveSession}
                 onViewPlayerProfile={handleViewPlayerProfile}
                 onEdit={handleEditTrigger}
+                onOpenChat={handleOpenChat}
                 playerStats={sessionPlayerStats}
+              />
+            )}
+
+            {activeScreen === 'session-chat' && currentDetailsSession && (
+              <ChatScreen
+                session={currentDetailsSession}
+                currentUser={user}
+                onBack={goBack}
               />
             )}
 
@@ -490,6 +506,17 @@ export default function App() {
                 currentUserId={user.id}
                 reviewerName={user.name}
                 reviewerAvatar={user.avatar}
+              />
+            )}
+
+            {activeScreen === 'chats' && (
+              <ChatsListScreen
+                sessions={sessions}
+                currentUser={user}
+                onOpenChat={(sessionId) => {
+                  setSelectedSessionId(sessionId);
+                  pushNav('session-chat');
+                }}
               />
             )}
           </motion.div>

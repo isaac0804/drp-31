@@ -1,4 +1,4 @@
-import { Compass, Trophy, User, Star } from 'lucide-react';
+import { Compass, Trophy, User, Star, MessageCircle } from 'lucide-react';
 import { ActiveScreen } from '../types';
 
 interface BottomNavProps {
@@ -9,7 +9,9 @@ interface BottomNavProps {
 
 export default function BottomNav({ activeScreen, onNavigate, pendingReviewCount = 0 }: BottomNavProps) {
   const isActive = (tab: string) =>
-    activeScreen === tab || (tab === 'explore' && activeScreen === 'details');
+    activeScreen === tab ||
+    (tab === 'explore' && activeScreen === 'details') ||
+    (tab === 'chats' && activeScreen === 'session-chat');
 
   const tabClass = (tab: string) =>
     isActive(tab)
@@ -50,6 +52,15 @@ export default function BottomNav({ activeScreen, onNavigate, pendingReviewCount
         {isActive('reviews')
           ? <span className="font-sans font-bold text-[11px] tracking-wide uppercase">Reviews</span>
           : <span className="font-sans font-semibold text-[10px] tracking-wide text-on-surface-variant/70 mt-0.5">Reviews</span>
+        }
+      </button>
+
+      {/* Chats */}
+      <button onClick={() => onNavigate('chats')} className={`${tabClass('chats')} cursor-pointer`}>
+        <MessageCircle className={`w-5 h-5 ${isActive('chats') ? 'stroke-[2.5px]' : 'stroke-[2px]'}`} />
+        {isActive('chats')
+          ? <span className="font-sans font-bold text-[11px] tracking-wide uppercase">Chats</span>
+          : <span className="font-sans font-semibold text-[10px] tracking-wide text-on-surface-variant/70 mt-0.5">Chats</span>
         }
       </button>
 

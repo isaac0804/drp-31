@@ -1,5 +1,5 @@
 import { MatchSession, Player, UserProfile, SkillLevel, SKILL_LEVELS, SKILL_LEVEL_LABELS } from '../types';
-import { ArrowLeft, Calendar, MapPin, Plus, Trophy, Pencil, CalendarPlus, Navigation } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Plus, Trophy, Pencil, CalendarPlus, Navigation, MessageCircle } from 'lucide-react';
 
 interface PlayerStat {
   wouldPlayAgain: number | null;
@@ -14,6 +14,7 @@ interface SessionDetailsProps {
   onLeave: (sessionId: string) => void;
   onViewPlayerProfile: (player: Player) => void;
   onEdit?: (session: MatchSession) => void;
+  onOpenChat?: (sessionId: string) => void;
   playerStats?: Record<string, PlayerStat>;
 }
 
@@ -25,6 +26,7 @@ export default function SessionDetails({
   onLeave,
   onViewPlayerProfile,
   onEdit,
+  onOpenChat,
   playerStats = {},
 }: SessionDetailsProps) {
   const isJoined = session.playersJoined.some((p) => p.id === currentUser.id);
@@ -360,7 +362,17 @@ export default function SessionDetails({
 
       {/* Stationary Bottom Fixed Action CTA */}
       <div className="fixed bottom-20 md:bottom-0 left-0 w-full p-4 pb-safe bg-surface/90 backdrop-blur-md border-t border-outline-variant/20 z-40">
-        <div className="w-full max-w-3xl mx-auto flex gap-3">
+        <div className="w-full max-w-3xl mx-auto flex flex-col gap-2">
+          {(isJoined || isHost) && (
+            <button
+              onClick={() => onOpenChat?.(session.id)}
+              className="w-full flex items-center justify-center gap-2 bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-sans font-bold text-xs uppercase tracking-widest py-3 rounded-full border border-outline-variant/30 transition-all active:scale-98 cursor-pointer"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Group Chat
+            </button>
+          )}
+          <div className="flex gap-3">
           {isHost ? (
             <div className="w-full text-center text-xs font-sans text-on-surface-variant py-4 bg-surface-container-highest rounded-full border border-outline-variant/20">
               {session.hostJoinsAsPlayer === false
@@ -398,6 +410,7 @@ export default function SessionDetails({
               )}
             </div>
           )}
+          </div>
         </div>
       </div>
     </article>
