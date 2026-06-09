@@ -30,7 +30,7 @@ export interface Review {
   reviewerName?: string;
   reviewerAvatar?: string;
 }
-export type ActiveScreen = 'explore' | 'host' | 'sessions' | 'details' | 'profile' | 'player-profile' | 'assessment' | 'reviews';
+export type ActiveScreen = 'explore' | 'host' | 'sessions' | 'details' | 'profile' | 'player-profile' | 'assessment' | 'reviews' | 'player-reviews';
 export type MatchType = 'singles' | 'doubles';
 export type FootballFormat = '5v5' | '7v7' | '11v11';
 export type GenderPreference = 'male' | 'female' | 'open';
