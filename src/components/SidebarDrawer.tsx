@@ -1,4 +1,4 @@
-import { X, Play, Trophy, Users, Award, Zap, LogOut, Target, Star } from 'lucide-react';
+import { X, Play, Trophy, Users, Award, Zap, LogOut, Target, Star, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ActiveScreen } from '../types';
 
@@ -118,6 +118,18 @@ export default function SidebarDrawer({
                 >
                   <Star className="w-4 h-4" />
                   Player Reviews
+                </button>
+
+                <button
+                  onClick={() => { onNavigate('chats'); onClose(); }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-sans font-semibold text-sm uppercase tracking-wide ${
+                    activeScreen === 'chats' || activeScreen === 'session-chat'
+                      ? 'bg-primary-fixed text-on-primary-fixed shadow-[0_4px_12px_rgba(202,243,0,0.15)]'
+                      : 'hover:bg-surface-variant text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  My Chats
                 </button>
 
                 <button
