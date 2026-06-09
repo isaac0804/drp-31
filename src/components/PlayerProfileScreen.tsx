@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Review, HostReview, UserProfile, Sport, SportSkill, GENDER_LABELS } from '../types';
 import { ArrowLeft, MessageSquare, ThumbsUp, Trophy, Target, Star, Home } from 'lucide-react';
 
@@ -26,11 +27,17 @@ export default function PlayerProfileScreen({
 }: PlayerProfileScreenProps) {
   const sportsPlayed = profile.sportsPlayed ?? [];
 
-  const playAgainYes = reviews.filter((r) => r.playAgain === 'yes').length;
-  const playAgainPct = reviews.length > 0 ? Math.round((playAgainYes / reviews.length) * 100) : null;
-  const accurateCount = reviews.filter((r) => r.skillAccuracy === 'accurate').length;
-  const tooHighCount = reviews.filter((r) => r.skillAccuracy === 'too-high').length;
-  const tooLowCount = reviews.filter((r) => r.skillAccuracy === 'too-low').length;
+  const [reviewTab, setReviewTab] = useState<'all-time' | 'recent'>('all-time');
+
+  const twoMonthsAgo = Date.now() - 60 * 24 * 60 * 60 * 1000;
+  const recentReviews = reviews.filter((r) => r.createdAt >= twoMonthsAgo);
+  const activeReviews = reviewTab === 'all-time' ? reviews : recentReviews;
+
+  const playAgainYes = activeReviews.filter((r) => r.playAgain === 'yes').length;
+  const playAgainPct = activeReviews.length > 0 ? Math.round((playAgainYes / activeReviews.length) * 100) : null;
+  const accurateCount = activeReviews.filter((r) => r.skillAccuracy === 'accurate').length;
+  const tooHighCount = activeReviews.filter((r) => r.skillAccuracy === 'too-high').length;
+  const tooLowCount = activeReviews.filter((r) => r.skillAccuracy === 'too-low').length;
   const feedbackItems = reviews.filter((r) => r.feedback && r.feedback.trim());
 
   const avgHostStars = hostReviews.length > 0
@@ -230,6 +237,27 @@ export default function PlayerProfileScreen({
               </p>
             ) : (
               <div className="mt-3 space-y-3">
+                <div className="flex gap-1 p-1 bg-surface-container rounded-lg border border-outline-variant/20">
+                  {(['all-time', 'recent'] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setReviewTab(t)}
+                      className={`flex-1 text-[10px] font-bold uppercase tracking-wider py-1.5 rounded transition-all cursor-pointer ${
+                        reviewTab === t
+                          ? 'bg-primary-fixed text-on-primary-fixed'
+                          : 'text-on-surface-variant hover:text-on-surface'
+                      }`}
+                    >
+                      {t === 'all-time' ? 'All-time' : 'Last 2 months'}
+                    </button>
+                  ))}
+                </div>
+
+                {activeReviews.length === 0 ? (
+                  <p className="text-sm text-on-surface-variant bg-surface-container-high/60 border border-outline-variant/60 rounded-lg p-3">
+                    No reviews in the last 2 months.
+                  </p>
+                ) : (
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-surface-container rounded-lg p-3 text-center border border-outline-variant/20">
                     <div className="flex items-center justify-center gap-1 text-primary-fixed mb-1">
@@ -237,10 +265,10 @@ export default function PlayerProfileScreen({
                       <span className="font-mono font-bold text-base">{playAgainPct}%</span>
                     </div>
                     <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">Would play again</p>
-                    <p className="text-[10px] text-on-surface-variant/60 mt-0.5">{playAgainYes}/{reviews.length} players</p>
+                    <p className="text-[10px] text-on-surface-variant/60 mt-0.5">{playAgainYes}/{activeReviews.length} players</p>
                   </div>
                   <div className="bg-surface-container rounded-lg p-3 text-center border border-outline-variant/20">
-                    <div className="font-mono font-bold text-base text-primary-fixed mb-1">{Math.round((accurateCount / reviews.length) * 100)}%</div>
+                    <div className="font-mono font-bold text-base text-primary-fixed mb-1">{Math.round((accurateCount / activeReviews.length) * 100)}%</div>
                     <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">Skill accurate</p>
                     <div className="flex justify-center gap-1.5 mt-0.5">
                       {tooHighCount > 0 && <span className="text-[9px] text-amber-400">↑ too high</span>}
@@ -248,6 +276,7 @@ export default function PlayerProfileScreen({
                     </div>
                   </div>
                 </div>
+                )}
 
                 {feedbackItems.length > 0 && (
                   <div className="space-y-2">
