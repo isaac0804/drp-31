@@ -16,6 +16,7 @@ export type Vibe = 'great' | 'okay' | 'poor';
 export type SessionOrganisation = 'well-organised' | 'average' | 'disorganised';
 export type VenueAccuracy = 'spot-on' | 'minor-differences' | 'very-different';
 export type WelcomingAtmosphere = 'very-welcoming' | 'decent' | 'unwelcoming';
+export type ChatResponsiveness = 'very-responsive' | 'somewhat-responsive' | 'unresponsive';
 
 export interface Review {
   id?: string;
@@ -42,6 +43,7 @@ export interface HostReview {
   sessionOrganisation: SessionOrganisation;
   venueAccuracy: VenueAccuracy;
   welcomingAtmosphere: WelcomingAtmosphere;
+  chatResponsiveness: ChatResponsiveness;
   feedback?: string;
   createdAt: number;
 }
