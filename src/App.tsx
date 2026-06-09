@@ -295,33 +295,23 @@ export default function App() {
     const playerMap = new Map<string, Player>(session.playersJoined.map((p: Player) => [p.id, p]));
     if (!playerMap.has(session.host.id)) playerMap.set(session.host.id, session.host);
     const players = Array.from(playerMap.values());
-    Promise.all(players.map((p: Player) => getReviewsForPlayer(p.id).then((reviews) => ({ id: p.id, reviews })))).then((results) => {
-      const reliabilityScore = (v: string | undefined) =>
-        v === 'punctual' ? 5 : v === 'mostly-on-time' ? 3 : v === 'often-late' ? 1 : null;
-      const sportsmanshipScore = (v: string | undefined) =>
-        v === 'fair-play' ? 5 : v === 'average' ? 3 : v === 'poor-attitude' ? 1 : null;
-      const vibeScore = (v: string | undefined) =>
-        v === 'great' ? 5 : v === 'okay' ? 3 : v === 'poor' ? 1 : null;
-
+    Promise.all(players.map((p: Player) =>
+      Promise.all([getReviewsForPlayer(p.id), getHostReviewsForPlayer(p.id)])
+        .then(([reviews, hostReviews]) => ({ id: p.id, reviews, hostReviews }))
+    )).then((results) => {
       const stats: Record<string, { wouldPlayAgain: number | null; skillAccuracy: number | null; reviewCount: number; hostRating: number | null; hostReviewCount: number }> = {};
-      for (const { id, reviews } of results) {
+      for (const { id, reviews, hostReviews } of results) {
         const playAgainYes = reviews.filter((r: Review) => r.playAgain === 'yes').length;
         const accurateCount = reviews.filter((r: Review) => r.skillAccuracy === 'accurate').length;
-
-        const hostScores = reviews.map((r: Review) => {
-          const scores = [reliabilityScore(r.reliability), sportsmanshipScore(r.sportsmanship), vibeScore(r.vibe)]
-            .filter((s): s is number => s !== null);
-          return scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
-        }).filter((s): s is number => s !== null);
-
+        const avgHostStars = hostReviews.length > 0
+          ? hostReviews.reduce((sum: number, r: HostReview) => sum + r.starRating, 0) / hostReviews.length
+          : null;
         stats[id] = {
           wouldPlayAgain: reviews.length > 0 ? parseFloat(((playAgainYes / reviews.length) * 5).toFixed(1)) : null,
           skillAccuracy: reviews.length > 0 ? parseFloat(((accurateCount / reviews.length) * 5).toFixed(1)) : null,
           reviewCount: reviews.length,
-          hostRating: hostScores.length > 0
-            ? parseFloat((hostScores.reduce((a, b) => a + b, 0) / hostScores.length).toFixed(1))
-            : null,
-          hostReviewCount: hostScores.length,
+          hostRating: avgHostStars !== null ? parseFloat(avgHostStars.toFixed(1)) : null,
+          hostReviewCount: hostReviews.length,
         };
       }
       setSessionPlayerStats(stats);

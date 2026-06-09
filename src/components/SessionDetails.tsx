@@ -258,7 +258,11 @@ export default function SessionDetails({
             const hostStat = playerStats[session.host.id];
             const isSuperhost = hostStat?.hostRating != null && hostStat.hostRating >= 4 && hostStat.hostReviewCount > 10;
             return (
-              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface-container-low border border-outline-variant/15">
+              <button
+                type="button"
+                onClick={() => onViewPlayerProfile(session.host)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface-container-low border border-outline-variant/15 w-full text-left hover:bg-surface-container transition-colors cursor-pointer"
+              >
                 <img
                   src={session.host.avatar}
                   alt={session.host.name}
@@ -284,12 +288,12 @@ export default function SessionDetails({
                           <span className="text-on-surface-variant/50 ml-1">[{hostStat.hostReviewCount}]</span>
                         </>
                       ) : (
-                        <span className="text-on-surface-variant/40">No reviews yet</span>
+                        <span className="text-on-surface-variant/40">No host rating yet</span>
                       )}
                     </div>
                   )}
                 </div>
-              </div>
+              </button>
             );
           })()}
 
@@ -351,6 +355,19 @@ export default function SessionDetails({
                             <div className="text-[9px] text-on-surface-variant/40 leading-tight">No Reviews Yet</div>
                           ) : (
                             <>
+                              {slot.isHost && (
+                                <div className="text-[9px] text-on-surface-variant/70 leading-tight">
+                                  {playerStats[slot.id].hostRating != null ? (
+                                    <>
+                                      <span className="text-primary-fixed font-mono font-bold">{playerStats[slot.id].hostRating!.toFixed(1)}</span>
+                                      <span>/5.0 Host Rating</span>
+                                      <span className="text-on-surface-variant/50 ml-1">[{playerStats[slot.id].hostReviewCount}]</span>
+                                    </>
+                                  ) : (
+                                    <span className="text-on-surface-variant/40">No host rating yet</span>
+                                  )}
+                                </div>
+                              )}
                               <div className="text-[9px] text-on-surface-variant/70 leading-tight">
                                 <span className="text-primary-fixed font-mono font-bold">{playerStats[slot.id].wouldPlayAgain!.toFixed(1)}</span>
                                 <span>/5.0 Rating</span>
@@ -359,13 +376,6 @@ export default function SessionDetails({
                                 <span className="text-primary-fixed font-mono font-bold">{playerStats[slot.id].skillAccuracy!.toFixed(1)}</span>
                                 <span>/5.0 Skill Acc.</span>
                               </div>
-                              {slot.isHost && playerStats[slot.id].hostRating != null && (
-                                <div className="text-[9px] text-on-surface-variant/70 leading-tight">
-                                  <span className="text-primary-fixed font-mono font-bold">{playerStats[slot.id].hostRating!.toFixed(1)}</span>
-                                  <span>/5.0 Host Rating</span>
-                                  <span className="text-on-surface-variant/50 ml-1">[{playerStats[slot.id].hostReviewCount}]</span>
-                                </div>
-                              )}
                             </>
                           )}
                         </div>
