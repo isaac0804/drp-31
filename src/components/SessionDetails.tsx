@@ -258,7 +258,11 @@ export default function SessionDetails({
             const hostStat = playerStats[session.host.id];
             const isSuperhost = hostStat?.hostRating != null && hostStat.hostRating >= 4 && hostStat.hostReviewCount > 10;
             return (
-              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface-container-low border border-outline-variant/15">
+              <button
+                type="button"
+                onClick={() => onViewPlayerProfile(session.host)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface-container-low border border-outline-variant/15 w-full text-left hover:bg-surface-container transition-colors cursor-pointer"
+              >
                 <img
                   src={session.host.avatar}
                   alt={session.host.name}
@@ -289,7 +293,7 @@ export default function SessionDetails({
                     </div>
                   )}
                 </div>
-              </div>
+              </button>
             );
           })()}
 
