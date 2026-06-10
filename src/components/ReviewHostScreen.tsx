@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Player, MatchSession, SessionOrganisation, VenueAccuracy, WelcomingAtmosphere } from '../types';
+import { Player, MatchSession, SessionOrganisation, VenueAccuracy, WelcomingAtmosphere, ChatResponsiveness } from '../types';
 import { ArrowLeft, Star, Send, CheckCircle, Check, Minus, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { submitHostReview } from '../reviews';
@@ -96,6 +96,12 @@ const WELCOMING_ATMOSPHERE_OPTIONS: CategoryOption<WelcomingAtmosphere>[] = [
   { value: 'unwelcoming',    label: 'Unwelcoming',    sentiment: 'negative' },
 ];
 
+const CHAT_RESPONSIVENESS_OPTIONS: CategoryOption<ChatResponsiveness>[] = [
+  { value: 'very-responsive',     label: 'Very responsive',     sentiment: 'positive' },
+  { value: 'somewhat-responsive', label: 'Somewhat responsive', sentiment: 'neutral'  },
+  { value: 'unresponsive',        label: 'Unresponsive',        sentiment: 'negative' },
+];
+
 export default function ReviewHostScreen({
   reviewerId,
   host,
@@ -108,6 +114,7 @@ export default function ReviewHostScreen({
   const [sessionOrganisation, setSessionOrganisation]     = useState<SessionOrganisation | null>(null);
   const [venueAccuracy, setVenueAccuracy]                 = useState<VenueAccuracy | null>(null);
   const [welcomingAtmosphere, setWelcomingAtmosphere]     = useState<WelcomingAtmosphere | null>(null);
+  const [chatResponsiveness, setChatResponsiveness]       = useState<ChatResponsiveness | null>(null);
   const [feedback, setFeedback]                           = useState('');
   const [submitting, setSubmitting]                       = useState(false);
   const [submitted, setSubmitted]                         = useState(false);
@@ -123,10 +130,11 @@ export default function ReviewHostScreen({
     sessionOrganisation !== null &&
     venueAccuracy !== null &&
     welcomingAtmosphere !== null &&
+    chatResponsiveness !== null &&
     !submitting;
 
   async function handleSubmit() {
-    if (!canSubmit || !sessionOrganisation || !venueAccuracy || !welcomingAtmosphere) return;
+    if (!canSubmit || !sessionOrganisation || !venueAccuracy || !welcomingAtmosphere || !chatResponsiveness) return;
     setSubmitting(true);
     setError(null);
     try {
@@ -138,6 +146,7 @@ export default function ReviewHostScreen({
         sessionOrganisation,
         venueAccuracy,
         welcomingAtmosphere,
+        chatResponsiveness,
         feedback.trim() || undefined,
       );
       setSubmitted(true);
@@ -263,6 +272,13 @@ export default function ReviewHostScreen({
         options={WELCOMING_ATMOSPHERE_OPTIONS}
         value={welcomingAtmosphere}
         onChange={(v) => setWelcomingAtmosphere(v)}
+      />
+      <CategoryPicker
+        step="04" label="Chat Responsiveness"
+        description="How responsive was the host in the group chat before and during the session?"
+        options={CHAT_RESPONSIVENESS_OPTIONS}
+        value={chatResponsiveness}
+        onChange={(v) => setChatResponsiveness(v)}
       />
 
       {/* Optional free-text */}

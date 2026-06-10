@@ -339,32 +339,58 @@ export default function PlayerProfileScreen({
               <p className="mt-2 text-sm text-on-surface-variant bg-surface-container-high/60 border border-outline-variant/60 rounded-lg p-3">
                 No host reviews yet.
               </p>
-            ) : (
-              <div className="mt-3 space-y-3">
-                <div className="flex items-center gap-3 bg-surface-container rounded-lg p-3 border border-outline-variant/20">
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <Star
-                        key={s}
-                        className={`w-4 h-4 ${
-                          avgHostStars !== null && s <= Math.round(avgHostStars)
-                            ? 'text-primary-fixed fill-primary-fixed'
-                            : 'text-outline-variant/30'
-                        }`}
-                      />
-                    ))}
+            ) : (() => {
+              const veryResponsiveCount     = hostReviews.filter((r) => r.chatResponsiveness === 'very-responsive').length;
+              const somewhatResponsiveCount = hostReviews.filter((r) => r.chatResponsiveness === 'somewhat-responsive').length;
+              const unresponsiveCount       = hostReviews.filter((r) => r.chatResponsiveness === 'unresponsive').length;
+              const responsiveTotal = veryResponsiveCount + somewhatResponsiveCount + unresponsiveCount;
+              return (
+                <div className="mt-3 space-y-3">
+                  <div className="flex items-center gap-3 bg-surface-container rounded-lg p-3 border border-outline-variant/20">
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star
+                          key={s}
+                          className={`w-4 h-4 ${
+                            avgHostStars !== null && s <= Math.round(avgHostStars)
+                              ? 'text-primary-fixed fill-primary-fixed'
+                              : 'text-outline-variant/30'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <div>
+                      <span className="font-mono font-bold text-base text-primary-fixed">
+                        {avgHostStars !== null ? avgHostStars.toFixed(1) : '—'}
+                      </span>
+                      <span className="text-[11px] text-on-surface-variant/60 ml-1">
+                        avg from {hostReviews.length} {hostReviews.length === 1 ? 'review' : 'reviews'}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="font-mono font-bold text-base text-primary-fixed">
-                      {avgHostStars !== null ? avgHostStars.toFixed(1) : '—'}
-                    </span>
-                    <span className="text-[11px] text-on-surface-variant/60 ml-1">
-                      avg from {hostReviews.length} {hostReviews.length === 1 ? 'review' : 'reviews'}
-                    </span>
-                  </div>
+
+                  {responsiveTotal > 0 && (
+                    <div className="bg-surface-container rounded-lg p-3 border border-outline-variant/20 space-y-1.5">
+                      <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">Chat Responsiveness</p>
+                      <div className="flex justify-between gap-2">
+                        <div className="text-center flex-1">
+                          <div className="font-mono font-bold text-sm text-primary-fixed">{Math.round((veryResponsiveCount / responsiveTotal) * 100)}%</div>
+                          <div className="text-[9px] text-on-surface-variant/60 mt-0.5">Very responsive</div>
+                        </div>
+                        <div className="text-center flex-1">
+                          <div className="font-mono font-bold text-sm text-amber-400">{Math.round((somewhatResponsiveCount / responsiveTotal) * 100)}%</div>
+                          <div className="text-[9px] text-on-surface-variant/60 mt-0.5">Somewhat</div>
+                        </div>
+                        <div className="text-center flex-1">
+                          <div className="font-mono font-bold text-sm text-error">{Math.round((unresponsiveCount / responsiveTotal) * 100)}%</div>
+                          <div className="text-[9px] text-on-surface-variant/60 mt-0.5">Unresponsive</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </section>
 
         </div>
