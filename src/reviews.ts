@@ -6,7 +6,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { PlayAgain, Review, SkillAccuracy, Reliability, Sportsmanship, Vibe, HostReview, SessionOrganisation, VenueAccuracy, WelcomingAtmosphere } from './types';
+import { PlayAgain, Review, SkillAccuracy, Reliability, Sportsmanship, Vibe, HostReview, SessionOrganisation, VenueAccuracy, WelcomingAtmosphere, ChatResponsiveness } from './types';
 
 const REVIEWS_COL = 'reviews';
 
@@ -77,6 +77,7 @@ export async function submitHostReview(
   sessionOrganisation: SessionOrganisation,
   venueAccuracy: VenueAccuracy,
   welcomingAtmosphere: WelcomingAtmosphere,
+  chatResponsiveness: ChatResponsiveness,
   feedback?: string,
 ): Promise<void> {
   const review = {
@@ -87,6 +88,7 @@ export async function submitHostReview(
     sessionOrganisation,
     venueAccuracy,
     welcomingAtmosphere,
+    chatResponsiveness,
     feedback: feedback ?? '',
     createdAt: Date.now(),
     isHostReview: true,
