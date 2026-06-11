@@ -35,6 +35,18 @@ import ChatsListScreen from './components/ChatsListScreen';
 
 
 export default function App() {
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') !== 'light');
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.remove('light');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.add('light');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkMode]);
+
   const [sessions, setSessions] = useState<MatchSession[]>([]);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
@@ -398,6 +410,8 @@ export default function App() {
         onSignOut={handleSignOut}
         onRetakeAssessment={() => pushNav('assessment')}
         matchesCount={matchesCount}
+        isDarkMode={isDarkMode}
+        onToggleTheme={() => setIsDarkMode((d: boolean) => !d)}
       />
 
       {/* Main Container viewport */}
@@ -428,6 +442,7 @@ export default function App() {
                 filters={exploreFilters}
                 onFiltersChange={setExploreFilters}
                 userGender={user.gender}
+                isDarkMode={isDarkMode}
               />
             )}
 
