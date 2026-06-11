@@ -12,6 +12,7 @@ interface ReviewsScreenProps {
   currentUserId: string;
   reviewerName: string;
   reviewerAvatar: string;
+  onReviewSubmitted?: (sessionId: string, revieweeId: string, isHostReview: boolean) => void;
 }
 
 function isFinished(s: MatchSession): boolean {
@@ -30,7 +31,7 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-export default function ReviewsScreen({ sessions, currentUserId, reviewerName, reviewerAvatar }: ReviewsScreenProps) {
+export default function ReviewsScreen({ sessions, currentUserId, reviewerName, reviewerAvatar, onReviewSubmitted }: ReviewsScreenProps) {
   const [reviewingSession, setReviewingSession] = useState<MatchSession | null>(null);
   const [reviewingPlayer, setReviewingPlayer]   = useState<Player | null>(null);
   const [reviewingHost, setReviewingHost]       = useState(false);
@@ -71,6 +72,7 @@ export default function ReviewsScreen({ sessions, currentUserId, reviewerName, r
         onBack={() => setReviewingPlayer(null)}
         onSubmit={() => {
           setReviewedPlayerIds((prev) => [...prev, reviewingPlayer.id]);
+          onReviewSubmitted?.(reviewingSession.id, reviewingPlayer.id, false);
           setReviewingPlayer(null);
         }}
       />
@@ -86,6 +88,7 @@ export default function ReviewsScreen({ sessions, currentUserId, reviewerName, r
         onBack={() => setReviewingHost(false)}
         onSubmit={() => {
           setReviewedHostSessionIds((prev) => [...prev, reviewingSession.id]);
+          onReviewSubmitted?.(reviewingSession.id, reviewingSession.host.id, true);
           setReviewingHost(false);
         }}
       />

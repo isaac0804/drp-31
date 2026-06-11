@@ -118,3 +118,12 @@ export async function getReviewedHostSessionIds(reviewerId: string): Promise<str
     new Set(snap.docs.map((d) => (d.data() as Pick<HostReview, 'sessionId'>).sessionId))
   );
 }
+
+export async function getAllReviewsByUser(reviewerId: string): Promise<{ sessionId: string; revieweeId: string; isHostReview: boolean }[]> {
+  const q = query(collection(db, REVIEWS_COL), where('reviewerId', '==', reviewerId));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => {
+    const data = d.data() as { sessionId: string; revieweeId: string; isHostReview?: boolean };
+    return { sessionId: data.sessionId, revieweeId: data.revieweeId, isHostReview: !!data.isHostReview };
+  });
+}
