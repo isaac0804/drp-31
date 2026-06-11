@@ -21,6 +21,34 @@ interface SessionDetailsProps {
   playerStats?: Record<string, PlayerStat>;
 }
 
+const SPORT_HERO: Record<string, { photo: string; glow: string; icon: string }> = {
+  Badminton: {
+    photo: 'https://images.pexels.com/photos/8007173/pexels-photo-8007173.jpeg?auto=compress&cs=tinysrgb&w=1200&h=500&fit=crop',
+    glow: '0,210,175',
+    icon: '',
+  },
+  'Table Tennis': {
+    photo: 'https://images.pexels.com/photos/709134/pexels-photo-709134.jpeg?auto=compress&cs=tinysrgb&w=1200&h=500&fit=crop',
+    glow: '248,113,113',
+    icon: '',
+  },
+  Football: {
+    photo: 'https://images.pexels.com/photos/399187/pexels-photo-399187.jpeg?auto=compress&cs=tinysrgb&w=1200&h=500&fit=crop',
+    glow: '34,197,94',
+    icon: '⚽',
+  },
+  Basketball: {
+    photo: 'https://images.pexels.com/photos/5407033/pexels-photo-5407033.jpeg?auto=compress&cs=tinysrgb&w=1200&h=500&fit=crop',
+    glow: '249,115,22',
+    icon: '🏀',
+  },
+  Pickleball: {
+    photo: 'https://images.pexels.com/photos/17299530/pexels-photo-17299530.jpeg?auto=compress&cs=tinysrgb&w=1200&h=500&fit=crop',
+    glow: '96,165,250',
+    icon: '',
+  },
+};
+
 export default function SessionDetails({
   session,
   currentUser,
@@ -96,6 +124,8 @@ export default function SessionDetails({
 
   const formattedDuration = calculateDuration(session.timeStart, session.timeEnd);
 
+  const hero = SPORT_HERO[session.sport] ?? { photo: '', glow: '202,243,0', icon: '🏆' };
+
   const buildGCalUrl = (s: MatchSession) => {
     const fmt = (d: string, t: string) => d.replace(/-/g, '') + 'T' + t.replace(':', '') + '00';
     const params = new URLSearchParams({
@@ -148,9 +178,13 @@ export default function SessionDetails({
       </header>
 
       {/* Hero gradient section */}
-      <section className="relative pt-20 pb-8 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-fixed/15 via-surface to-surface pointer-events-none" />
-        <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-primary-fixed/10 blur-3xl pointer-events-none" />
+      <section
+        className="relative pt-20 pb-8 px-4 overflow-hidden bg-[#0f1117]"
+        style={hero.photo ? { backgroundImage: `url(${hero.photo})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/50 to-black/75 pointer-events-none" />
+        <div className="absolute top-0 -right-10 w-64 h-64 rounded-full blur-3xl pointer-events-none" style={{ background: `rgba(${hero.glow},0.18)` }} />
+        <div className="absolute right-4 top-16 text-[110px] leading-none select-none pointer-events-none opacity-[0.12]">{hero.icon}</div>
         <div className="relative flex flex-col gap-2">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="bg-primary-fixed/15 text-primary-fixed text-[10px] font-sans font-extrabold px-3 py-1 rounded-full uppercase border border-primary-fixed/30 tracking-wider">

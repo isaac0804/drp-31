@@ -31,6 +31,7 @@
   --color-error-container: #93000a;
 }
 
+html,
 body {
   background-color: var(--color-background);
   color: var(--color-on-background);

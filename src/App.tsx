@@ -12,7 +12,7 @@ import {
   leaveSession,
   updateSessionsForPlayer,
 } from './sessions';
-import { getReviewsForPlayer, getHostReviewsForPlayer } from './reviews';
+import { getReviewsForPlayer, getHostReviewsForPlayer, getAllReviewsByUser } from './reviews';
 import { seedDummySessions, unseedDummySessions } from './devSeed';
 
 // Component imports
@@ -64,6 +64,7 @@ export default function App() {
   const [selectedPlayerReviews, setSelectedPlayerReviews] = useState<Review[]>([]);
   const [selectedPlayerHostReviews, setSelectedPlayerHostReviews] = useState<HostReview[]>([]);
   const [myReviews, setMyReviews] = useState<Review[]>([]);
+  const [myReviewedItems, setMyReviewedItems] = useState<{ sessionId: string; revieweeId: string; isHostReview: boolean }[]>([]);
   const [editingSession, setEditingSession] = useState<MatchSession | null>(null);
   const [exploreViewMode, setExploreViewMode] = useState<'list' | 'map'>('list');
   const [exploreFilters, setExploreFilters] = useState<ExploreFilters>(DEFAULT_EXPLORE_FILTERS);
@@ -101,8 +102,10 @@ export default function App() {
       if (currentUser && !currentUser.skillsBySport || (currentUser && Object.keys(currentUser.skillsBySport ?? {}).length === 0)) setActiveScreen('assessment');
       if (currentUser) {
         getReviewsForPlayer(currentUser.id).then(setMyReviews).catch(console.error);
+        getAllReviewsByUser(currentUser.id).then(setMyReviewedItems).catch(console.error);
       } else {
         setMyReviews([]);
+        setMyReviewedItems([]);
       }
     }, (error) => {
       setUser(null);
@@ -278,6 +281,10 @@ export default function App() {
     pushNav('session-chat');
   };
 
+  const handleReviewSubmitted = (sessionId: string, revieweeId: string, isHostReview: boolean) => {
+    setMyReviewedItems((prev) => [...prev, { sessionId, revieweeId, isHostReview }]);
+  };
+
   // Edit trigger
   const handleEditTrigger = (session: MatchSession) => {
     if (!user || session.host.id !== user.id) {
@@ -346,11 +353,19 @@ export default function App() {
   const myParticipatedMatchesCount = sessions.filter((s) =>
     user && s.playersJoined.some((p: Player) => p.id === user.id) && isSessionFinished(s)
   ).length;
-  const pendingReviewCount = sessions.filter((s) =>
-    user &&
-    (s.host.id === user.id || s.playersJoined.some((p: Player) => p.id === user.id)) &&
-    isSessionFinished(s)
-  ).length;
+  const pendingReviewCount = sessions.filter((s) => {
+    if (!user) return false;
+    const isParticipant = s.host.id === user.id || s.playersJoined.some((p: Player) => p.id === user.id);
+    if (!isParticipant || !isSessionFinished(s)) return false;
+    const playerReviewedIds = new Set(
+      myReviewedItems.filter((r) => r.sessionId === s.id && !r.isHostReview).map((r) => r.revieweeId)
+    );
+    const hasReviewedHost = myReviewedItems.some((r) => r.sessionId === s.id && r.isHostReview);
+    const reviewablePlayers = s.playersJoined.filter((p: Player) => p.id !== user.id);
+    const allPlayersReviewed = reviewablePlayers.length === 0 || reviewablePlayers.every((p: Player) => playerReviewedIds.has(p.id));
+    const needsHostReview = s.host.id !== user.id;
+    return !allPlayersReviewed || (needsHostReview && !hasReviewedHost);
+  }).length;
 
   if (isAuthLoading) {
     return (
@@ -537,6 +552,7 @@ export default function App() {
                 currentUserId={user.id}
                 reviewerName={user.name}
                 reviewerAvatar={user.avatar}
+                onReviewSubmitted={handleReviewSubmitted}
               />
             )}
 
