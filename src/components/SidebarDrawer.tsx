@@ -1,4 +1,4 @@
-import { X, Play, Trophy, Users, Award, Zap, LogOut, Target, Star, MessageCircle } from 'lucide-react';
+import { X, Play, Trophy, Users, Award, Zap, LogOut, Target, Star, MessageCircle, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ActiveScreen } from '../types';
 
@@ -10,6 +10,8 @@ interface SidebarDrawerProps {
   onSignOut: () => void;
   onRetakeAssessment: () => void;
   matchesCount: number;
+  isDarkMode: boolean;
+  onToggleTheme: () => void;
 }
 
 export default function SidebarDrawer({
@@ -19,7 +21,9 @@ export default function SidebarDrawer({
   onNavigate,
   onSignOut,
   onRetakeAssessment,
-  matchesCount
+  matchesCount,
+  isDarkMode,
+  onToggleTheme,
 }: SidebarDrawerProps) {
   return (
     <AnimatePresence>
@@ -162,6 +166,15 @@ export default function SidebarDrawer({
 
             {/* Bottom actions */}
             <div className="border-t border-outline-variant/20 pt-4 space-y-2">
+              <button
+                onClick={onToggleTheme}
+                className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg border border-outline-variant/30 hover:border-outline-variant/60 bg-surface-variant/30 hover:bg-surface-bright transition-colors"
+              >
+                <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
+                  {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                </span>
+                {isDarkMode ? <Sun className="w-4 h-4 text-on-surface-variant" /> : <Moon className="w-4 h-4 text-on-surface-variant" />}
+              </button>
               <button
                 onClick={() => {
                   onSignOut();

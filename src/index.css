@@ -38,6 +38,33 @@ body {
   font-family: var(--font-sans);
 }
 
+html.light .text-white {
+  color: var(--color-on-surface);
+}
+
+html.light {
+  --color-background: #faf8f5;
+  --color-on-background: #1a1c17;
+  --color-surface: #fffefb;
+  --color-surface-container: #edf0e9;
+  --color-surface-container-low: #f0f2ec;
+  --color-surface-container-high: #e5e8e1;
+  --color-surface-container-highest: #dde0d9;
+  --color-surface-variant: #e1e4db;
+  --color-surface-bright: #eef0eb;
+  --color-primary-fixed: #4d6b00;
+  --color-primary-fixed-dim: #3a5200;
+  --color-primary-container: #4d6b00;
+  --color-on-primary-fixed: #f0ffe0;
+  --color-on-primary-container: #f0ffe0;
+  --color-on-surface: #1a1c17;
+  --color-on-surface-variant: #44473d;
+  --color-outline-variant: #c4c7be;
+  --color-outline: #747770;
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+}
+
 /* Custom scrollbar utilities for hidden scroll */
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
@@ -49,7 +76,7 @@ body {
 
 /* Lift the very dark CARTO dark_all tiles so streets/labels are readable.
    Applied to the whole tile pane (not per-tile) to avoid visible seams. */
-.leaflet-tile-pane {
+html:not(.light) .leaflet-tile-pane {
   filter: brightness(1.55) contrast(0.92);
 }
 

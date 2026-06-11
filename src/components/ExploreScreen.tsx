@@ -45,6 +45,7 @@ interface ExploreScreenProps {
   filters: ExploreFilters;
   onFiltersChange: (f: ExploreFilters) => void;
   userGender?: UserGender;
+  isDarkMode?: boolean;
 }
 
 export default function ExploreScreen({
@@ -57,6 +58,7 @@ export default function ExploreScreen({
   filters,
   onFiltersChange,
   userGender,
+  isDarkMode,
 }: ExploreScreenProps) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -461,6 +463,7 @@ export default function ExploreScreen({
             sessions={filteredSessions}
             onSelectSession={onSelectSession}
             currentUserId={currentUserId}
+            isDarkMode={isDarkMode}
             fullScreen
           />
         </div>
