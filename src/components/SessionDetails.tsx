@@ -179,7 +179,7 @@ export default function SessionDetails({
 
       {/* Hero gradient section */}
       <section
-        className="relative pt-20 pb-8 px-4 overflow-hidden bg-[#0f1117]"
+        className="sport-hero relative pt-20 pb-8 px-4 overflow-hidden bg-[#0f1117]"
         style={hero.photo ? { backgroundImage: `url(${hero.photo})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/50 to-black/75 pointer-events-none" />

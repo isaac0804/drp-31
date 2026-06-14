@@ -87,9 +87,9 @@ const SKILL_OPTIONS: { value: SkillAccuracy; label: string; icon: React.ReactNod
 ];
 
 const RELIABILITY_OPTIONS: CategoryOption<Reliability>[] = [
-  { value: 'punctual',       label: 'Always on time!',      sentiment: 'positive' },
-  { value: 'mostly-on-time', label: 'Mostly showed up',     sentiment: 'neutral'  },
-  { value: 'often-late',     label: 'Often late or no-show',sentiment: 'negative' },
+  { value: 'punctual',       label: 'On time!',             sentiment: 'positive' },
+  { value: 'mostly-on-time', label: 'A bit late',           sentiment: 'neutral'  },
+  { value: 'often-late',     label: 'Late or no-show',      sentiment: 'negative' },
 ];
 
 const SPORTSMANSHIP_OPTIONS: CategoryOption<Sportsmanship>[] = [

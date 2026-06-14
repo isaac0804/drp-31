@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { MatchSession, Player } from '../types';
-import { getReviewedPlayerIds, getReviewedHostSessionIds } from '../reviews';
+import { getAllReviewsByUser } from '../reviews';
 import { MapPin, Star, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReviewTeamScreen from './ReviewTeamScreen';
@@ -35,30 +35,47 @@ export default function ReviewsScreen({ sessions, currentUserId, reviewerName, r
   const [reviewingSession, setReviewingSession] = useState<MatchSession | null>(null);
   const [reviewingPlayer, setReviewingPlayer]   = useState<Player | null>(null);
   const [reviewingHost, setReviewingHost]       = useState(false);
-  const [reviewedPlayerIds, setReviewedPlayerIds]       = useState<string[]>([]);
-  const [reviewedHostSessionIds, setReviewedHostSessionIds] = useState<string[]>([]);
-
-  useEffect(() => {
-    if (!reviewingSession) { setReviewedPlayerIds([]); return; }
-    let cancelled = false;
-    getReviewedPlayerIds(currentUserId, reviewingSession.id)
-      .then((ids) => { if (!cancelled) setReviewedPlayerIds(ids); })
-      .catch(() => { if (!cancelled) setReviewedPlayerIds([]); });
-    return () => { cancelled = true; };
-  }, [reviewingSession, currentUserId]);
+  const [allUserReviews, setAllUserReviews]     = useState<{ sessionId: string; revieweeId: string; isHostReview: boolean }[]>([]);
 
   useEffect(() => {
     let cancelled = false;
-    getReviewedHostSessionIds(currentUserId)
-      .then((ids) => { if (!cancelled) setReviewedHostSessionIds(ids); })
-      .catch(() => { if (!cancelled) setReviewedHostSessionIds([]); });
+    getAllReviewsByUser(currentUserId)
+      .then((reviews) => { if (!cancelled) setAllUserReviews(reviews); })
+      .catch(() => { if (!cancelled) setAllUserReviews([]); });
     return () => { cancelled = true; };
   }, [currentUserId]);
 
-  const finishedSessions = sessions.filter(
-    (s) =>
-      (s.host.id === currentUserId || s.playersJoined.some((p) => p.id === currentUserId)) &&
-      isFinished(s)
+  const reviewedPlayerIdsBySession = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    allUserReviews.filter(r => !r.isHostReview).forEach(r => {
+      if (!map.has(r.sessionId)) map.set(r.sessionId, new Set());
+      map.get(r.sessionId)!.add(r.revieweeId);
+    });
+    return map;
+  }, [allUserReviews]);
+
+  const reviewedHostSessionIds = useMemo(() =>
+    new Set(allUserReviews.filter(r => r.isHostReview).map(r => r.sessionId)),
+    [allUserReviews]
+  );
+
+  const reviewedPlayerIds = useMemo(() =>
+    reviewingSession ? Array.from(reviewedPlayerIdsBySession.get(reviewingSession.id) ?? []) : [],
+    [reviewingSession, reviewedPlayerIdsBySession]
+  );
+
+  const finishedSessions = useMemo(() =>
+    sessions.filter(s => {
+      if (s.host.id !== currentUserId && !s.playersJoined.some(p => p.id === currentUserId)) return false;
+      if (!isFinished(s)) return false;
+      const reviewablePlayers = s.playersJoined.filter(p => p.id !== currentUserId);
+      const sessionReviewedIds = reviewedPlayerIdsBySession.get(s.id) ?? new Set<string>();
+      const allPlayersReviewed = reviewablePlayers.every(p => sessionReviewedIds.has(p.id));
+      const isCurrentUserHost = s.host.id === currentUserId;
+      const hostReviewed = isCurrentUserHost || reviewedHostSessionIds.has(s.id);
+      return !(allPlayersReviewed && hostReviewed);
+    }),
+    [sessions, currentUserId, reviewedPlayerIdsBySession, reviewedHostSessionIds]
   );
 
   if (reviewingPlayer && reviewingSession) {
@@ -71,7 +88,7 @@ export default function ReviewsScreen({ sessions, currentUserId, reviewerName, r
         session={reviewingSession}
         onBack={() => setReviewingPlayer(null)}
         onSubmit={() => {
-          setReviewedPlayerIds((prev) => [...prev, reviewingPlayer.id]);
+          setAllUserReviews(prev => [...prev, { sessionId: reviewingSession.id, revieweeId: reviewingPlayer.id, isHostReview: false }]);
           onReviewSubmitted?.(reviewingSession.id, reviewingPlayer.id, false);
           setReviewingPlayer(null);
         }}
@@ -87,7 +104,7 @@ export default function ReviewsScreen({ sessions, currentUserId, reviewerName, r
         session={reviewingSession}
         onBack={() => setReviewingHost(false)}
         onSubmit={() => {
-          setReviewedHostSessionIds((prev) => [...prev, reviewingSession.id]);
+          setAllUserReviews(prev => [...prev, { sessionId: reviewingSession.id, revieweeId: reviewingSession.host.id, isHostReview: true }]);
           onReviewSubmitted?.(reviewingSession.id, reviewingSession.host.id, true);
           setReviewingHost(false);
         }}
@@ -102,9 +119,9 @@ export default function ReviewsScreen({ sessions, currentUserId, reviewerName, r
         currentUserId={currentUserId}
         reviewedPlayerIds={reviewedPlayerIds}
         onSelectPlayer={setReviewingPlayer}
-        onBack={() => { setReviewingSession(null); setReviewedPlayerIds([]); }}
+        onBack={() => setReviewingSession(null)}
         onReviewHost={() => setReviewingHost(true)}
-        hasReviewedHost={reviewedHostSessionIds.includes(reviewingSession.id)}
+        hasReviewedHost={reviewedHostSessionIds.has(reviewingSession.id)}
       />
     );
   }
@@ -138,8 +155,8 @@ export default function ReviewsScreen({ sessions, currentUserId, reviewerName, r
           ) : (
             finishedSessions.map((session, i) => {
               const reviewablePlayers = session.playersJoined.filter((p) => p.id !== currentUserId);
-              const allReviewed = reviewablePlayers.length > 0 &&
-                reviewablePlayers.every((p) => reviewedPlayerIds.includes(p.id));
+              const sessionReviewedIds = reviewedPlayerIdsBySession.get(session.id) ?? new Set<string>();
+              const pendingPlayers = reviewablePlayers.filter(p => !sessionReviewedIds.has(p.id));
 
               return (
                 <motion.article
@@ -181,10 +198,10 @@ export default function ReviewsScreen({ sessions, currentUserId, reviewerName, r
                     </div>
 
                     {/* Player avatars */}
-                    {reviewablePlayers.length > 0 && (
+                    {pendingPlayers.length > 0 && (
                       <div className="flex items-center gap-2">
                         <div className="flex -space-x-2">
-                          {reviewablePlayers.slice(0, 5).map((p) => (
+                          {pendingPlayers.slice(0, 5).map((p) => (
                             <img
                               key={p.id}
                               src={p.avatar}
@@ -194,7 +211,7 @@ export default function ReviewsScreen({ sessions, currentUserId, reviewerName, r
                           ))}
                         </div>
                         <span className="text-xs text-on-surface-variant/50">
-                          {reviewablePlayers.length} player{reviewablePlayers.length > 1 ? 's' : ''} to rate
+                          {pendingPlayers.length} player{pendingPlayers.length > 1 ? 's' : ''} to rate
                         </span>
                       </div>
                     )}
@@ -202,14 +219,10 @@ export default function ReviewsScreen({ sessions, currentUserId, reviewerName, r
                     {/* CTA */}
                     <button
                       onClick={() => setReviewingSession(session)}
-                      className={`w-full py-2.5 rounded-xl border text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                        allReviewed
-                          ? 'border-outline-variant/20 bg-surface-container text-on-surface-variant/40'
-                          : 'border-primary-fixed/40 bg-primary-fixed/8 hover:bg-primary-fixed/15 text-primary-fixed'
-                      }`}
+                      className="w-full py-2.5 rounded-xl border text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer border-primary-fixed/40 bg-primary-fixed/8 hover:bg-primary-fixed/15 text-primary-fixed"
                     >
                       <Users className="w-3.5 h-3.5" />
-                      {allReviewed ? 'All players reviewed' : 'Review Players'}
+                      Review Players
                     </button>
                   </div>
                 </motion.article>
