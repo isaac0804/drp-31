@@ -274,6 +274,14 @@ export default function MySessions({
                           <Users className="w-3.5 h-3.5" />
                           Review Team
                         </button>
+                        {session.host.id === currentUserId && (
+                          <button
+                            onClick={() => onCancelSession(session.id)}
+                            className="py-2.5 px-3 rounded-xl border border-error/30 hover:bg-error/8 text-error text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     }
                   />

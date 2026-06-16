@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Send } from 'lucide-react';
 import { MatchSession, UserProfile, ChatMessage } from '../types';
-import { sendMessage, subscribeToMessages } from '../chat';
+import { sendMessage, subscribeToMessages, markChatRead } from '../chat';
 
 interface ChatScreenProps {
   session: MatchSession;
@@ -48,6 +48,12 @@ export default function ChatScreen({ session, currentUser, onBack }: ChatScreenP
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Mark as read whenever messages load or a new one arrives while this chat is open.
+  useEffect(() => {
+    if (!isParticipant || messages.length === 0) return;
+    markChatRead(session.id, currentUser.id).catch((err) => console.error('Mark read error:', err));
+  }, [session.id, currentUser.id, isParticipant, messages.length]);
 
   const handleSend = async () => {
     const text = input.trim();

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ActiveScreen, MatchSession, Review, HostReview, UserProfile, Player, Sport } from './types';
+import { ActiveScreen, ChatMeta, MatchSession, Review, HostReview, UserProfile, Player, Sport } from './types';
 import { signInWithGoogle, signOut, subscribeToCurrentUser, updateCurrentUser, getUserProfileById } from './auth';
 import { DEFAULT_USER } from './data';
 import {
@@ -14,6 +14,7 @@ import {
 } from './sessions';
 import { getReviewsForPlayer, getHostReviewsForPlayer, getAllReviewsByUser } from './reviews';
 import { seedDummySessions, unseedDummySessions } from './devSeed';
+import { subscribeToChatMetas } from './chat';
 
 // Component imports
 import Header from './components/Header';
@@ -48,6 +49,7 @@ export default function App() {
   }, [isDarkMode]);
 
   const [sessions, setSessions] = useState<MatchSession[]>([]);
+  const [chatMetas, setChatMetas] = useState<Record<string, ChatMeta>>({});
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -78,6 +80,7 @@ export default function App() {
   const [myReviews, setMyReviews] = useState<Review[]>([]);
   const [myReviewedItems, setMyReviewedItems] = useState<{ sessionId: string; revieweeId: string; isHostReview: boolean }[]>([]);
   const [editingSession, setEditingSession] = useState<MatchSession | null>(null);
+  const [assessmentSport, setAssessmentSport] = useState<Sport | null>(null);
   const [exploreViewMode, setExploreViewMode] = useState<'list' | 'map'>('list');
   const [exploreFilters, setExploreFilters] = useState<ExploreFilters>(DEFAULT_EXPLORE_FILTERS);
   
@@ -94,6 +97,22 @@ export default function App() {
   useEffect(() => {
     return subscribeToSessions(setSessions, (err) => console.error('Sessions error:', err));
   }, []);
+
+  const myChatSessionIds = user
+    ? sessions
+        .filter((s) => s.host.id === user.id || s.playersJoined.some((p) => p.id === user.id))
+        .map((s) => s.id)
+    : [];
+  const myChatSessionIdsKey = myChatSessionIds.join(',');
+
+  useEffect(() => {
+    if (myChatSessionIds.length === 0) {
+      setChatMetas({});
+      return;
+    }
+    return subscribeToChatMetas(myChatSessionIds, setChatMetas, (err) => console.error('Chat metas error:', err));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myChatSessionIdsKey]);
 
   useEffect(() => {
     if (!pendingInviteId || sessions.length === 0) return;
@@ -180,7 +199,13 @@ export default function App() {
       skillsBySport: { ...(user?.skillsBySport ?? {}), [sport]: { skillLevel } },
       skillLevel,
     });
+    setAssessmentSport(null);
     rootNav('explore');
+  };
+
+  const handleTakeAssessment = (sport: Sport) => {
+    setAssessmentSport(sport);
+    pushNav('assessment');
   };
 
   const handleSignOut = async () => {
@@ -245,7 +270,7 @@ export default function App() {
       id: user.id,
       name: user.name,
       avatar: user.avatar,
-      skillLevel: sportSkill?.skillLevel ?? user.skillLevel,
+      skillLevel: sportSkill?.skillLevel,
     };
     joinSession(sessionId, player).catch((err) => console.error('Join session error:', err));
   };
@@ -384,6 +409,13 @@ export default function App() {
     const needsHostReview = s.host.id !== user.id;
     return !allPlayersReviewed || (needsHostReview && !hasReviewedHost);
   }).length;
+  const unreadChatsCount = user
+    ? myChatSessionIds.filter((id) => {
+        const meta = chatMetas[id];
+        if (!meta || meta.lastMessageAt <= 0) return false;
+        return meta.lastMessageAt > (meta.readBy[user.id] ?? 0);
+      }).length
+    : 0;
 
   if (isAuthLoading) {
     return (
@@ -411,6 +443,7 @@ export default function App() {
         onNavigate={(screen) => { setEditingSession(null); rootNav(screen); }}
         onSignOut={handleSignOut}
         pendingReviewCount={pendingReviewCount}
+        unreadChatsCount={unreadChatsCount}
         onLogoClick={() => {
           setEditingSession(null);
           setExploreViewMode('list');
@@ -433,6 +466,8 @@ export default function App() {
         matchesCount={matchesCount}
         isDarkMode={isDarkMode}
         onToggleTheme={() => setIsDarkMode((d: boolean) => !d)}
+        unreadChatsCount={unreadChatsCount}
+        pendingReviewCount={pendingReviewCount}
       />
 
       {/* Main Container viewport */}
@@ -512,6 +547,7 @@ export default function App() {
                 onViewPlayerProfile={handleViewPlayerProfile}
                 onEdit={handleEditTrigger}
                 onOpenChat={handleOpenChat}
+                onTakeAssessment={handleTakeAssessment}
                 playerStats={sessionPlayerStats}
               />
             )}
@@ -565,7 +601,8 @@ export default function App() {
             {activeScreen === 'assessment' && (
               <SkillAssessmentScreen
                 onComplete={handleAssessmentComplete}
-                onClose={goBack}
+                onClose={() => { setAssessmentSport(null); goBack(); }}
+                initialSport={assessmentSport ?? undefined}
               />
             )}
 
@@ -583,6 +620,7 @@ export default function App() {
               <ChatsListScreen
                 sessions={sessions}
                 currentUser={user}
+                chatMetas={chatMetas}
                 onOpenChat={(sessionId) => {
                   setSelectedSessionId(sessionId);
                   pushNav('session-chat');
@@ -635,6 +673,7 @@ export default function App() {
       <BottomNav
         activeScreen={activeScreen}
         pendingReviewCount={pendingReviewCount}
+        unreadChatsCount={unreadChatsCount}
         onNavigate={(screen) => {
           setEditingSession(null);
           if (screen === 'explore') setExploreViewMode('list');

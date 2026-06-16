@@ -10,9 +10,10 @@ interface HeaderProps {
   onNavigate: (screen: ActiveScreen) => void;
   onSignOut: () => void;
   pendingReviewCount?: number;
+  unreadChatsCount?: number;
 }
 
-export default function Header({ user, onMenuClick, onLogoClick, onNavigate, onSignOut, pendingReviewCount = 0 }: HeaderProps) {
+export default function Header({ user, onMenuClick, onLogoClick, onNavigate, onSignOut, pendingReviewCount = 0, unreadChatsCount = 0 }: HeaderProps) {
   const [open, setOpen] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
 
@@ -47,9 +48,12 @@ export default function Header({ user, onMenuClick, onLogoClick, onNavigate, onS
         <button
           onClick={onMenuClick}
           aria-label="Toggle Navigation Drawer"
-          className="text-primary-fixed hover:bg-surface-variant/50 active:scale-95 transition-all p-2 -ml-2 rounded-full cursor-pointer"
+          className="relative text-primary-fixed hover:bg-surface-variant/50 active:scale-95 transition-all p-2 -ml-2 rounded-full cursor-pointer"
         >
           <Menu className="w-6 h-6" />
+          {(pendingReviewCount > 0 || unreadChatsCount > 0) && (
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border border-surface" />
+          )}
         </button>
 
         {/* Logo */}
