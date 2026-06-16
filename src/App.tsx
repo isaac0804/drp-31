@@ -111,7 +111,6 @@ export default function App() {
       setUser(currentUser);
       setIsAuthLoading(false);
       setAuthError(null);
-      if (currentUser && !currentUser.skillsBySport || (currentUser && Object.keys(currentUser.skillsBySport ?? {}).length === 0)) setActiveScreen('assessment');
       if (currentUser) {
         getReviewsForPlayer(currentUser.id).then(setMyReviews).catch(console.error);
         getAllReviewsByUser(currentUser.id).then(setMyReviewedItems).catch(console.error);
@@ -128,7 +127,7 @@ export default function App() {
 
   // Dev-only: expose dummy-session seeders on the console, bound to the live
   // signed-in account so the sessions are hosted by the real user.
-  // Run `seedDummySessions()` / `unseedDummySessions()` from the browser console.
+  // Run `seedDummySessions()` / `unseedDummySessions()` / `resetSkillsForDemo()` from the browser console.
   useEffect(() => {
     if (!import.meta.env.DEV) return;
     const w = window as unknown as Record<string, unknown>;
@@ -136,9 +135,16 @@ export default function App() {
       const host: Player = { id: user.id, name: user.name, avatar: user.avatar };
       w.seedDummySessions = () => seedDummySessions(host);
       w.unseedDummySessions = () => unseedDummySessions();
+      w.resetSkillsForDemo = async () => {
+        const updated = { ...user, skillsBySport: {} };
+        await updateCurrentUser(updated);
+        setUser(updated);
+        console.log('Skills reset — assessment banner will now show.');
+      };
     } else {
       delete w.seedDummySessions;
       delete w.unseedDummySessions;
+      delete w.resetSkillsForDemo;
     }
   }, [user]);
 
@@ -458,6 +464,8 @@ export default function App() {
                 onFiltersChange={setExploreFilters}
                 userGender={user.gender}
                 isDarkMode={isDarkMode}
+                showAssessmentBanner={!user.skillsBySport || Object.keys(user.skillsBySport).length === 0}
+                onStartAssessment={() => pushNav('assessment')}
               />
             )}
 
@@ -581,6 +589,7 @@ export default function App() {
                 }}
               />
             )}
+
           </motion.div>
         </AnimatePresence>
       </main>
