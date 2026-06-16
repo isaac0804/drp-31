@@ -49,15 +49,11 @@ interface Spec {
 }
 
 const SPECS: Spec[] = [
-  // ── Sessions hosted by pool players (future) — user can join in demo ────
-  { dayOffset: 9,  timeStart: '20:00', timeEnd: '22:00', venue: 2, sport: 'Badminton',   skillLevel: 'lower-intermediate', matchType: 'singles', gender: 'open',   maxPlayers: 2,  fill: 0, poolHost: 2, hostNote: 'Looking for a singles partner at Chelsea — intermediate level, friendly rally.' },
-  { dayOffset: 11, timeStart: '18:30', timeEnd: '20:00', venue: 5, sport: 'Table Tennis', skillLevel: 'beginner',          matchType: 'doubles', gender: 'open',   maxPlayers: 4,  fill: 1, poolHost: 3, hostNote: 'Beginner table tennis at Sobell. Come learn and have fun — all welcome!' },
-
-  // ── Past sessions where the signed-in user was a participant (review demo) ─
-  // Session hosted by Chloe (POOL[0]): user + Alex + Marcus joined. Good for standard reviews.
-  { dayOffset: -3, timeStart: '18:00', timeEnd: '20:00', venue: 0, sport: 'Badminton',   skillLevel: 'lower-intermediate', matchType: 'doubles', gender: 'open',   maxPlayers: 4,  fill: 3, poolHost: 0, includeUser: true, hostNote: 'Great session at Ethos — courts were in perfect condition. GGs all round!' },
-  // Session hosted by Alex (POOL[1]): user + Sarah + Jamie joined. Jamie is the "bad player" for the review demo.
-  { dayOffset: -1, timeStart: '19:30', timeEnd: '21:30', venue: 4, sport: 'Badminton',   skillLevel: 'lower-intermediate', matchType: 'doubles', gender: 'open',   maxPlayers: 4,  fill: 3, poolHost: 1, includeUser: true, hostNote: 'Doubles at Kensington. Tight rallies, good fun overall.' },
+  // ── Past sessions hosted by the signed-in user (review demo) ──────────────
+  // User hosts: Chloe + Alex + Sarah joined. Good for standard reviews.
+  { dayOffset: -3, timeStart: '18:00', timeEnd: '20:00', venue: 0, sport: 'Badminton',   skillLevel: 'lower-intermediate', matchType: 'doubles', gender: 'open',   maxPlayers: 4,  fill: 3, hostNote: 'Great session at Ethos — courts were in perfect condition. GGs all round!' },
+  // User hosts: Chloe + Alex + Sarah joined. Sarah is the "bad player" for the review demo.
+  { dayOffset: -1, timeStart: '19:30', timeEnd: '21:30', venue: 4, sport: 'Badminton',   skillLevel: 'lower-intermediate', matchType: 'doubles', gender: 'open',   maxPlayers: 4,  fill: 3, hostNote: 'Doubles at Kensington. Tight rallies, good fun overall.' },
 ];
 
 function buildSession(spec: Spec, index: number, signedInUser: Player): MatchSession {
@@ -109,7 +105,10 @@ export async function seedDummySessions(host: Player): Promise<number> {
 
 export async function unseedDummySessions(): Promise<number> {
   const SWEEP = 20; // covers any previously seeded range
-  await Promise.all(Array.from({ length: SWEEP }, (_, i) => cancelSession(`dummy_seed_${i + 1}`)));
-  console.info(`[devSeed] Cleaned up dummy_seed_1 through dummy_seed_${SWEEP}.`);
-  return SWEEP;
+  const results = await Promise.allSettled(
+    Array.from({ length: SWEEP }, (_, i) => cancelSession(`dummy_seed_${i + 1}`))
+  );
+  const removed = results.filter((r) => r.status === 'fulfilled').length;
+  console.info(`[devSeed] Cleaned up ${removed} dummy sessions.`);
+  return removed;
 }
