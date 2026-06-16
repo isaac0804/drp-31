@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Player, MatchSession, PlayAgain, SkillAccuracy, Reliability, Sportsmanship, Vibe } from '../types';
-import { ArrowLeft, ThumbsUp, ThumbsDown, TrendingDown, CheckCircle, TrendingUp, Send, Check, Minus, X } from 'lucide-react';
+import { ArrowLeft, ThumbsUp, ThumbsDown, TrendingDown, CheckCircle, TrendingUp, Send, Check, Minus, X, Info, Clock, AlarmClock, CalendarX, ShieldCheck, Flame, Smile, Meh, Frown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { submitReview } from '../reviews';
 
@@ -20,6 +20,7 @@ interface CategoryOption<T extends string> {
   value: T;
   label: string;
   sentiment: Sentiment;
+  icon?: React.ReactNode;
 }
 
 const SENTIMENT_ICONS: Record<Sentiment, React.ReactNode> = {
@@ -51,13 +52,40 @@ function CategoryPicker<T extends string>({
   value: T | null;
   onChange: (v: T) => void;
 }) {
+  const [pinned, setPinned] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const showDesc = pinned || hovered;
+
   return (
     <section className="rounded-2xl border border-outline-variant/10 bg-surface-container/40 p-4 space-y-3">
       <div className="flex items-start gap-2">
         <span className="text-[10px] font-black text-primary-fixed/50 tracking-widest pt-0.5">{step}</span>
-        <div>
-          <h3 className="font-bold text-sm text-white">{label}</h3>
-          <p className="text-xs text-on-surface-variant/45 mt-0.5 leading-snug">{description}</p>
+        <div className="flex-1">
+          <div className="flex items-center gap-1.5">
+            <h3 className="font-bold text-sm text-white">{label}</h3>
+            <button
+              onClick={() => setPinned((v) => !v)}
+              onMouseEnter={() => setHovered(true)}
+              onMouseLeave={() => setHovered(false)}
+              className="text-on-surface-variant/35 hover:text-on-surface-variant/70 transition-colors cursor-pointer"
+              aria-label="More info"
+            >
+              <Info className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <AnimatePresence>
+            {showDesc && (
+              <motion.p
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.15 }}
+                className="text-xs text-on-surface-variant/45 mt-0.5 leading-snug overflow-hidden"
+              >
+                {description}
+              </motion.p>
+            )}
+          </AnimatePresence>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-2">
@@ -67,10 +95,8 @@ function CategoryPicker<T extends string>({
             onClick={() => onChange(opt.value)}
             className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border text-center text-xs font-semibold transition-all cursor-pointer leading-tight ${sentimentClass(opt.sentiment, value === opt.value)}`}
           >
-            <span className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
-              value === opt.value ? 'bg-current/15' : 'bg-outline-variant/10'
-            }`}>
-              {SENTIMENT_ICONS[opt.sentiment]}
+            <span className="w-4 h-4 flex items-center justify-center">
+              {opt.icon ?? SENTIMENT_ICONS[opt.sentiment]}
             </span>
             {opt.label}
           </button>
@@ -87,21 +113,21 @@ const SKILL_OPTIONS: { value: SkillAccuracy; label: string; icon: React.ReactNod
 ];
 
 const RELIABILITY_OPTIONS: CategoryOption<Reliability>[] = [
-  { value: 'punctual',       label: 'On time!',             sentiment: 'positive' },
-  { value: 'mostly-on-time', label: 'A bit late',           sentiment: 'neutral'  },
-  { value: 'often-late',     label: 'Late or no-show',      sentiment: 'negative' },
+  { value: 'punctual',       label: 'On time!',        sentiment: 'positive', icon: <Clock      className="w-4 h-4" /> },
+  { value: 'mostly-on-time', label: 'A bit late',      sentiment: 'neutral',  icon: <AlarmClock className="w-4 h-4" /> },
+  { value: 'often-late',     label: 'Late or no-show', sentiment: 'negative', icon: <CalendarX  className="w-4 h-4" /> },
 ];
 
 const SPORTSMANSHIP_OPTIONS: CategoryOption<Sportsmanship>[] = [
-  { value: 'fair-play',     label: 'Fair & respectful',   sentiment: 'positive' },
-  { value: 'average',       label: 'Nothing to note',     sentiment: 'neutral'  },
-  { value: 'poor-attitude', label: 'Hot-headed or dirty', sentiment: 'negative' },
+  { value: 'fair-play',     label: 'Fair & respectful',   sentiment: 'positive', icon: <ShieldCheck className="w-4 h-4" /> },
+  { value: 'average',       label: 'Nothing to note',     sentiment: 'neutral',  icon: <Minus       className="w-4 h-4" /> },
+  { value: 'poor-attitude', label: 'Hot-headed or dirty', sentiment: 'negative', icon: <Flame       className="w-4 h-4" /> },
 ];
 
 const VIBE_OPTIONS: CategoryOption<Vibe>[] = [
-  { value: 'great', label: 'Friendly & fun!',        sentiment: 'positive' },
-  { value: 'okay',  label: 'Fine, nothing special',  sentiment: 'neutral'  },
-  { value: 'poor',  label: 'Unpleasant to play with',sentiment: 'negative' },
+  { value: 'great', label: 'Friendly & fun!',         sentiment: 'positive', icon: <Smile className="w-4 h-4" /> },
+  { value: 'okay',  label: 'Fine, nothing special',   sentiment: 'neutral',  icon: <Meh   className="w-4 h-4" /> },
+  { value: 'poor',  label: 'Unpleasant to play with', sentiment: 'negative', icon: <Frown className="w-4 h-4" /> },
 ];
 
 export default function ReviewPlayerScreen({
@@ -221,7 +247,7 @@ export default function ReviewPlayerScreen({
         <div className="flex items-start gap-2">
           <span className="text-[10px] font-black text-primary-fixed/50 tracking-widest pt-0.5">01</span>
           <div>
-            <h3 className="font-bold text-sm text-white">Would you play with them again?</h3>
+            <h3 className="font-bold text-sm text-white">Would you play with {player.name} again?</h3>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -255,7 +281,7 @@ export default function ReviewPlayerScreen({
         <div className="flex items-start gap-2">
           <span className="text-[10px] font-black text-primary-fixed/50 tracking-widest pt-0.5">02</span>
           <div>
-            <h3 className="font-bold text-sm text-white">How accurate is their skill rating?</h3>
+            <h3 className="font-bold text-sm text-white">How accurate is {player.name}'s skill rating?</h3>
           </div>
         </div>
         <div className="flex flex-col gap-2">
@@ -281,21 +307,21 @@ export default function ReviewPlayerScreen({
       {/* Q3–Q5: Tap-to-select categories */}
       <CategoryPicker
         step="03" label="Punctuality"
-        description="Were they punctual? Did they show up when they said they would?"
+        description={`Did ${player.name} show up on time?`}
         options={RELIABILITY_OPTIONS}
         value={reliability}
         onChange={(v) => setReliability(v)}
       />
       <CategoryPicker
         step="04" label="Sportsmanship"
-        description="How did they handle the game — wins, losses, and disputed calls?"
+        description={`How did ${player.name} handle the game — wins, losses, and disputed calls?`}
         options={SPORTSMANSHIP_OPTIONS}
         value={sportsmanship}
         onChange={(v) => setSportsmanship(v)}
       />
       <CategoryPicker
         step="05" label="Vibe & Friendliness"
-        description="Were they friendly, fun to be around, and a good team player overall?"
+        description={`Was ${player.name} friendly and fun to be around?`}
         options={VIBE_OPTIONS}
         value={vibe}
         onChange={(v) => setVibe(v)}
@@ -307,7 +333,7 @@ export default function ReviewPlayerScreen({
           <h3 className="font-bold text-sm text-white">
             Additional Comments <span className="text-on-surface-variant/35 font-normal text-xs">(optional)</span>
           </h3>
-          <p className="text-xs text-on-surface-variant/45 mt-0.5">Leave a note the next player will see before playing with them.</p>
+          <p className="text-xs text-on-surface-variant/45 mt-0.5">Leave a note the next player will see before playing with {player.name}.</p>
         </div>
         <textarea
           value={feedback}
