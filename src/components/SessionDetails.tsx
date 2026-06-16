@@ -1,5 +1,13 @@
 import { MatchSession, Player, UserProfile, SkillLevel, SKILL_LEVELS, SKILL_LEVEL_LABELS } from '../types';
-import { ArrowLeft, Calendar, MapPin, Plus, Trophy, Pencil, CalendarPlus, Navigation } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Plus, Trophy, Pencil, CalendarPlus, Navigation, MessageCircle } from 'lucide-react';
+
+interface PlayerStat {
+  wouldPlayAgain: number | null;
+  skillAccuracy: number | null;
+  reviewCount: number;
+  hostRating: number | null;
+  hostReviewCount: number;
+}
 
 interface SessionDetailsProps {
   session: MatchSession;
@@ -9,7 +17,37 @@ interface SessionDetailsProps {
   onLeave: (sessionId: string) => void;
   onViewPlayerProfile: (player: Player) => void;
   onEdit?: (session: MatchSession) => void;
+  onOpenChat?: (sessionId: string) => void;
+  playerStats?: Record<string, PlayerStat>;
 }
+
+const SPORT_HERO: Record<string, { photo: string; glow: string; icon: string }> = {
+  Badminton: {
+    photo: 'https://images.pexels.com/photos/8007173/pexels-photo-8007173.jpeg?auto=compress&cs=tinysrgb&w=1200&h=500&fit=crop',
+    glow: '0,210,175',
+    icon: '',
+  },
+  'Table Tennis': {
+    photo: 'https://images.pexels.com/photos/709134/pexels-photo-709134.jpeg?auto=compress&cs=tinysrgb&w=1200&h=500&fit=crop',
+    glow: '248,113,113',
+    icon: '',
+  },
+  Football: {
+    photo: 'https://images.pexels.com/photos/399187/pexels-photo-399187.jpeg?auto=compress&cs=tinysrgb&w=1200&h=500&fit=crop',
+    glow: '34,197,94',
+    icon: '⚽',
+  },
+  Basketball: {
+    photo: 'https://images.pexels.com/photos/5407033/pexels-photo-5407033.jpeg?auto=compress&cs=tinysrgb&w=1200&h=500&fit=crop',
+    glow: '249,115,22',
+    icon: '🏀',
+  },
+  Pickleball: {
+    photo: 'https://images.pexels.com/photos/17299530/pexels-photo-17299530.jpeg?auto=compress&cs=tinysrgb&w=1200&h=500&fit=crop',
+    glow: '96,165,250',
+    icon: '',
+  },
+};
 
 export default function SessionDetails({
   session,
@@ -19,6 +57,8 @@ export default function SessionDetails({
   onLeave,
   onViewPlayerProfile,
   onEdit,
+  onOpenChat,
+  playerStats = {},
 }: SessionDetailsProps) {
   const isJoined = session.playersJoined.some((p) => p.id === currentUser.id);
   const isHost = session.host.id === currentUser.id;
@@ -84,6 +124,8 @@ export default function SessionDetails({
 
   const formattedDuration = calculateDuration(session.timeStart, session.timeEnd);
 
+  const hero = SPORT_HERO[session.sport] ?? { photo: '', glow: '202,243,0', icon: '🏆' };
+
   const buildGCalUrl = (s: MatchSession) => {
     const fmt = (d: string, t: string) => d.replace(/-/g, '') + 'T' + t.replace(':', '') + '00';
     const params = new URLSearchParams({
@@ -136,9 +178,13 @@ export default function SessionDetails({
       </header>
 
       {/* Hero gradient section */}
-      <section className="relative pt-20 pb-8 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-fixed/15 via-surface to-surface pointer-events-none" />
-        <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-primary-fixed/10 blur-3xl pointer-events-none" />
+      <section
+        className="sport-hero relative pt-20 pb-8 px-4 overflow-hidden bg-[#0f1117]"
+        style={hero.photo ? { backgroundImage: `url(${hero.photo})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/50 to-black/75 pointer-events-none" />
+        <div className="absolute top-0 -right-10 w-64 h-64 rounded-full blur-3xl pointer-events-none" style={{ background: `rgba(${hero.glow},0.18)` }} />
+        <div className="absolute right-4 top-16 text-[110px] leading-none select-none pointer-events-none opacity-[0.12]">{hero.icon}</div>
         <div className="relative flex flex-col gap-2">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="bg-primary-fixed/15 text-primary-fixed text-[10px] font-sans font-extrabold px-3 py-1 rounded-full uppercase border border-primary-fixed/30 tracking-wider">
@@ -242,6 +288,49 @@ export default function SessionDetails({
             </span>
           </div>
 
+          {session.hostJoinsAsPlayer === false && (() => {
+            const hostStat = playerStats[session.host.id];
+            const isSuperhost = hostStat?.hostRating != null && hostStat.hostRating >= 4 && hostStat.hostReviewCount > 10;
+            return (
+              <button
+                type="button"
+                onClick={() => onViewPlayerProfile(session.host)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface-container-low border border-outline-variant/15 w-full text-left hover:bg-surface-container transition-colors cursor-pointer"
+              >
+                <img
+                  src={session.host.avatar}
+                  alt={session.host.name}
+                  referrerPolicy="no-referrer"
+                  className="w-8 h-8 rounded-full object-cover border border-outline-variant/30 shrink-0"
+                />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="text-xs font-bold text-on-surface truncate">{session.host.name}</div>
+                    {isSuperhost && (
+                      <span className="text-[9px] font-black text-amber-400 bg-amber-400/10 border border-amber-400/30 px-1.5 py-0.5 rounded-full uppercase tracking-wider leading-none">
+                        Superhost
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-on-surface-variant">Organiser · Not playing</div>
+                  {hostStat && (
+                    <div className="text-[10px] text-on-surface-variant/70 mt-0.5">
+                      {hostStat.hostRating != null ? (
+                        <>
+                          <span className="text-primary-fixed font-mono font-bold">{hostStat.hostRating.toFixed(1)}</span>
+                          <span>/5.0 Host Rating</span>
+                          <span className="text-on-surface-variant/50 ml-1">[{hostStat.hostReviewCount}]</span>
+                        </>
+                      ) : (
+                        <span className="text-on-surface-variant/40">No host rating yet</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })()}
+
           {/* Graphical custom percentage bar */}
           <div className="w-full bg-surface-container h-2 rounded-full overflow-hidden border border-outline-variant/10">
             <div
@@ -263,11 +352,22 @@ export default function SessionDetails({
                       slot.isHost ? 'border-primary-fixed/50' : 'border-outline-variant/20'
                     }`}
                   >
-                    {slot.isHost && (
-                      <div className="absolute -top-2.5 bg-primary-fixed text-on-primary-fixed font-sans font-black text-[9px] leading-tight px-2.5 py-0.5 rounded-full uppercase tracking-widest shadow-sm">
-                        Host
-                      </div>
-                    )}
+                    {slot.isHost && (() => {
+                      const hostStat = playerStats[slot.id];
+                      const isSuperhost = hostStat?.hostRating != null && hostStat.hostRating >= 4 && hostStat.hostReviewCount > 10;
+                      return (
+                        <div className="absolute -top-2.5 flex items-center gap-1">
+                          <div className="bg-primary-fixed text-on-primary-fixed font-sans font-black text-[9px] leading-tight px-2.5 py-0.5 rounded-full uppercase tracking-widest shadow-sm">
+                            Host
+                          </div>
+                          {isSuperhost && (
+                            <div className="bg-amber-400 text-amber-900 font-sans font-black text-[9px] leading-tight px-2 py-0.5 rounded-full uppercase tracking-widest shadow-sm">
+                              Superhost
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                     <img
                       alt={slot.name}
                       referrerPolicy="no-referrer"
@@ -283,6 +383,37 @@ export default function SessionDetails({
                       <div className="text-[10px] font-mono text-primary-fixed/80 uppercase tracking-wider mt-0.5">
                         {safeLabel(slot.skillLevel ?? session.skillLevel)}
                       </div>
+                      {playerStats[slot.id] && (
+                        <div className="mt-1.5 space-y-0.5">
+                          {playerStats[slot.id].wouldPlayAgain === null ? (
+                            <div className="text-[9px] text-on-surface-variant/40 leading-tight">No Reviews Yet</div>
+                          ) : (
+                            <>
+                              {slot.isHost && (
+                                <div className="text-[9px] text-on-surface-variant/70 leading-tight">
+                                  {playerStats[slot.id].hostRating != null ? (
+                                    <>
+                                      <span className="text-primary-fixed font-mono font-bold">{playerStats[slot.id].hostRating!.toFixed(1)}</span>
+                                      <span>/5.0 Host Rating</span>
+                                      <span className="text-on-surface-variant/50 ml-1">[{playerStats[slot.id].hostReviewCount}]</span>
+                                    </>
+                                  ) : (
+                                    <span className="text-on-surface-variant/40">No host rating yet</span>
+                                  )}
+                                </div>
+                              )}
+                              <div className="text-[9px] text-on-surface-variant/70 leading-tight">
+                                <span className="text-primary-fixed font-mono font-bold">{playerStats[slot.id].wouldPlayAgain!.toFixed(1)}</span>
+                                <span>/5.0 Rating</span>
+                              </div>
+                              <div className="text-[9px] text-on-surface-variant/70 leading-tight">
+                                <span className="text-primary-fixed font-mono font-bold">{playerStats[slot.id].skillAccuracy!.toFixed(1)}</span>
+                                <span>/5.0 Skill Acc.</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </button>
                 );
@@ -320,10 +451,22 @@ export default function SessionDetails({
 
       {/* Stationary Bottom Fixed Action CTA */}
       <div className="fixed bottom-20 md:bottom-0 left-0 w-full p-4 pb-safe bg-surface/90 backdrop-blur-md border-t border-outline-variant/20 z-40">
-        <div className="w-full max-w-3xl mx-auto flex gap-3">
+        <div className="w-full max-w-3xl mx-auto flex flex-col gap-2">
+          {(isJoined || isHost) && (
+            <button
+              onClick={() => onOpenChat?.(session.id)}
+              className="w-full flex items-center justify-center gap-2 bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-sans font-bold text-xs uppercase tracking-widest py-3 rounded-full border border-outline-variant/30 transition-all active:scale-98 cursor-pointer"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Group Chat
+            </button>
+          )}
+          <div className="flex gap-3">
           {isHost ? (
             <div className="w-full text-center text-xs font-sans text-on-surface-variant py-4 bg-surface-container-highest rounded-full border border-outline-variant/20">
-              You are the host of this match session
+              {session.hostJoinsAsPlayer === false
+                ? 'You are organising this session · Not playing'
+                : 'You are the host of this match session'}
             </div>
           ) : isJoined ? (
             <button
@@ -356,6 +499,7 @@ export default function SessionDetails({
               )}
             </div>
           )}
+          </div>
         </div>
       </div>
     </article>

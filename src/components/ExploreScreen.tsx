@@ -1,10 +1,13 @@
 import { useState, useMemo } from 'react';
-import { MatchSession, SkillLevel, GenderPreference, Sport, SKILL_LEVELS, SKILL_LEVEL_LABELS } from '../types';
+import { MatchSession, SkillLevel, GenderPreference, Sport, UserGender, SKILL_LEVELS, SKILL_LEVEL_LABELS } from '../types';
 import { SPORTS } from '../data';
 import SkillRangePicker from './SkillRangePicker';
-import { MapPin, Plus, CalendarDays, List, Map, SlidersHorizontal, X } from 'lucide-react';
+import { MapPin, Plus, CalendarDays, List, Map, SlidersHorizontal, X, Clock, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import SessionMapView from './SessionMapView';
+
+export type DateFilter = 'all' | 'today' | 'tomorrow' | 'weekend' | 'custom';
+export type TimeOfDayFilter = 'all' | 'morning' | 'afternoon' | 'evening';
 
 export interface ExploreFilters {
   sport: 'all' | Sport;
@@ -13,6 +16,10 @@ export interface ExploreFilters {
   gender: 'all' | GenderPreference;
   hideFull: boolean;
   search: string;
+  date: DateFilter;
+  dateFrom: string;
+  dateTo: string;
+  timeOfDay: TimeOfDayFilter;
 }
 
 export const DEFAULT_EXPLORE_FILTERS: ExploreFilters = {
@@ -22,6 +29,10 @@ export const DEFAULT_EXPLORE_FILTERS: ExploreFilters = {
   gender: 'all',
   hideFull: false,
   search: '',
+  date: 'all',
+  dateFrom: '',
+  dateTo: '',
+  timeOfDay: 'all',
 };
 
 interface ExploreScreenProps {
@@ -33,6 +44,10 @@ interface ExploreScreenProps {
   onViewModeChange: (mode: 'list' | 'map') => void;
   filters: ExploreFilters;
   onFiltersChange: (f: ExploreFilters) => void;
+  userGender?: UserGender;
+  isDarkMode?: boolean;
+  showAssessmentBanner?: boolean;
+  onStartAssessment?: () => void;
 }
 
 export default function ExploreScreen({
@@ -44,13 +59,23 @@ export default function ExploreScreen({
   onViewModeChange,
   filters,
   onFiltersChange,
+  userGender,
+  isDarkMode,
+  showAssessmentBanner,
+  onStartAssessment,
 }: ExploreScreenProps) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const { sport: selectedSport, skillMin: selectedSkillMin, skillMax: selectedSkillMax, gender: selectedGender, hideFull, search: searchQuery } = filters;
+  const { sport: selectedSport, skillMin: selectedSkillMin, skillMax: selectedSkillMax, gender: selectedGender, hideFull, search: searchQuery, date: selectedDate, dateFrom, dateTo, timeOfDay: selectedTimeOfDay } = filters;
 
   const skillRangeIsAll = selectedSkillMin === SKILL_LEVELS[0] && selectedSkillMax === SKILL_LEVELS[SKILL_LEVELS.length - 1];
-  const activeFilterCount = (selectedSport !== 'all' ? 1 : 0) + (!skillRangeIsAll ? 1 : 0) + (selectedGender !== 'all' ? 1 : 0) + (hideFull ? 1 : 0);
+  const activeFilterCount =
+    (selectedSport !== 'all' ? 1 : 0) +
+    (!skillRangeIsAll ? 1 : 0) +
+    (selectedGender !== 'all' ? 1 : 0) +
+    (hideFull ? 1 : 0) +
+    (selectedDate !== 'all' ? 1 : 0) +
+    (selectedTimeOfDay !== 'all' ? 1 : 0);
 
   // Filter out past sessions
   const isUpcoming = (s: MatchSession) => {
@@ -64,6 +89,18 @@ export default function ExploreScreen({
 
   // Handle filtering
   const filteredSessions = useMemo(() => {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const fmtDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const todayStr = fmtDate(now);
+    const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
+    const tomorrowStr = fmtDate(tomorrow);
+    const dayOfWeek = now.getDay();
+    const toSat = new Date(now); toSat.setDate(now.getDate() + ((6 - dayOfWeek + 7) % 7 || 7));
+    const toSun = new Date(now); toSun.setDate(now.getDate() + ((0 - dayOfWeek + 7) % 7 || 7));
+    const satStr = fmtDate(toSat);
+    const sunStr = fmtDate(toSun);
+
     return sessions
       .filter((s) => {
         if (s.isPrivate) return false;
@@ -81,14 +118,26 @@ export default function ExploreScreen({
         const matchesSearch =
           s.venue.toLowerCase().includes(searchQuery.toLowerCase()) ||
           s.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          s.host.name.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesSport && matchesSkill && matchesGender && matchesSearch;
+          s.host.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          s.sport.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesDate =
+          selectedDate === 'all' ? true :
+          selectedDate === 'today' ? s.date === todayStr :
+          selectedDate === 'tomorrow' ? s.date === tomorrowStr :
+          selectedDate === 'weekend' ? (s.date === satStr || s.date === sunStr) :
+          (!dateFrom || s.date >= dateFrom) && (!dateTo || s.date <= dateTo);
+        const matchesTime =
+          selectedTimeOfDay === 'all' ? true :
+          selectedTimeOfDay === 'morning' ? s.timeStart < '12:00' :
+          selectedTimeOfDay === 'afternoon' ? s.timeStart >= '12:00' && s.timeStart < '18:00' :
+          s.timeStart >= '18:00';
+        return matchesSport && matchesSkill && matchesGender && matchesSearch && matchesDate && matchesTime;
       })
       .sort((a, b) => {
         const dateCmp = a.date.localeCompare(b.date);
         return dateCmp !== 0 ? dateCmp : a.timeStart.localeCompare(b.timeStart);
       });
-  }, [sessions, selectedSkillMin, selectedSkillMax, selectedGender, searchQuery, selectedSport, hideFull, skillRangeIsAll]);
+  }, [sessions, selectedSkillMin, selectedSkillMax, selectedGender, searchQuery, selectedSport, hideFull, skillRangeIsAll, selectedDate, dateFrom, dateTo, selectedTimeOfDay]);
 
   // Calendar formatter helper
   const getParsedDate = (dateStr: string) => {
@@ -111,55 +160,74 @@ export default function ExploreScreen({
 
   // Shared controls bar (search + filter + toggle) — used in both layouts
   const controlsBar = (
-    <div className="flex gap-2 items-center">
-      <input
-        type="text"
-        placeholder="Search venue, club, or host..."
-        value={searchQuery}
-        onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
-        className="flex-1 min-w-0 bg-surface-container-high/90 backdrop-blur-sm border border-outline-variant/30 text-on-surface text-sm rounded-xl py-3 px-4 outline-none focus:ring-1 focus:ring-primary-fixed/80 placeholder-on-surface-variant/50 transition-all font-sans"
-      />
+    <div className="flex flex-col gap-2">
+      <div className="flex gap-2 items-center">
+        <input
+          type="text"
+          placeholder="Search venue, sport, host..."
+          value={searchQuery}
+          onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
+          className="flex-1 min-w-0 bg-surface-container-high/90 backdrop-blur-sm border border-outline-variant/30 text-on-surface text-sm rounded-xl py-3 px-4 outline-none focus:ring-1 focus:ring-primary-fixed/80 placeholder-on-surface-variant/50 transition-all font-sans"
+        />
 
-      <button
-        onClick={() => setIsFilterOpen(true)}
-        aria-label="Open filters"
-        className={`relative p-2.5 rounded-xl border transition-colors cursor-pointer shrink-0 backdrop-blur-sm ${
-          activeFilterCount > 0
-            ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
-            : 'border-outline-variant/40 bg-surface-container/90 text-on-surface-variant hover:bg-surface-bright'
-        }`}
-      >
-        <SlidersHorizontal className="w-4 h-4" />
-        {activeFilterCount > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-primary-fixed text-on-primary-fixed text-[9px] font-black flex items-center justify-center">
-            {activeFilterCount}
-          </span>
-        )}
-      </button>
-
-      <div className="flex rounded-xl border border-outline-variant/40 overflow-hidden shrink-0">
         <button
-          onClick={() => onViewModeChange('list')}
-          aria-pressed={viewMode === 'list'}
-          className={`p-2.5 transition-colors cursor-pointer ${
-            viewMode === 'list'
-              ? 'bg-primary-fixed text-on-primary-fixed'
-              : 'bg-surface-container/90 text-on-surface-variant hover:bg-surface-bright backdrop-blur-sm'
+          onClick={() => setIsFilterOpen(true)}
+          aria-label="Open filters"
+          className={`relative p-2.5 rounded-xl border transition-colors cursor-pointer shrink-0 backdrop-blur-sm ${
+            activeFilterCount > 0
+              ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+              : 'border-outline-variant/40 bg-surface-container/90 text-on-surface-variant hover:bg-surface-bright'
           }`}
         >
-          <List className="w-4 h-4" />
+          <SlidersHorizontal className="w-4 h-4" />
+          {activeFilterCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-primary-fixed text-on-primary-fixed text-[9px] font-black flex items-center justify-center">
+              {activeFilterCount}
+            </span>
+          )}
         </button>
-        <button
-          onClick={() => onViewModeChange('map')}
-          aria-pressed={viewMode === 'map'}
-          className={`p-2.5 transition-colors cursor-pointer ${
-            viewMode === 'map'
-              ? 'bg-primary-fixed text-on-primary-fixed'
-              : 'bg-surface-container/90 text-on-surface-variant hover:bg-surface-bright backdrop-blur-sm'
-          }`}
-        >
-          <Map className="w-4 h-4" />
-        </button>
+
+        <div className="flex rounded-xl border border-outline-variant/40 overflow-hidden shrink-0">
+          <button
+            onClick={() => onViewModeChange('list')}
+            aria-pressed={viewMode === 'list'}
+            className={`p-2.5 transition-colors cursor-pointer ${
+              viewMode === 'list'
+                ? 'bg-primary-fixed text-on-primary-fixed'
+                : 'bg-surface-container/90 text-on-surface-variant hover:bg-surface-bright backdrop-blur-sm'
+            }`}
+          >
+            <List className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onViewModeChange('map')}
+            aria-pressed={viewMode === 'map'}
+            className={`p-2.5 transition-colors cursor-pointer ${
+              viewMode === 'map'
+                ? 'bg-primary-fixed text-on-primary-fixed'
+                : 'bg-surface-container/90 text-on-surface-variant hover:bg-surface-bright backdrop-blur-sm'
+            }`}
+          >
+            <Map className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Sport quick-filter chips */}
+      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
+        {([{ value: 'all' as const, label: 'All Sports' }, ...SPORTS.map((s) => ({ value: s, label: s }))] as { value: 'all' | Sport; label: string }[]).map((chip) => (
+          <button
+            key={chip.value}
+            onClick={() => onFiltersChange({ ...filters, sport: selectedSport === chip.value && chip.value !== 'all' ? 'all' : chip.value })}
+            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border transition-all cursor-pointer ${
+              selectedSport === chip.value
+                ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+                : 'border-outline-variant/30 bg-surface-container/80 text-on-surface-variant/60 hover:bg-surface-container-high hover:text-on-surface-variant/90'
+            }`}
+          >
+            {chip.label}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -184,18 +252,24 @@ export default function ExploreScreen({
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 32, stiffness: 320 }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-surface-container-high rounded-t-2xl px-5 pt-5 pb-10 max-w-3xl mx-auto"
+            className="fixed bottom-0 left-0 right-0 z-50 bg-surface-container-high rounded-t-2xl max-h-[82vh] flex flex-col max-w-3xl mx-auto"
           >
-            <div className="w-10 h-1 rounded-full bg-outline-variant/50 mx-auto mb-5" />
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-sans font-black text-lg text-on-surface">Filter Sessions</h3>
-              <button
-                onClick={() => setIsFilterOpen(false)}
-                className="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-variant transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
+            {/* Fixed header */}
+            <div className="px-5 pt-5 shrink-0">
+              <div className="w-10 h-1 rounded-full bg-outline-variant/50 mx-auto mb-4" />
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-sans font-black text-lg text-on-surface">Filter Sessions</h3>
+                <button
+                  onClick={() => setIsFilterOpen(false)}
+                  className="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-variant transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
+
+            {/* Scrollable body */}
+            <div className="overflow-y-auto flex-1 px-5 pb-4">
 
             <div className="space-y-2.5 mb-5">
               <p className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Sport</p>
@@ -211,6 +285,84 @@ export default function ExploreScreen({
                     }`}
                   >
                     {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="h-px bg-outline-variant/20 mb-5" />
+            <div className="space-y-2.5 mb-5">
+              <p className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider flex items-center gap-1.5">
+                <CalendarDays className="w-3.5 h-3.5" /> Date
+              </p>
+              <div className="grid grid-cols-4 gap-2">
+                {([
+                  { value: 'today',    label: 'Today' },
+                  { value: 'tomorrow', label: 'Tomorrow' },
+                  { value: 'weekend',  label: 'Weekend' },
+                  { value: 'custom',   label: 'Range' },
+                ] as { value: DateFilter; label: string }[]).map((f) => (
+                  <button
+                    key={f.value}
+                    onClick={() => onFiltersChange({ ...filters, date: selectedDate === f.value ? 'all' : f.value, ...(f.value !== 'custom' ? { dateFrom: '', dateTo: '' } : {}) })}
+                    className={`py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wide transition-all cursor-pointer ${
+                      selectedDate === f.value
+                        ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+                        : 'border-outline-variant/40 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+              {selectedDate === 'custom' && (
+                <div className="flex gap-2 items-center mt-2">
+                  <div className="flex-1">
+                    <p className="text-[10px] text-on-surface-variant/50 font-semibold uppercase tracking-wider mb-1">From</p>
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => onFiltersChange({ ...filters, dateFrom: e.target.value })}
+                      className="w-full bg-surface-variant border border-outline-variant/40 rounded-xl px-3 py-2 text-sm text-on-surface outline-none focus:border-primary-fixed/60 transition-colors cursor-pointer"
+                    />
+                  </div>
+                  <span className="text-on-surface-variant/40 mt-5">—</span>
+                  <div className="flex-1">
+                    <p className="text-[10px] text-on-surface-variant/50 font-semibold uppercase tracking-wider mb-1">To</p>
+                    <input
+                      type="date"
+                      value={dateTo}
+                      min={dateFrom || undefined}
+                      onChange={(e) => onFiltersChange({ ...filters, dateTo: e.target.value })}
+                      className="w-full bg-surface-variant border border-outline-variant/40 rounded-xl px-3 py-2 text-sm text-on-surface outline-none focus:border-primary-fixed/60 transition-colors cursor-pointer"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="h-px bg-outline-variant/20 mb-5" />
+            <div className="space-y-2.5 mb-5">
+              <p className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" /> Time of Day
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { value: 'morning',   label: 'Morning', sub: 'Before 12pm' },
+                  { value: 'afternoon', label: 'Afternoon', sub: '12pm – 6pm' },
+                  { value: 'evening',   label: 'Evening', sub: 'After 6pm' },
+                ] as { value: TimeOfDayFilter; label: string; sub: string }[]).map((f) => (
+                  <button
+                    key={f.value}
+                    onClick={() => onFiltersChange({ ...filters, timeOfDay: selectedTimeOfDay === f.value ? 'all' : f.value })}
+                    className={`py-2.5 px-2 rounded-xl border text-xs font-bold uppercase tracking-wide transition-all cursor-pointer flex flex-col items-center gap-0.5 ${
+                      selectedTimeOfDay === f.value
+                        ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
+                        : 'border-outline-variant/40 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
+                    }`}
+                  >
+                    {f.label}
+                    <span className={`text-[9px] font-normal normal-case tracking-normal ${selectedTimeOfDay === f.value ? 'text-primary-fixed/70' : 'text-on-surface-variant/50'}`}>{f.sub}</span>
                   </button>
                 ))}
               </div>
@@ -236,15 +388,15 @@ export default function ExploreScreen({
             <div className="h-px bg-outline-variant/20 mb-5" />
             <div className="space-y-2.5 mb-5">
               <p className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Gender</p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {([
-                  { value: 'all', label: 'Any Gender' },
-                  { value: 'male', label: 'Male Only' },
+                  { value: 'open',   label: 'Open to All' },
+                  { value: 'male',   label: 'Male Only' },
                   { value: 'female', label: 'Female Only' },
-                ] as const).map((f) => (
+                ] as { value: GenderPreference; label: string }[]).map((f) => (
                   <button
                     key={f.value}
-                    onClick={() => onFiltersChange({ ...filters, gender: f.value })}
+                    onClick={() => onFiltersChange({ ...filters, gender: selectedGender === f.value ? 'all' : f.value })}
                     className={`py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wide transition-all cursor-pointer ${
                       selectedGender === f.value
                         ? 'border-primary-fixed bg-primary-fixed/10 text-primary-fixed'
@@ -269,19 +421,24 @@ export default function ExploreScreen({
               </div>
             </button>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => onFiltersChange(DEFAULT_EXPLORE_FILTERS)}
-                className="flex-1 py-3 rounded-full border border-outline-variant/50 text-on-surface-variant text-sm font-bold uppercase tracking-wider transition-all hover:bg-surface-variant cursor-pointer"
-              >
-                Reset
-              </button>
-              <button
-                onClick={() => setIsFilterOpen(false)}
-                className="flex-1 py-3 rounded-full bg-primary-fixed text-on-primary-fixed text-sm font-extrabold uppercase tracking-wider transition-all hover:bg-primary-fixed-dim active:scale-95 cursor-pointer"
-              >
-                Done
-              </button>
+            </div>{/* end scrollable body */}
+
+            {/* Fixed footer */}
+            <div className="px-5 pb-8 pt-3 shrink-0 border-t border-outline-variant/15">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => onFiltersChange(DEFAULT_EXPLORE_FILTERS)}
+                  className="flex-1 py-3 rounded-full border border-outline-variant/50 text-on-surface-variant text-sm font-bold uppercase tracking-wider transition-all hover:bg-surface-variant cursor-pointer"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={() => setIsFilterOpen(false)}
+                  className="flex-1 py-3 rounded-full bg-primary-fixed text-on-primary-fixed text-sm font-extrabold uppercase tracking-wider transition-all hover:bg-primary-fixed-dim active:scale-95 cursor-pointer"
+                >
+                  Done
+                </button>
+              </div>
             </div>
           </motion.div>
         </>
@@ -310,6 +467,7 @@ export default function ExploreScreen({
             sessions={filteredSessions}
             onSelectSession={onSelectSession}
             currentUserId={currentUserId}
+            isDarkMode={isDarkMode}
             fullScreen
           />
         </div>
@@ -332,6 +490,24 @@ export default function ExploreScreen({
     <div className="flex flex-col gap-6">
       {controlsBar}
       {filterSheet}
+
+      {showAssessmentBanner && onStartAssessment && (
+        <div className="flex items-center gap-3 bg-primary-fixed/15 border border-primary-fixed/40 rounded-xl p-4">
+          <div className="w-9 h-9 rounded-full bg-primary-fixed/20 flex items-center justify-center shrink-0">
+            <Zap className="w-4 h-4 text-primary-fixed" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-sm text-on-surface">What's your skill level?</p>
+            <p className="text-xs text-on-surface-variant/80 mt-0.5">Take a quick assessment to find the right sessions for you.</p>
+          </div>
+          <button
+            onClick={onStartAssessment}
+            className="shrink-0 text-xs font-black uppercase tracking-wider text-on-primary-fixed bg-primary-fixed px-4 py-2 rounded-lg hover:bg-primary-fixed-dim transition-colors cursor-pointer"
+          >
+            Start
+          </button>
+        </div>
+      )}
 
       <section className="flex flex-col gap-4">
         {filteredSessions.length === 0 ? (
@@ -442,9 +618,18 @@ export default function ExploreScreen({
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide bg-surface-variant text-on-surface-variant uppercase font-sans">
                       {session.sport === 'Football' && session.footballFormat ? session.footballFormat : session.matchType}
                     </span>
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide bg-surface-variant text-on-surface-variant uppercase font-sans">
-                      {session.gender === 'male' ? '♂ Male' : session.gender === 'female' ? '♀ Female' : '⚥ Open'}
-                    </span>
+                    {(() => {
+                      const genderIneligible = session.gender && session.gender !== 'open' && userGender !== session.gender;
+                      return (
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase font-sans ${
+                          genderIneligible
+                            ? 'bg-error/10 text-error border border-error/25'
+                            : 'bg-surface-variant text-on-surface-variant'
+                        }`}>
+                          {session.gender === 'male' ? '♂ Male' : session.gender === 'female' ? '♀ Female' : '⚥ Open'}
+                        </span>
+                      );
+                    })()}
                   </div>
                   <div className="text-right flex flex-col items-end gap-1.5 min-w-[90px]">
                     <span className="font-sans font-extrabold text-[11px] text-on-surface tracking-wide">

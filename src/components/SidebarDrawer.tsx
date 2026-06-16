@@ -1,7 +1,6 @@
-import { X, Play, Trophy, Users, Award, Zap, LogOut, Target } from 'lucide-react';
+import { X, Play, Trophy, Users, Award, Zap, LogOut, Target, Star, MessageCircle, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-
-type ActiveScreen = 'explore' | 'host' | 'sessions' | 'details' | 'profile' | 'player-profile' | 'assessment';
+import { ActiveScreen } from '../types';
 
 interface SidebarDrawerProps {
   isOpen: boolean;
@@ -11,6 +10,8 @@ interface SidebarDrawerProps {
   onSignOut: () => void;
   onRetakeAssessment: () => void;
   matchesCount: number;
+  isDarkMode: boolean;
+  onToggleTheme: () => void;
 }
 
 export default function SidebarDrawer({
@@ -20,7 +21,9 @@ export default function SidebarDrawer({
   onNavigate,
   onSignOut,
   onRetakeAssessment,
-  matchesCount
+  matchesCount,
+  isDarkMode,
+  onToggleTheme,
 }: SidebarDrawerProps) {
   return (
     <AnimatePresence>
@@ -110,6 +113,30 @@ export default function SidebarDrawer({
                 </button>
 
                 <button
+                  onClick={() => { onNavigate('reviews'); onClose(); }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-sans font-semibold text-sm uppercase tracking-wide ${
+                    activeScreen === 'reviews'
+                      ? 'bg-primary-fixed text-on-primary-fixed shadow-[0_4px_12px_rgba(202,243,0,0.15)]'
+                      : 'hover:bg-surface-variant text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  <Star className="w-4 h-4" />
+                  Player Reviews
+                </button>
+
+                <button
+                  onClick={() => { onNavigate('chats'); onClose(); }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-sans font-semibold text-sm uppercase tracking-wide ${
+                    activeScreen === 'chats' || activeScreen === 'session-chat'
+                      ? 'bg-primary-fixed text-on-primary-fixed shadow-[0_4px_12px_rgba(202,243,0,0.15)]'
+                      : 'hover:bg-surface-variant text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  My Chats
+                </button>
+
+                <button
                   onClick={() => { onRetakeAssessment(); onClose(); }}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-sans font-semibold text-sm uppercase tracking-wide hover:bg-surface-variant text-on-surface-variant hover:text-on-surface"
                 >
@@ -139,6 +166,15 @@ export default function SidebarDrawer({
 
             {/* Bottom actions */}
             <div className="border-t border-outline-variant/20 pt-4 space-y-2">
+              <button
+                onClick={onToggleTheme}
+                className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg border border-outline-variant/30 hover:border-outline-variant/60 bg-surface-variant/30 hover:bg-surface-bright transition-colors"
+              >
+                <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
+                  {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                </span>
+                {isDarkMode ? <Sun className="w-4 h-4 text-on-surface-variant" /> : <Moon className="w-4 h-4 text-on-surface-variant" />}
+              </button>
               <button
                 onClick={() => {
                   onSignOut();

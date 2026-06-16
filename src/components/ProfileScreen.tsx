@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Review, UserProfile, Sport, SportSkill, SkillLevel, UserGender, SKILL_LEVEL_LABELS } from '../types';
+import { Review, UserProfile, Sport, SportSkill, SkillLevel, UserGender, SKILL_LEVEL_LABELS, GENDER_LABELS } from '../types';
 import { MessageSquare, ThumbsUp, Trophy, Award, RotateCcw, Target, X, Pencil, Check } from 'lucide-react';
 
 const TIER_LEGEND: { level: SkillLevel; description: string }[] = [
@@ -111,6 +111,11 @@ export default function ProfileScreen({
             </div>
           </div>
 
+          {user.gender && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-surface-container-highest border border-outline-variant/20 text-on-surface-variant">
+              {GENDER_LABELS[user.gender]}
+            </span>
+          )}
           <div className="flex items-center gap-2">
             {isEditingName ? (
               <>
@@ -144,8 +149,8 @@ export default function ProfileScreen({
             <h4 className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider">Gender</h4>
             <p className="text-[10px] text-on-surface-variant/60 mt-0.5">Used to match you with gender-restricted sessions.</p>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            {(['male', 'female'] as UserGender[]).map((g) => {
+          <div className="grid grid-cols-3 gap-2">
+            {(['male', 'female', 'non-binary'] as UserGender[]).map((g) => {
               const isSelected = user.gender === g;
               return (
                 <button
@@ -165,7 +170,7 @@ export default function ProfileScreen({
                       : 'border-outline-variant/40 bg-surface-variant text-on-surface-variant hover:bg-surface-bright'
                   }`}
                 >
-                  {g === 'male' ? '♂ Male' : '♀ Female'}
+                  {GENDER_LABELS[g]}
                 </button>
               );
             })}

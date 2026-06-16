@@ -1,5 +1,5 @@
 import { MatchSession, Player } from '../types';
-import { ArrowLeft, MapPin, ChevronRight, CheckCircle } from 'lucide-react';
+import { ArrowLeft, MapPin, ChevronRight, CheckCircle, Home } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface ReviewTeamScreenProps {
@@ -8,6 +8,8 @@ interface ReviewTeamScreenProps {
   reviewedPlayerIds: string[];
   onSelectPlayer: (player: Player) => void;
   onBack: () => void;
+  onReviewHost?: () => void;
+  hasReviewedHost?: boolean;
 }
 
 function formatDate(dateStr: string): string {
@@ -21,8 +23,11 @@ export default function ReviewTeamScreen({
   reviewedPlayerIds,
   onSelectPlayer,
   onBack,
+  onReviewHost,
+  hasReviewedHost = false,
 }: ReviewTeamScreenProps) {
   const teammates = session.playersJoined.filter((p) => p.id !== currentUserId);
+  const isCurrentUserHost = session.host.id === currentUserId;
 
   return (
     <motion.div
@@ -62,8 +67,52 @@ export default function ReviewTeamScreen({
         </span>
       </div>
 
+      {/* Review Host button — only if the current user is not the host */}
+      {!isCurrentUserHost && onReviewHost && (
+        <div className="space-y-1.5">
+          <p className="text-[10px] font-extrabold uppercase tracking-widest text-on-surface-variant/40 px-1">Host</p>
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.18 }}
+            onClick={() => !hasReviewedHost && onReviewHost()}
+            disabled={hasReviewedHost}
+            className={`w-full flex items-center gap-3.5 border rounded-2xl px-4 py-3.5 transition-all text-left ${
+              hasReviewedHost
+                ? 'bg-surface-container/50 border-outline-variant/10 cursor-default opacity-60'
+                : 'bg-surface-container hover:bg-surface-container-high border-primary-fixed/25 cursor-pointer group'
+            }`}
+          >
+            <img
+              src={session.host.avatar}
+              alt={session.host.name}
+              className="w-11 h-11 rounded-full object-cover border-2 border-outline-variant/20 shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-sm text-white">{session.host.name}</p>
+              <p className="text-[11px] text-on-surface-variant/50 mt-0.5">
+                {hasReviewedHost ? 'Already reviewed' : 'Tap to review as host'}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-primary-fixed/60 bg-primary-fixed/8 border border-primary-fixed/20 rounded-md px-1.5 py-0.5">
+                HOST
+              </span>
+              {hasReviewedHost ? (
+                <CheckCircle className="w-4 h-4 text-primary-fixed" />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-primary-fixed/50 group-hover:text-primary-fixed transition-colors" />
+              )}
+            </div>
+          </motion.button>
+        </div>
+      )}
+
       {/* Player list */}
       <div className="flex flex-col gap-2">
+        {teammates.length > 0 && (
+          <p className="text-[10px] font-extrabold uppercase tracking-widest text-on-surface-variant/40 px-1">Players</p>
+        )}
         {teammates.length === 0 ? (
           <div className="text-center py-10 text-on-surface-variant/40 text-sm">
             No other players in this session.

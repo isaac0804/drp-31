@@ -1,11 +1,15 @@
-import { Review, UserProfile, Sport, SportSkill } from '../types';
-import { ArrowLeft, MessageSquare, ThumbsUp, Trophy, Target } from 'lucide-react';
+import { useState } from 'react';
+import { Review, HostReview, UserProfile, Sport, SportSkill, GENDER_LABELS } from '../types';
+import { ArrowLeft, MessageSquare, ThumbsUp, Trophy, Target, Star, Home } from 'lucide-react';
 
 interface PlayerProfileScreenProps {
   profile: UserProfile;
   matchesPlayedCount: number;
   reviews?: Review[];
+  hostReviews?: HostReview[];
   onBack: () => void;
+  onViewReviews?: () => void;
+  onViewHostReviews?: () => void;
 }
 
 function renderEmpty(value?: string) {
@@ -16,16 +20,29 @@ export default function PlayerProfileScreen({
   profile,
   matchesPlayedCount,
   reviews = [],
-  onBack
+  hostReviews = [],
+  onBack,
+  onViewReviews,
+  onViewHostReviews,
 }: PlayerProfileScreenProps) {
   const sportsPlayed = profile.sportsPlayed ?? [];
 
-  const playAgainYes = reviews.filter((r) => r.playAgain === 'yes').length;
-  const playAgainPct = reviews.length > 0 ? Math.round((playAgainYes / reviews.length) * 100) : null;
-  const accurateCount = reviews.filter((r) => r.skillAccuracy === 'accurate').length;
-  const tooHighCount = reviews.filter((r) => r.skillAccuracy === 'too-high').length;
-  const tooLowCount = reviews.filter((r) => r.skillAccuracy === 'too-low').length;
+  const [reviewTab, setReviewTab] = useState<'all-time' | 'recent'>('all-time');
+
+  const twoMonthsAgo = Date.now() - 60 * 24 * 60 * 60 * 1000;
+  const recentReviews = reviews.filter((r) => r.createdAt >= twoMonthsAgo);
+  const activeReviews = reviewTab === 'all-time' ? reviews : recentReviews;
+
+  const playAgainYes = activeReviews.filter((r) => r.playAgain === 'yes').length;
+  const playAgainPct = activeReviews.length > 0 ? Math.round((playAgainYes / activeReviews.length) * 100) : null;
+  const accurateCount = activeReviews.filter((r) => r.skillAccuracy === 'accurate').length;
+  const tooHighCount = activeReviews.filter((r) => r.skillAccuracy === 'too-high').length;
+  const tooLowCount = activeReviews.filter((r) => r.skillAccuracy === 'too-low').length;
   const feedbackItems = reviews.filter((r) => r.feedback && r.feedback.trim());
+
+  const avgHostStars = hostReviews.length > 0
+    ? hostReviews.reduce((sum, r) => sum + r.starRating, 0) / hostReviews.length
+    : null;
 
   return (
     <article className="space-y-6 pb-10">
@@ -69,8 +86,13 @@ export default function PlayerProfileScreen({
             </div>
           </div>
 
-          <div>
+          <div className="space-y-1">
             <h3 className="font-sans font-extrabold text-base text-on-surface">{profile.name}</h3>
+            {profile.gender && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-surface-container-highest border border-outline-variant/20 text-on-surface-variant">
+                {GENDER_LABELS[profile.gender]}
+              </span>
+            )}
           </div>
         </div>
 
@@ -192,13 +214,22 @@ export default function PlayerProfileScreen({
           </section>
 
           <section className="bg-surface-container-high rounded-xl p-4 border border-outline-variant/15">
-            <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider flex items-center gap-1.5">
-              <MessageSquare className="w-3.5 h-3.5" />
-              Peer Reviews
-              {reviews.length > 0 && (
-                <span className="ml-1 font-mono text-primary-fixed">({reviews.length})</span>
-              )}
-            </label>
+            <button
+              onClick={onViewReviews}
+              disabled={!onViewReviews}
+              className="w-full text-left"
+            >
+              <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider flex items-center gap-1.5 cursor-pointer">
+                <MessageSquare className="w-3.5 h-3.5" />
+                Peer Reviews
+                {reviews.length > 0 && (
+                  <span className="ml-1 font-mono text-primary-fixed">({reviews.length})</span>
+                )}
+                {onViewReviews && reviews.length > 0 && (
+                  <span className="ml-auto text-[10px] text-primary-fixed font-bold uppercase tracking-wider">View all →</span>
+                )}
+              </label>
+            </button>
 
             {reviews.length === 0 ? (
               <p className="mt-2 text-sm text-on-surface-variant bg-surface-container-high/60 border border-outline-variant/60 rounded-lg p-3">
@@ -206,6 +237,27 @@ export default function PlayerProfileScreen({
               </p>
             ) : (
               <div className="mt-3 space-y-3">
+                <div className="flex gap-1 p-1 bg-surface-container rounded-lg border border-outline-variant/20">
+                  {(['all-time', 'recent'] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setReviewTab(t)}
+                      className={`flex-1 text-[10px] font-bold uppercase tracking-wider py-1.5 rounded transition-all cursor-pointer ${
+                        reviewTab === t
+                          ? 'bg-primary-fixed text-on-primary-fixed'
+                          : 'text-on-surface-variant hover:text-on-surface'
+                      }`}
+                    >
+                      {t === 'all-time' ? 'All-time' : 'Last 2 months'}
+                    </button>
+                  ))}
+                </div>
+
+                {activeReviews.length === 0 ? (
+                  <p className="text-sm text-on-surface-variant bg-surface-container-high/60 border border-outline-variant/60 rounded-lg p-3">
+                    No reviews in the last 2 months.
+                  </p>
+                ) : (
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-surface-container rounded-lg p-3 text-center border border-outline-variant/20">
                     <div className="flex items-center justify-center gap-1 text-primary-fixed mb-1">
@@ -213,10 +265,10 @@ export default function PlayerProfileScreen({
                       <span className="font-mono font-bold text-base">{playAgainPct}%</span>
                     </div>
                     <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">Would play again</p>
-                    <p className="text-[10px] text-on-surface-variant/60 mt-0.5">{playAgainYes}/{reviews.length} players</p>
+                    <p className="text-[10px] text-on-surface-variant/60 mt-0.5">{playAgainYes}/{activeReviews.length} players</p>
                   </div>
                   <div className="bg-surface-container rounded-lg p-3 text-center border border-outline-variant/20">
-                    <div className="font-mono font-bold text-base text-primary-fixed mb-1">{Math.round((accurateCount / reviews.length) * 100)}%</div>
+                    <div className="font-mono font-bold text-base text-primary-fixed mb-1">{Math.round((accurateCount / activeReviews.length) * 100)}%</div>
                     <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">Skill accurate</p>
                     <div className="flex justify-center gap-1.5 mt-0.5">
                       {tooHighCount > 0 && <span className="text-[9px] text-amber-400">↑ too high</span>}
@@ -224,23 +276,123 @@ export default function PlayerProfileScreen({
                     </div>
                   </div>
                 </div>
+                )}
 
                 {feedbackItems.length > 0 && (
                   <div className="space-y-2">
                     <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">Comments</p>
-                    {feedbackItems.map((r) => (
-                      <blockquote
-                        key={r.id}
-                        className="text-sm text-on-surface-variant bg-surface-container/60 border-l-2 border-primary-fixed/40 rounded-r-lg pl-3 pr-3 py-2 leading-relaxed"
-                      >
-                        {r.feedback}
-                      </blockquote>
-                    ))}
+                    {feedbackItems.map((r) => {
+                      const attributed = !r.isAnonymous && r.reviewerName;
+                      return (
+                        <div
+                          key={r.id}
+                          className="bg-surface-container/60 border border-outline-variant/10 rounded-xl px-3 py-2.5 space-y-2"
+                        >
+                          <div className="flex items-center gap-2">
+                            {attributed ? (
+                              <img
+                                src={r.reviewerAvatar}
+                                alt={r.reviewerName}
+                                className="w-6 h-6 rounded-full object-cover shrink-0"
+                              />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-outline-variant/20 flex items-center justify-center shrink-0">
+                                <span className="text-[10px] text-on-surface-variant/40 font-bold">?</span>
+                              </div>
+                            )}
+                            <span className="text-[11px] font-semibold text-on-surface-variant">
+                              {attributed ? r.reviewerName : 'Anonymous Player'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-on-surface-variant leading-relaxed border-l-2 border-primary-fixed/40 pl-3">
+                            {r.feedback}
+                          </p>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
             )}
           </section>
+
+          {/* Host Reviews section */}
+          <section className="bg-surface-container-high rounded-xl p-4 border border-outline-variant/15">
+            <button
+              onClick={onViewHostReviews}
+              disabled={!onViewHostReviews || hostReviews.length === 0}
+              className="w-full text-left"
+            >
+              <label className="font-sans font-extrabold text-[11px] text-on-surface uppercase tracking-wider flex items-center gap-1.5 cursor-pointer">
+                <Home className="w-3.5 h-3.5" />
+                As a Host
+                {hostReviews.length > 0 && (
+                  <span className="ml-1 font-mono text-primary-fixed">({hostReviews.length})</span>
+                )}
+                {onViewHostReviews && hostReviews.length > 0 && (
+                  <span className="ml-auto text-[10px] text-primary-fixed font-bold uppercase tracking-wider">View all →</span>
+                )}
+              </label>
+            </button>
+
+            {hostReviews.length === 0 ? (
+              <p className="mt-2 text-sm text-on-surface-variant bg-surface-container-high/60 border border-outline-variant/60 rounded-lg p-3">
+                No host reviews yet.
+              </p>
+            ) : (() => {
+              const veryResponsiveCount     = hostReviews.filter((r) => r.chatResponsiveness === 'very-responsive').length;
+              const somewhatResponsiveCount = hostReviews.filter((r) => r.chatResponsiveness === 'somewhat-responsive').length;
+              const unresponsiveCount       = hostReviews.filter((r) => r.chatResponsiveness === 'unresponsive').length;
+              const responsiveTotal = veryResponsiveCount + somewhatResponsiveCount + unresponsiveCount;
+              return (
+                <div className="mt-3 space-y-3">
+                  <div className="flex items-center gap-3 bg-surface-container rounded-lg p-3 border border-outline-variant/20">
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star
+                          key={s}
+                          className={`w-4 h-4 ${
+                            avgHostStars !== null && s <= Math.round(avgHostStars)
+                              ? 'text-primary-fixed fill-primary-fixed'
+                              : 'text-outline-variant/30'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <div>
+                      <span className="font-mono font-bold text-base text-primary-fixed">
+                        {avgHostStars !== null ? avgHostStars.toFixed(1) : '—'}
+                      </span>
+                      <span className="text-[11px] text-on-surface-variant/60 ml-1">
+                        avg from {hostReviews.length} {hostReviews.length === 1 ? 'review' : 'reviews'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {responsiveTotal > 0 && (
+                    <div className="bg-surface-container rounded-lg p-3 border border-outline-variant/20 space-y-1.5">
+                      <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">Chat Responsiveness</p>
+                      <div className="flex justify-between gap-2">
+                        <div className="text-center flex-1">
+                          <div className="font-mono font-bold text-sm text-primary-fixed">{Math.round((veryResponsiveCount / responsiveTotal) * 100)}%</div>
+                          <div className="text-[9px] text-on-surface-variant/60 mt-0.5">Very responsive</div>
+                        </div>
+                        <div className="text-center flex-1">
+                          <div className="font-mono font-bold text-sm text-amber-400">{Math.round((somewhatResponsiveCount / responsiveTotal) * 100)}%</div>
+                          <div className="text-[9px] text-on-surface-variant/60 mt-0.5">Somewhat</div>
+                        </div>
+                        <div className="text-center flex-1">
+                          <div className="font-mono font-bold text-sm text-error">{Math.round((unresponsiveCount / responsiveTotal) * 100)}%</div>
+                          <div className="text-[9px] text-on-surface-variant/60 mt-0.5">Unresponsive</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </section>
+
         </div>
 
       </div>
