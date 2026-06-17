@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ActiveScreen, MatchSession, Review, HostReview, UserProfile, Player, Sport } from './types';
+import { ActiveScreen, ChatMeta, MatchSession, Review, HostReview, UserProfile, Player, Sport } from './types';
 import { signInWithGoogle, signOut, subscribeToCurrentUser, updateCurrentUser, getUserProfileById } from './auth';
 import { DEFAULT_USER } from './data';
 import {
@@ -14,6 +14,7 @@ import {
 } from './sessions';
 import { getReviewsForPlayer, getHostReviewsForPlayer, getAllReviewsByUser } from './reviews';
 import { seedDummySessions, unseedDummySessions } from './devSeed';
+import { subscribeToChatMetas } from './chat';
 
 // Component imports
 import Header from './components/Header';
@@ -48,6 +49,7 @@ export default function App() {
   }, [isDarkMode]);
 
   const [sessions, setSessions] = useState<MatchSession[]>([]);
+  const [chatMetas, setChatMetas] = useState<Record<string, ChatMeta>>({});
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -78,6 +80,7 @@ export default function App() {
   const [myReviews, setMyReviews] = useState<Review[]>([]);
   const [myReviewedItems, setMyReviewedItems] = useState<{ sessionId: string; revieweeId: string; isHostReview: boolean }[]>([]);
   const [editingSession, setEditingSession] = useState<MatchSession | null>(null);
+  const [assessmentSport, setAssessmentSport] = useState<Sport | null>(null);
   const [exploreViewMode, setExploreViewMode] = useState<'list' | 'map'>('list');
   const [exploreFilters, setExploreFilters] = useState<ExploreFilters>(DEFAULT_EXPLORE_FILTERS);
   
@@ -95,6 +98,22 @@ export default function App() {
     return subscribeToSessions(setSessions, (err) => console.error('Sessions error:', err));
   }, []);
 
+  const myChatSessionIds = user
+    ? sessions
+        .filter((s) => s.host.id === user.id || s.playersJoined.some((p) => p.id === user.id))
+        .map((s) => s.id)
+    : [];
+  const myChatSessionIdsKey = myChatSessionIds.join(',');
+
+  useEffect(() => {
+    if (myChatSessionIds.length === 0) {
+      setChatMetas({});
+      return;
+    }
+    return subscribeToChatMetas(myChatSessionIds, setChatMetas, (err) => console.error('Chat metas error:', err));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myChatSessionIdsKey]);
+
   useEffect(() => {
     if (!pendingInviteId || sessions.length === 0) return;
     const session = sessions.find((s) => s.id === pendingInviteId);
@@ -111,7 +130,6 @@ export default function App() {
       setUser(currentUser);
       setIsAuthLoading(false);
       setAuthError(null);
-      if (currentUser && !currentUser.skillsBySport || (currentUser && Object.keys(currentUser.skillsBySport ?? {}).length === 0)) setActiveScreen('assessment');
       if (currentUser) {
         getReviewsForPlayer(currentUser.id).then(setMyReviews).catch(console.error);
         getAllReviewsByUser(currentUser.id).then(setMyReviewedItems).catch(console.error);
@@ -128,17 +146,23 @@ export default function App() {
 
   // Dev-only: expose dummy-session seeders on the console, bound to the live
   // signed-in account so the sessions are hosted by the real user.
-  // Run `seedDummySessions()` / `unseedDummySessions()` from the browser console.
+  // Run `seedDummySessions()` / `unseedDummySessions()` / `resetSkillsForDemo()` from the browser console.
   useEffect(() => {
-    if (!import.meta.env.DEV) return;
     const w = window as unknown as Record<string, unknown>;
     if (user) {
       const host: Player = { id: user.id, name: user.name, avatar: user.avatar };
       w.seedDummySessions = () => seedDummySessions(host);
       w.unseedDummySessions = () => unseedDummySessions();
+      w.resetSkillsForDemo = async () => {
+        const updated = { ...user, skillsBySport: {} };
+        await updateCurrentUser(updated);
+        setUser(updated);
+        console.log('Skills reset — assessment banner will now show.');
+      };
     } else {
       delete w.seedDummySessions;
       delete w.unseedDummySessions;
+      delete w.resetSkillsForDemo;
     }
   }, [user]);
 
@@ -174,7 +198,13 @@ export default function App() {
       skillsBySport: { ...(user?.skillsBySport ?? {}), [sport]: { skillLevel } },
       skillLevel,
     });
+    setAssessmentSport(null);
     rootNav('explore');
+  };
+
+  const handleTakeAssessment = (sport: Sport) => {
+    setAssessmentSport(sport);
+    pushNav('assessment');
   };
 
   const handleSignOut = async () => {
@@ -239,7 +269,7 @@ export default function App() {
       id: user.id,
       name: user.name,
       avatar: user.avatar,
-      skillLevel: sportSkill?.skillLevel ?? user.skillLevel,
+      skillLevel: sportSkill?.skillLevel,
     };
     joinSession(sessionId, player).catch((err) => console.error('Join session error:', err));
   };
@@ -378,6 +408,13 @@ export default function App() {
     const needsHostReview = s.host.id !== user.id;
     return !allPlayersReviewed || (needsHostReview && !hasReviewedHost);
   }).length;
+  const unreadChatsCount = user
+    ? myChatSessionIds.filter((id) => {
+        const meta = chatMetas[id];
+        if (!meta || meta.lastMessageAt <= 0) return false;
+        return meta.lastMessageAt > (meta.readBy[user.id] ?? 0);
+      }).length
+    : 0;
 
   if (isAuthLoading) {
     return (
@@ -405,6 +442,7 @@ export default function App() {
         onNavigate={(screen) => { setEditingSession(null); rootNav(screen); }}
         onSignOut={handleSignOut}
         pendingReviewCount={pendingReviewCount}
+        unreadChatsCount={unreadChatsCount}
         onLogoClick={() => {
           setEditingSession(null);
           setExploreViewMode('list');
@@ -427,6 +465,8 @@ export default function App() {
         matchesCount={matchesCount}
         isDarkMode={isDarkMode}
         onToggleTheme={() => setIsDarkMode((d: boolean) => !d)}
+        unreadChatsCount={unreadChatsCount}
+        pendingReviewCount={pendingReviewCount}
       />
 
       {/* Main Container viewport */}
@@ -458,6 +498,8 @@ export default function App() {
                 onFiltersChange={setExploreFilters}
                 userGender={user.gender}
                 isDarkMode={isDarkMode}
+                showAssessmentBanner={!user.skillsBySport || Object.keys(user.skillsBySport).length === 0}
+                onStartAssessment={() => pushNav('assessment')}
               />
             )}
 
@@ -504,6 +546,7 @@ export default function App() {
                 onViewPlayerProfile={handleViewPlayerProfile}
                 onEdit={handleEditTrigger}
                 onOpenChat={handleOpenChat}
+                onTakeAssessment={handleTakeAssessment}
                 playerStats={sessionPlayerStats}
               />
             )}
@@ -557,7 +600,8 @@ export default function App() {
             {activeScreen === 'assessment' && (
               <SkillAssessmentScreen
                 onComplete={handleAssessmentComplete}
-                onClose={goBack}
+                onClose={() => { setAssessmentSport(null); goBack(); }}
+                initialSport={assessmentSport ?? undefined}
               />
             )}
 
@@ -575,12 +619,14 @@ export default function App() {
               <ChatsListScreen
                 sessions={sessions}
                 currentUser={user}
+                chatMetas={chatMetas}
                 onOpenChat={(sessionId) => {
                   setSelectedSessionId(sessionId);
                   pushNav('session-chat');
                 }}
               />
             )}
+
           </motion.div>
         </AnimatePresence>
       </main>
@@ -626,6 +672,7 @@ export default function App() {
       <BottomNav
         activeScreen={activeScreen}
         pendingReviewCount={pendingReviewCount}
+        unreadChatsCount={unreadChatsCount}
         onNavigate={(screen) => {
           setEditingSession(null);
           if (screen === 'explore') setExploreViewMode('list');

@@ -12,6 +12,8 @@ interface SidebarDrawerProps {
   matchesCount: number;
   isDarkMode: boolean;
   onToggleTheme: () => void;
+  unreadChatsCount?: number;
+  pendingReviewCount?: number;
 }
 
 export default function SidebarDrawer({
@@ -24,6 +26,8 @@ export default function SidebarDrawer({
   matchesCount,
   isDarkMode,
   onToggleTheme,
+  unreadChatsCount = 0,
+  pendingReviewCount = 0,
 }: SidebarDrawerProps) {
   return (
     <AnimatePresence>
@@ -121,7 +125,12 @@ export default function SidebarDrawer({
                   }`}
                 >
                   <Star className="w-4 h-4" />
-                  Player Reviews
+                  <span className="flex-1 text-left">Player Reviews</span>
+                  {pendingReviewCount > 0 && (
+                    <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center">
+                      {pendingReviewCount}
+                    </span>
+                  )}
                 </button>
 
                 <button
@@ -133,7 +142,12 @@ export default function SidebarDrawer({
                   }`}
                 >
                   <MessageCircle className="w-4 h-4" />
-                  My Chats
+                  <span className="flex-1 text-left">My Chats</span>
+                  {unreadChatsCount > 0 && (
+                    <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center">
+                      {unreadChatsCount}
+                    </span>
+                  )}
                 </button>
 
                 <button
