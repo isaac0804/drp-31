@@ -269,7 +269,7 @@ export default function App() {
       id: user.id,
       name: user.name,
       avatar: user.avatar,
-      skillLevel: sportSkill?.skillLevel,
+      ...(sportSkill?.skillLevel ? { skillLevel: sportSkill.skillLevel } : {}),
     };
     joinSession(sessionId, player).catch((err) => console.error('Join session error:', err));
   };
