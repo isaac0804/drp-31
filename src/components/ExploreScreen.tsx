@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { MatchSession, SkillLevel, GenderPreference, Sport, UserGender, SKILL_LEVELS, SKILL_LEVEL_LABELS } from '../types';
 import { SPORTS } from '../data';
 import SkillRangePicker from './SkillRangePicker';
-import { MapPin, Plus, CalendarDays, List, Map, SlidersHorizontal, X, Clock } from 'lucide-react';
+import { MapPin, Plus, CalendarDays, List, Map, SlidersHorizontal, X, Clock, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import SessionMapView from './SessionMapView';
 
@@ -46,6 +46,8 @@ interface ExploreScreenProps {
   onFiltersChange: (f: ExploreFilters) => void;
   userGender?: UserGender;
   isDarkMode?: boolean;
+  showAssessmentBanner?: boolean;
+  onStartAssessment?: () => void;
 }
 
 export default function ExploreScreen({
@@ -59,6 +61,8 @@ export default function ExploreScreen({
   onFiltersChange,
   userGender,
   isDarkMode,
+  showAssessmentBanner,
+  onStartAssessment,
 }: ExploreScreenProps) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -486,6 +490,24 @@ export default function ExploreScreen({
     <div className="flex flex-col gap-6">
       {controlsBar}
       {filterSheet}
+
+      {showAssessmentBanner && onStartAssessment && (
+        <div className="flex items-center gap-3 bg-primary-fixed/15 border border-primary-fixed/40 rounded-xl p-4">
+          <div className="w-9 h-9 rounded-full bg-primary-fixed/20 flex items-center justify-center shrink-0">
+            <Zap className="w-4 h-4 text-primary-fixed" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-sm text-on-surface">What's your skill level?</p>
+            <p className="text-xs text-on-surface-variant/80 mt-0.5">Take a quick assessment to find the right sessions for you.</p>
+          </div>
+          <button
+            onClick={onStartAssessment}
+            className="shrink-0 text-xs font-black uppercase tracking-wider text-on-primary-fixed bg-primary-fixed px-4 py-2 rounded-lg hover:bg-primary-fixed-dim transition-colors cursor-pointer"
+          >
+            Start
+          </button>
+        </div>
+      )}
 
       <section className="flex flex-col gap-4">
         {filteredSessions.length === 0 ? (

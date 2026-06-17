@@ -58,6 +58,14 @@ export interface ChatMessage {
   text: string;
   createdAt: number;
 }
+
+export interface ChatMeta {
+  lastMessageAt: number;
+  lastMessageText: string;
+  lastMessageSenderId: string;
+  lastMessageSenderName: string;
+  readBy: Record<string, number>;
+}
 export type MatchType = 'singles' | 'doubles';
 export type FootballFormat = '5v5' | '7v7' | '11v11';
 export type GenderPreference = 'male' | 'female' | 'open';

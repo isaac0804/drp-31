@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Target, RotateCcw, ChevronRight, Zap, Trophy, ArrowLeft } from 'lucide-react';
 import { SkillLevel, Sport, SKILL_LEVEL_LABELS } from '../types';
@@ -390,11 +390,12 @@ const SPORTS: Sport[] = ['Badminton', 'Table Tennis', 'Football', 'Pickleball'];
 interface SkillAssessmentScreenProps {
   onComplete: (sport: Sport, skillLevel: SkillLevel) => void;
   onClose: () => void;
+  initialSport?: Sport;
 }
 
 type Phase = 'sport-select' | 'quiz' | 'result';
 
-export default function SkillAssessmentScreen({ onComplete, onClose }: SkillAssessmentScreenProps) {
+export default function SkillAssessmentScreen({ onComplete, onClose, initialSport }: SkillAssessmentScreenProps) {
   const [phase, setPhase] = useState<Phase>('sport-select');
   const [selectedSport, setSelectedSport] = useState<Sport | null>(null);
   const [step, setStep] = useState(0);
@@ -415,6 +416,13 @@ export default function SkillAssessmentScreen({ onComplete, onClose }: SkillAsse
     setDirection(1);
     setPhase('quiz');
   };
+
+  // Jump straight into the relevant sport's quiz when arriving from a "you need
+  // to assess this sport before joining" prompt, skipping the sport-select screen.
+  useEffect(() => {
+    if (initialSport) handleStartQuiz(initialSport);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleNext = () => {
     if (selectedOption === null) return;

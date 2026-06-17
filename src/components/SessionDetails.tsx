@@ -1,5 +1,7 @@
-import { MatchSession, Player, UserProfile, SkillLevel, SKILL_LEVELS, SKILL_LEVEL_LABELS } from '../types';
-import { ArrowLeft, Calendar, MapPin, Plus, Trophy, Pencil, CalendarPlus, Navigation, MessageCircle } from 'lucide-react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { MatchSession, Player, UserProfile, Sport, SkillLevel, SKILL_LEVELS, SKILL_LEVEL_LABELS } from '../types';
+import { ArrowLeft, Calendar, MapPin, Plus, Trophy, Pencil, CalendarPlus, Navigation, MessageCircle, Target, X } from 'lucide-react';
 
 interface PlayerStat {
   wouldPlayAgain: number | null;
@@ -18,6 +20,7 @@ interface SessionDetailsProps {
   onViewPlayerProfile: (player: Player) => void;
   onEdit?: (session: MatchSession) => void;
   onOpenChat?: (sessionId: string) => void;
+  onTakeAssessment?: (sport: Sport) => void;
   playerStats?: Record<string, PlayerStat>;
 }
 
@@ -58,27 +61,42 @@ export default function SessionDetails({
   onViewPlayerProfile,
   onEdit,
   onOpenChat,
+  onTakeAssessment,
   playerStats = {},
 }: SessionDetailsProps) {
+  const [showAssessmentPrompt, setShowAssessmentPrompt] = useState(false);
   const isJoined = session.playersJoined.some((p) => p.id === currentUser.id);
   const isHost = session.host.id === currentUser.id;
   const spotsFilled = session.playersJoined.length;
   const maxPlayers = session.maxPlayers;
   const isFull = spotsFilled >= maxPlayers;
 
-  const userSportLevel = currentUser.skillsBySport?.[session.sport]?.skillLevel ?? currentUser.skillLevel;
+  // Skill level is assessed per sport — a level from a different sport must
+  // never be used here, or users get blocked from sports they've never assessed.
+  const sportSkillLevel = currentUser.skillsBySport?.[session.sport]?.skillLevel;
   const safeLabel = (level: string | undefined) =>
     level ? (SKILL_LEVEL_LABELS[level as SkillLevel] ?? level) : '';
   const minIdx = SKILL_LEVELS.indexOf(session.skillLevel);
   const maxIdx = SKILL_LEVELS.indexOf(session.skillLevelMax ?? session.skillLevel);
-  const userIdx = SKILL_LEVELS.indexOf(userSportLevel);
-  // Old sessions may have a skill level not in the new list; always allow joining those
-  const levelMatch = minIdx === -1 || (userIdx >= minIdx && userIdx <= maxIdx);
+  const userIdx = sportSkillLevel ? SKILL_LEVELS.indexOf(sportSkillLevel) : -1;
+  // Sessions open to every tier (beginner through pro) need no assessment to join.
+  const isOpenToAllLevels = minIdx === 0 && maxIdx === SKILL_LEVELS.length - 1;
+  // Old sessions may have a skill level not in the new list — always allow joining those.
+  const skillGateApplies = minIdx !== -1 && !isOpenToAllLevels;
+  const needsAssessment = skillGateApplies && userIdx === -1;
+  const levelMatch = !skillGateApplies || (userIdx >= minIdx && userIdx <= maxIdx);
   const genderMatch = !session.gender || session.gender === 'open' || currentUser.gender === session.gender;
   const canJoin = !isFull && levelMatch && genderMatch;
+  // Disabled only when truly blocked — "needs assessment" stays clickable so it can open the prompt.
+  const joinDisabled = isFull || !genderMatch || (skillGateApplies && userIdx !== -1 && !levelMatch);
   const skillRangeLabel = session.skillLevelMax && session.skillLevelMax !== session.skillLevel
     ? `${safeLabel(session.skillLevel)} – ${safeLabel(session.skillLevelMax)}`
     : safeLabel(session.skillLevel);
+
+  const handleJoinClick = () => {
+    if (needsAssessment) { setShowAssessmentPrompt(true); return; }
+    if (canJoin) onJoin(session.id);
+  };
 
   // Calculate percentage for progress meter
   const fillPercentage = Math.min((spotsFilled / maxPlayers) * 100, 100);
@@ -478,22 +496,25 @@ export default function SessionDetails({
           ) : (
             <div className="w-full flex flex-col items-center gap-2">
               <button
-                onClick={() => onJoin(session.id)}
-                disabled={!canJoin}
+                onClick={handleJoinClick}
+                disabled={joinDisabled}
                 className={`w-full font-sans font-black text-xs uppercase tracking-widest py-4 rounded-full transition-all flex items-center justify-center gap-2 ${
-                  canJoin
-                    ? 'bg-primary-fixed text-on-primary-fixed hover:bg-primary-fixed-dim shadow-[0_4px_20px_rgba(202,243,0,0.3)] hover:scale-101 active:scale-98 cursor-pointer'
-                    : 'bg-surface-variant text-on-surface-variant cursor-not-allowed opacity-60'
+                  joinDisabled
+                    ? 'bg-surface-variant text-on-surface-variant cursor-not-allowed opacity-60'
+                    : 'bg-primary-fixed text-on-primary-fixed hover:bg-primary-fixed-dim shadow-[0_4px_20px_rgba(202,243,0,0.3)] hover:scale-101 active:scale-98 cursor-pointer'
                 }`}
               >
-                {isFull ? 'Match is full' : !genderMatch ? `${session.gender === 'male' ? '♂ Male' : '♀ Female'} only` : !levelMatch ? `${skillRangeLabel} only` : 'Join session'}
-                {canJoin && <Trophy className="w-4 h-4" />}
+                {isFull ? 'Match is full'
+                  : !genderMatch ? `${session.gender === 'male' ? '♂ Male' : '♀ Female'} only`
+                  : !needsAssessment && !levelMatch ? `${skillRangeLabel} only`
+                  : 'Join session'}
+                {(canJoin || needsAssessment) && <Trophy className="w-4 h-4" />}
               </button>
-              {!isFull && !canJoin && (
+              {!isFull && !canJoin && !needsAssessment && (
                 <p className="text-[11px] text-on-surface-variant/70 text-center">
                   {!genderMatch
                     ? `This session is ${session.gender} only. Update your gender in your profile to join.`
-                    : <>Your {session.sport} level is <span className="text-primary-fixed font-bold">{userSportLevel}</span> — this session requires <span className="font-bold text-on-surface">{skillRangeLabel}</span></>
+                    : <>Your {session.sport} level is <span className="text-primary-fixed font-bold">{sportSkillLevel}</span> — this session requires <span className="font-bold text-on-surface">{skillRangeLabel}</span></>
                   }
                 </p>
               )}
@@ -502,6 +523,64 @@ export default function SessionDetails({
           </div>
         </div>
       </div>
+
+      {/* Skill assessment required to join */}
+      <AnimatePresence>
+        {showAssessmentPrompt && (
+          <>
+            <motion.div
+              key="assessment-backdrop"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setShowAssessmentPrompt(false)}
+              className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm"
+            />
+            <motion.div
+              key="assessment-sheet"
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+              className="fixed bottom-0 left-0 right-0 z-50 bg-surface-container-high rounded-t-2xl px-5 pt-5 pb-10 max-w-3xl mx-auto"
+            >
+              <div className="w-10 h-1 rounded-full bg-outline-variant/50 mx-auto mb-5" />
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-primary-fixed text-on-primary-fixed flex items-center justify-center">
+                    <Target className="w-4 h-4 stroke-[2.5px]" />
+                  </div>
+                  <h3 className="font-sans font-black text-lg text-on-surface">Assessment Required</h3>
+                </div>
+                <button
+                  onClick={() => setShowAssessmentPrompt(false)}
+                  className="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-variant transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-sm text-on-surface-variant/80 mb-6 leading-relaxed">
+                You haven't taken a skill assessment for {session.sport} yet. This session requires{' '}
+                <span className="font-bold text-on-surface">{skillRangeLabel}</span> — take a quick 7-question
+                assessment to see if you qualify.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAssessmentPrompt(false)}
+                  className="flex-1 py-3 rounded-full border border-outline-variant/50 text-on-surface-variant text-sm font-bold uppercase tracking-wider transition-all hover:bg-surface-variant cursor-pointer"
+                >
+                  Maybe Later
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowAssessmentPrompt(false); onTakeAssessment?.(session.sport); }}
+                  className="flex-1 py-3 rounded-full bg-primary-fixed text-on-primary-fixed text-sm font-extrabold uppercase tracking-wider transition-all hover:bg-primary-fixed-dim active:scale-95 cursor-pointer"
+                >
+                  Take Assessment
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </article>
   );
 }
