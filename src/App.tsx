@@ -148,7 +148,6 @@ export default function App() {
   // signed-in account so the sessions are hosted by the real user.
   // Run `seedDummySessions()` / `unseedDummySessions()` / `resetSkillsForDemo()` from the browser console.
   useEffect(() => {
-    if (!import.meta.env.DEV) return;
     const w = window as unknown as Record<string, unknown>;
     if (user) {
       const host: Player = { id: user.id, name: user.name, avatar: user.avatar };
